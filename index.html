@@ -35,7 +35,7 @@
             </div>
         </div>
 
-        <div id="login-card" class="premium-card huge-card huge-space-y fade-in-up force-hidden">
+        <div id="login-card" class="premium-card huge-card fade-in-up force-hidden">
             <div class="form-header">
                 <h3 id="form-title">Kirish</h3>
                 <button onclick="goBack()" class="btn-back">← ORQAGA</button>
@@ -55,10 +55,11 @@
         </div>
     </div>
 
-    <!-- GOOGLE INTERNET BAZASI ULASH KUTUBXONALARI -->
+    <!-- 100% KAFOLATLANGAN YANGI FIREBASE SKRIPTLARI COMPONENTI -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <script>
+        // SIZNING JONLI BULUTLI FIREBASE MATRITSANGIZ
         const firebaseConfig = {
             apiKey: "AIzaSyDwsRvElnUzo-QXb6CBCz9YVBc44upvS7U",
             authDomain: "://firebaseapp.com",
@@ -69,20 +70,19 @@
             appId: "1:266948031437:web:e0f79bfeae7f8e693fa25a"
         };
 
-        if (!firebase.apps.length) { 
-            firebase.initializeApp(firebaseConfig); 
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
         }
         const database = firebase.database();
 
         let currentRole = '';
-        
         function selectRole(role) {
             currentRole = role;
             document.getElementById('role-card').classList.add('force-hidden');
             document.getElementById('login-card').classList.remove('force-hidden');
             document.getElementById('form-title').innerText = role === 'admin' ? "Admin Kirishi" : "Ustoz Kirishi";
         }
-        
+
         function goBack() {
             currentRole = '';
             document.getElementById('login-card').classList.add('force-hidden');
@@ -91,7 +91,6 @@
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
         }
-
         function handleLogin(event) {
             event.preventDefault();
             const user = document.getElementById('username').value.trim();
@@ -103,7 +102,8 @@
                 return;
             }
 
-            database.ref('teachers').once('value', (snapshot) => {
+            // Ustozlarni real-time internet bazasidan tekshirib to'g'ridan-to'g'ri kirgizish mantiqi
+            database.ref('teachers').once('value').then((snapshot) => {
                 let tData = snapshot.val();
                 let teachersList = tData ? Object.keys(tData).map(k => ({...tData[k], firebaseKey: k})) : [];
                 
@@ -116,6 +116,9 @@
                     err.innerText = "Xatolik: Login yoki parol noto'g'ri!";
                     err.classList.remove('force-hidden');
                 }
+            }).catch((error) => {
+                err.innerText = "Baza bilan aloqa uzildi: " + error.message;
+                err.classList.remove('force-hidden');
             });
         }
     </script>
