@@ -1,4 +1,4 @@
-
+// JONLI INTERNET BAZASI BILAN SINXRONLASHTIRILGAN MATRITSA
 const firebaseConfig = {
     apiKey: "AIzaSyDwsRvElnUzo-QXb6CBCz9YVBc44upvS7U",
     authDomain: "://firebaseapp.com",
@@ -10,12 +10,11 @@ const firebaseConfig = {
     measurementId: "G-TRNC75JE31"
 };
 
-
 let teachers = [];
 let students = [];
 let isSearching = false;
 
-// Bazadan ma'lumotlarni Realtime oqim orqali tortib olish funksiyasi
+// BAZADAN MA'LUMOTLARNI REALTIME TORTIB OLISH ALGORITMI
 async function initAdminPanel() {
     if (isSearching) return;
 
@@ -79,6 +78,7 @@ async function initAdminPanel() {
         }
     } catch(e) { console.log("Yuklashda xato:", e); }
 }
+// AVTOMAT JORIY OY RESET TIZIMI
 async function checkMonthlyReset() {
     const now = new Date();
     const currentDay = now.getDate();
@@ -113,6 +113,7 @@ async function checkMonthlyReset() {
     } catch(e) { console.log(e); }
 }
 
+// 3 OYLIK MOLIYA ARXIVINI CHIZISH
 async function renderMonthlyArchive() {
     const archiveBox = document.getElementById('moliya-archive-box');
     if (!archiveBox) return;
@@ -342,8 +343,11 @@ async function clearAllLogs() {
 }
 
 async function saveLog(name, status, sum, phone) {
-    let newLog = { id: Date.now(), name, date: new Date().toLocaleDateString('uz-UZ'), status, sum, phone: phone || "" };
-    await fetch(`${firebaseConfig.databaseURL}/excelLog.json`, { method: 'POST', body: JSON.stringify(newLog) });
+    let logRes = await fetch(`${firebaseConfig.databaseURL}/excelLog.json`, { method: 'POST', body: JSON.stringify({ id: Date.now(), name, date: new Date().toLocaleDateString('uz-UZ'), status, sum, phone: phone || "" }) });
+    let logData = await logRes.json();
+    if(logData && logData.name) {
+        await fetch(`${firebaseConfig.databaseURL}/excelLog/${logData.name}.json`, { method: 'PATCH', body: JSON.stringify({ id: logData.name }) });
+    }
 }
 
 function scrollToExcelLog() {
