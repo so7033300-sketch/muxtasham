@@ -35,9 +35,9 @@
             </div>
         </div>
 
-        <div id="login-card" class="premium-card huge-card fade-in-up force-hidden">
+        <div id="login-card" class="premium-card huge-card huge-space-y fade-in-up force-hidden">
             <div class="form-header">
-                <h3 id="form-title"></h3>
+                <h3 id="form-title">Kirish</h3>
                 <button onclick="goBack()" class="btn-back">← ORQAGA</button>
             </div>
             <form onsubmit="handleLogin(event)" class="huge-space-y">
@@ -55,7 +55,7 @@
         </div>
     </div>
 
-    <!-- FIREBASE KUTUBXONALARI BOG'LANDI -->
+    <!-- GOOGLE INTERNET BAZASI ULASH KUTUBXONALARI -->
     <script src="https://gstatic.com"></script>
     <script src="https://gstatic.com"></script>
     <script>
@@ -69,16 +69,20 @@
             appId: "1:266948031437:web:e0f79bfeae7f8e693fa25a"
         };
 
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        if (!firebase.apps.length) { 
+            firebase.initializeApp(firebaseConfig); 
+        }
         const database = firebase.database();
 
         let currentRole = '';
+        
         function selectRole(role) {
             currentRole = role;
             document.getElementById('role-card').classList.add('force-hidden');
             document.getElementById('login-card').classList.remove('force-hidden');
             document.getElementById('form-title').innerText = role === 'admin' ? "Admin Kirishi" : "Ustoz Kirishi";
         }
+        
         function goBack() {
             currentRole = '';
             document.getElementById('login-card').classList.add('force-hidden');
@@ -99,7 +103,6 @@
                 return;
             }
 
-            // Ustozlarni haqiqiy bulutli internet bazasidan tekshirib kirish mantiqi
             database.ref('teachers').once('value', (snapshot) => {
                 let tData = snapshot.val();
                 let teachersList = tData ? Object.keys(tData).map(k => ({...tData[k], firebaseKey: k})) : [];
