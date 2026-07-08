@@ -1,0 +1,222 @@
+/* ========================================================
+   Muxtasham CRM — Pure CSS Premium Gold & Spacious Layout
+   ======================================================== */
+
+@import url('https://googleapis.com');
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: linear-gradient(135deg, #161208 0%, #1c160a 50%, #0d0a04 100%);
+    color: #f4f4f7;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    min-height: 100vh;
+    font-size: 19px; /* Yirik oson o'qiladigan shrift */
+}
+
+/* Ekranning qoq markazida turishini ta'minlash (Keng masofalar bilan) */
+.center-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    width: 100%;
+    padding: 40px 20px;
+}
+
+/* Siz chizgandek juda keng, massiv va baquvvat premium karta */
+.premium-card {
+    background: rgba(28, 22, 14, 0.85);
+    border: 3px solid #f59e0b; /* Yorqin Oltin chiziq */
+    border-radius: 36px;
+    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 158, 11, 0.05);
+    width: 100%;
+    max-width: 700px; /* Kattalashtirilgan kenglik */
+    padding: 55px 50px; /* Hech narsa siqilmasligi uchun katta padding */
+    text-align: center;
+}
+
+/* Admin va Ustoz uchun katta sahifa konteyneri */
+.main-wrapper {
+    max-w: 1100px !important;
+    margin: 60px auto;
+    width: 100%;
+    padding: 0 25px;
+}
+
+/* Premium Katta Logotip */
+.logo-box {
+    display: inline-block;
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #0d0a04;
+    padding: 20px 45px;
+    border-radius: 24px;
+    font-weight: 900;
+    font-size: 28px;
+    letter-spacing: 3px;
+    margin-bottom: 45px;
+    box-shadow: 0 15px 35px rgba(245, 158, 11, 0.3);
+}
+
+/* Sarlavhalar */
+.huge-title {
+    font-size: 34px;
+    font-weight: 900;
+    color: #ffffff;
+    margin-bottom: 15px;
+}
+
+.huge-subtitle {
+    font-size: 18px;
+    color: #a1a1aa;
+    margin-bottom: 45px;
+}
+
+/* Massiv va Yirik Oltin Tugmalar */
+.btn-premium-gold {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    color: #0d0a04;
+    font-weight: 900;
+    font-size: 20px;
+    border: none;
+    border-radius: 24px;
+    padding: 24px 30px;
+    cursor: pointer;
+    box-shadow: 0 12px 30px rgba(245, 158, 11, 0.35);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 100%;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-premium-gold:hover {
+    box-shadow: 0 15px 40px rgba(245, 158, 11, 0.6);
+    transform: scale(1.025);
+}
+
+/* Katta To'q Rangli Tugmalar */
+.btn-premium-dark {
+    background: rgba(245, 158, 11, 0.05);
+    border: 3px solid rgba(245, 158, 11, 0.3);
+    color: #ffffff;
+    font-weight: 800;
+    font-size: 20px;
+    border-radius: 24px;
+    padding: 24px 30px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    width: 100%;
+}
+
+.btn-premium-dark:hover {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: #f59e0b;
+    transform: scale(1.025);
+}
+
+/* Katta va Elegant Kiritish Maydonlari */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    text-align: left;
+    margin-bottom: 30px;
+}
+
+.form-label {
+    font-size: 16px;
+    font-weight: 800;
+    color: #fbbf24;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding-left: 4px;
+}
+
+.premium-input {
+    background: #0d0a04;
+    border: 2px solid rgba(245, 158, 11, 0.3);
+    color: #ffffff;
+    border-radius: 22px;
+    padding: 22px 26px;
+    font-size: 20px;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.premium-input:focus {
+    border-color: #fbbf24;
+    box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.25);
+    outline: none;
+}
+
+/* Moliya bloki */
+.moliya-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+@media (max-w: 768px) {
+    .moliya-grid { grid-template-columns: 1fr; }
+}
+
+.moliya-card {
+    background: rgba(28, 22, 14, 0.85);
+    border: 3px solid rgba(245, 158, 11, 0.3);
+    padding: 30px;
+    border-radius: 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Qat'iy yashirish klassi */
+.force-hidden {
+    display: none !important;
+}
+
+/* Excel Stilidagi Katakchali Jadval */
+.excel-wrapper {
+    overflow-x: auto;
+    border-radius: 24px;
+    border: 3px solid rgba(245, 158, 11, 0.3);
+    margin-top: 30px;
+}
+
+.excel-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #120e06;
+    text-align: left;
+}
+
+.excel-table th, .excel-table td {
+    border: 2px solid rgba(245, 158, 11, 0.15);
+    padding: 22px;
+    font-size: 18px;
+}
+
+.excel-table th {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fbbf24;
+    font-weight: 800;
+}
+
+.excel-table tr:hover {
+    background: rgba(245, 158, 11, 0.05);
+}
+
+/* Animatsiya */
+.fade-in-up {
+    animation: fadeInUp 0.5s ease-out forwards;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
