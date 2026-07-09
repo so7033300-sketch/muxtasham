@@ -44,10 +44,11 @@ async function uploadLocalDataToBackend() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dataToSend)
         });
-       const result = await response.json();
-if (result.success) {
-    alert("🔥 Dahshat! Hamma ma'lumotlar pullik Render serveriga 100% xavfsiz yuklandi! 🎉");
-}
+               const result = await response.json();
+        if (result.success) {
+            alert("🔥 Dahshat! Hamma ma'lumotlar pullik Render serveriga 100% xavfsiz yuklandi! 🎉");
+        } else {
+
 }
 // 3. MA'LUMOTLARNI SERVERDAN TIKLASH
 async function downloadDataFromBackend() {
