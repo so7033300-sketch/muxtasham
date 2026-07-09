@@ -14,6 +14,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
+// 1.1 TIZIMGA KIRISH (LOGIN / PAROL) LOGIKASI
+let selectedRole = 'teacher';
+
+function selectRole(role) {
+    selectedRole = role;
+    const btnTeacher = document.getElementById('btn-role-teacher');
+    const btnAdmin = document.getElementById('btn-role-admin');
+    if (!btnTeacher || !btnAdmin) return;
+    
+    if (role === 'admin') {
+        btnAdmin.classList.add('active');
+        btnTeacher.classList.remove('active');
+    } else {
+        btnTeacher.classList.add('active');
+        btnAdmin.classList.remove('active');
+    }
+}
+
+function handleLoginSystem(event) {
+    event.preventDefault();
+    const inputLogin = document.getElementById('loginUser')?.value.trim();
+    const inputPass = document.getElementById('passUser')?.value.trim();
+
+    if (selectedRole === 'admin') {
+        if (inputLogin === 'admin' && inputPass === 'admin123') {
+            localStorage.setItem('adminIsactive', 'true');
+            alert("Welcome! Administrator tizimga muvaffaqiyatli kirdi. 🎉");
+            window.location.href = 'admin.html';
+        } else {
+            alert("❌ Admin login yoki paroli noto'g'ri!");
+        }
+        return;
+    }
+
+    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    const foundTeacher = teachers.find(t => t.login === inputLogin && t.pass === inputPass);
+
+    if (foundTeacher) {
+        localStorage.setItem('loggedInTeacher', JSON.stringify(foundTeacher));
+        alert(`✅ Xush kelibsiz, ${foundTeacher.name}! Tizim muvaffaqiyatli ochildi.`);
+        window.location.href = 'ustoz.html';
+    } else {
+        alert("❌ Ustoz login yoki paroli noto'g'ri! Yoki administrator sizni hali ro'yxatga olmagan.");
+    }
+}
+
 // 2. MA'LUMOTLARNI BACKEND-GA SAQLASH
 async function uploadLocalDataToBackend() {
     let dataToSend = {
@@ -33,7 +79,6 @@ async function uploadLocalDataToBackend() {
         }
     } catch (error) { console.error("Serverga yuklashda xatolik:", error.message); }
 }
-
 // 3. MA'LUMOTLARNI SERVERDAN TIKLASH
 async function downloadDataFromBackend() {
     if (!confirm("Diqqat! Serverdan yuklasangiz, hozirgi brauzeringizdagi ma'lumotlar o'chib ketadi. Rozimisiz?")) return;
@@ -49,6 +94,7 @@ async function downloadDataFromBackend() {
         }
     } catch (error) { alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message); }
 }
+
 // 4. O'QITUVCHINI QO'SHISH (ADMIN PANEL)
 function addTeacher(event) {
     event.preventDefault();
@@ -246,10 +292,10 @@ function updateMoliyaGrid() {
     let teachersSalaryPool = totalCollected * 0.5;
 
     const profitEl = document.getElementById('center-profit');
-    const salaryEl = document.getElementById('admin-teacher-salary');
+    const campusEl = document.getElementById('admin-teacher-salary');
     
     if (profitEl) profitEl.innerText = centerProfit.toLocaleString() + " UZS";
-    if (salaryEl) salaryEl.innerText = teachersSalaryPool.toLocaleString() + " UZS";
+    if (campusEl) campusEl.innerText = teachersSalaryPool.toLocaleString() + " UZS";
 }
 
 // =========================================================================
@@ -267,7 +313,7 @@ function initTeacherCabinet() {
 
     renderTeacherStudents();
     checkTimeAndLockSystem();
-    setInterval(checkTimeAndLockSystem, 3000); // Tezroq tekshirish uchun 3 soniya qilindi
+    setInterval(checkTimeAndLockSystem, 3000); // Har 3 soniyada vaqtni tekshirish
 }
 
 function checkTimeAndLockSystem() {
@@ -286,7 +332,6 @@ function checkTimeAndLockSystem() {
     const todayDateStr = now.toLocaleDateString();
     const isAlreadyDoneToday = localStorage.getItem(`davomat_done_${currentTeacher.id}_${todayDateStr}`) === "true";
 
-    // 🔒 HAR QANDAY VIZUAL BUZILISHLARNI OLDINI OLISH UCHUN FAQAT TUGMALARNI QULFLASH
     const allButtons = document.querySelectorAll('button');
     
     if (!isRightDay || !isRightTime || isAlreadyDoneToday) {
@@ -325,7 +370,6 @@ function renderTeacherStudents() {
     });
 }
 
-// DAVOMAT BOSILGANDA KURS NARXINI TO'G'RI YECHISH VA SRAZU BLOKLASH
 function doAttendance(studentId, status) {
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
