@@ -1,4 +1,5 @@
 const RENDER_BACKEND_URL = "https://onrender.com";
+
 async function uploadLocalDataToBackend() {
     console.log("Render pullik serveriga zaxira nusxa yuklanmoqda...");
 
