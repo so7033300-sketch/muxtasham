@@ -31,36 +31,6 @@ function selectRole(role) {
         btnAdmin.classList.remove('active');
     }
 }
-
-function handleLoginSystem(event) {
-    event.preventDefault();
-    const inputLogin = document.getElementById('loginUser')?.value.trim();
-    const inputPass = document.getElementById('passUser')?.value.trim();
-
-    if (selectedRole === 'admin') {
-        // MAJBURIY KIRISH: Kesh xalaqit bermasligi uchun har qanday holatda admin.html ga o'tkazish
-        if (inputLogin === 'admin' && inputPass === 'admin123') {
-            localStorage.setItem('adminIsactive', 'true');
-            alert("Welcome! Administrator tizimga kirdi. 🎉");
-            window.location.href = 'admin.html';
-        } else {
-            alert("❌ Admin login yoki paroli noto'g'ri!");
-        }
-        return;
-    }
-
-    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-    const foundTeacher = teachers.find(t => t.login === inputLogin && t.pass === inputPass);
-
-    if (foundTeacher) {
-        localStorage.setItem('loggedInTeacher', JSON.stringify(foundTeacher));
-        alert(`✅ Xush kelibsiz, ${foundTeacher.name}! Tizim muvaffaqiyatli ochildi.`);
-        window.location.href = 'ustoz.html';
-    } else {
-        alert("❌ Ustoz login yoki paroli noto'g'ri!");
-    }
-}
-
 // 2. MA'LUMOTLARNI BACKEND-GA SAQLASH
 async function uploadLocalDataToBackend() {
     let dataToSend = {
