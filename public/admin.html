@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muhtasham - Admin Panel</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <h1>Dashboard - Admin Panel</h1>
+
+        <!-- SERVER BILAN ISHLASH TUGMALARI -->
+        <div class="server-controls" style="margin-bottom: 20px; display: flex; gap: 10px;">
+            <button onclick="uploadLocalDataToBackend()" style="background-color: #ffc107; color: black; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 5px;">
+                SERVERGA SAQLASH 💾
+            </button>
+            <button onclick="downloadDataFromBackend()" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 5px;">
+                SERVERDAN TIKLASH 🔄
+            </button>
+        </div>
+
+        <!-- O'QITUVCHI QO'SHISH FORMASI -->
+        <div class="card">
+            <h2>O'qituvchi Qo'shish</h2>
+            <form onsubmit="addTeacher(event)">
+                <div class="form-group">
+                    <label>Ustoz Ism Familiyasi:</label>
+                    <input type="text" id="teacherName" placeholder="Davlatjon domla" required>
+                </div>
+
+                <div class="form-group">
+                    <label>O'tadigan Fani:</label>
+                    <input type="text" id="teacherSubject" placeholder="Ingliz tili" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Guruh Nomi:</label>
+                    <input type="text" id="teacherGroup" placeholder="Sefr" required>
+                </div>
+
+                <div class="form-group" style="display: flex; gap: 10px;">
+                    <div>
+                        <label>Boshlanish Soati:</label>
+                        <input type="time" id="startTime" required>
+                    </div>
+                    <div>
+                        <label>Tugash Soati:</label>
+                        <input type="time" id="endTime" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Haftalik Dars Kunlarini Tanlang:</label>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
+                        <label><input type="checkbox" name="days" value="Dushanba"> Dushanba</label>
+                        <label><input type="checkbox" name="days" value="Seshanba"> Seshanba</label>
+                        <label><input type="checkbox" name="days" value="Chorshanba"> Chorshanba</label>
+                        <label><input type="checkbox" name="days" value="Payshanba"> Payshanba</label>
+                        <label><input type="checkbox" name="days" value="Juma"> Juma</label>
+                        <label><input type="checkbox" name="days" value="Shanba"> Shanba</label>
+                        <label><input type="checkbox" name="days" value="Yakshanba"> Yakshanba</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Tizim Login:</label>
+                    <input type="text" id="teacherLogin" placeholder="davlatjon" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Tizim Parol:</label>
+                    <input type="password" id="teacherPass" placeholder="davlatjon123" required>
+                </div>
+
+                <button type="submit" class="btn-premise-gold" style="background-color: #d29d2b; color: black; width: 100%; padding: 12px; font-weight: bold; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px;">
+                    USTOZNI TAYMER BILAN SAQLASH +
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT ULASH -->
+    <script src="script.js"></script>
+</body>
+</html>
