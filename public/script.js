@@ -1,4 +1,4 @@
-const RENDER_BACKEND_URL = "https://onrender.com";
+const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
 
 async function uploadLocalDataToBackend() {
     console.log("Render pullik serveriga zaxira nusxa yuklanmoqda...");
