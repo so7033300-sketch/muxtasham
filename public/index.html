@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Muxtasham CRM — Kirish</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .center-container { display: flex; align-items: center; justify-content: center; min-height: 100vh; width: 100%; box-sizing: border-box; padding: 40px 20px; }
+        .huge-card { width: 100%; max-width: 650px !important; box-sizing: border-box; padding: 50px 45px !important; text-align: center; }
+        .logo-box { display: inline-block; background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #060508; padding: 18px 40px; border-radius: 20px; font-weight: 900; font-size: 26px; letter-spacing: 3px; margin-bottom: 40px; box-shadow: 0 15px 30px rgba(245, 158, 11, 0.25); }
+        .huge-title { font-size: 32px !important; font-weight: 800; color: #ffffff; margin-bottom: 15px; letter-spacing: 0.5px; }
+        .huge-subtitle { font-size: 18px; color: #a1a1aa; margin-bottom: 45px; font-weight: 500; }
+        .huge-space-y { display: flex; flex-direction: column; gap: 25px; }
+        .form-group { display: flex; flex-direction: column; gap: 12px; text-align: left; margin-bottom: 25px; }
+        .form-label { font-size: 15px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; padding-left: 4px; }
+        .btn-back { display: inline-block; font-size: 14px; font-weight: 800; color: #f59e0b; background: rgba(255, 255, 255, 0.03); border: 2px solid rgba(255, 255, 255, 0.08); padding: 12px 24px; border-radius: 14px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+        .btn-back:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
+        .form-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255, 255, 255, 0.08); padding-bottom: 20px; margin-bottom: 35px; }
+        .form-header h3 { font-size: 24px; font-weight: 900; color: #f59e0b; margin: 0; text-transform: uppercase; letter-spacing: 0.5px; }
+    </style>
+</head>
+<body>
+    <div class="center-container">
+        <div id="role-card" class="premium-card huge-card fade-in-up">
+            <div class="logo-box">MUXTASHAM</div>
+            <div>
+                <h2 class="huge-title">Qaysi sahifaga kirasiz?</h2>
+                <p class="huge-subtitle">Davom etish uchun tizimdagi vazifangizni belgilang:</p>
+            </div>
+            <div class="huge-space-y">
+                <button onclick="selectRole('admin')" class="btn-premium-dark">💼 Administrator Sahifasiga</button>
+                <button onclick="selectRole('teacher')" class="btn-premium-gold">👨‍🏫 O'qituvchi Sahifasiga</button>
+            </div>
+        </div>
+        <div id="login-card" class="premium-card huge-card fade-in-up" style="display: none;">
+            <div class="form-header">
+                <h3 id="form-title">Kirish</h3>
+                <button onclick="goBack()" class="btn-back">← ORQAGA</button>
+            </div>
+            <form onsubmit="handleLogin(event)" class="huge-space-y">
+                <div class="form-group">
+                    <label class="form-label">Foydalanuvchi nomi (Login)</label>
+                    <input type="text" id="username" required class="premium-input" placeholder="Loginingizni kiriting">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Maxfiy Parol</label>
+                    <input type="password" id="password" required class="premium-input" placeholder="••••••••">
+                </div>
+                <div id="error-message" style="display: none; color: #f87171; font-size: 16px; font-weight: 700; text-align: center; background: rgba(239, 68, 68, 0.1); padding: 18px; border-radius: 20px; border: 2px solid rgba(239, 68, 68, 0.2);"></div>
+                <button type="submit" class="btn-premium-gold" style="margin-top: 15px;">Tizimga Tasdiqlab Kirish →</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        localStorage.removeItem('adminSessionActive');
+        localStorage.removeItem('loggedInTeacherId');
+        let currentRole = '';
+
+        function selectRole(role) {
+            currentRole = role;
+            document.getElementById('role-card').style.display = 'none';
+            document.getElementById('login-card').style.display = 'block';
+            document.getElementById('form-title').innerText = role === 'admin' ? "Admin Kirishi" : "Ustoz Kirishi";
+        }
+        function goBack() {
+            currentRole = '';
+            document.getElementById('login-card').style.display = 'none';
+            document.getElementById('role-card').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+        function handleLogin(event) {
+            event.preventDefault();
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const err = document.getElementById('error-message');
+
+            if (currentRole === 'admin' && user === 'admin' && pass === '123') {
+                localStorage.setItem('adminSessionActive', 'true');
+                window.location.href = 'admin.html';
+                return;
+            } 
+            let savedTeachers = JSON.parse(localStorage.getItem('teachers')) || [];
+            let foundTeacher = savedTeachers.find(t => t.login === user && t.pass === pass);
+            if (currentRole === 'teacher' && foundTeacher) {
+                localStorage.setItem('loggedInTeacherId', foundTeacher.id);
+                window.location.href = 'ustoz.html';
+                return;
+            }
+            err.innerText = "Xatolik: Login yoki parol noto'g'ri!";
+            err.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
