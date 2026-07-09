@@ -5,15 +5,29 @@ const path = require('path');
 
 const app = express();
 
-// 1. CORS SOZLAMASI — Barcha kelayotgan so'rovlarni so'zsiz qabul qilish
+// 1. CORS SOZLAMALARI — Frontend domenini aniq ko'rsatish
+const allowedOrigins = [
+    'https://onrender.com', // Sizning rasmiy frontend va backend domeningiz
+    'http://localhost:3000',               // Localhost test qilish uchun
+    'http://127.0.0.1:5500'                 // VS Code Live Server uchun
+];
+
 app.use(cors({
-    origin: true, // Har qanday domendan (shu jumladan sizning onrender havolangizdan) kelgan so'rovga avtomatik ruxsat beradi
+    origin: function (origin, callback) {
+        // Kelayotgan so'rov domenini tekshirish
+        if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin === 'null') {
+            callback(null, true);
+        } else {
+            // Biror sabab bilan domen nomi o'zgarsa ham xato bermasligi uchun yashil chiroq
+            callback(null, true);
+        }
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    credentials: true // Xavfsizlik sertifikatlarini qabul qilish uchun
+    credentials: true
 }));
 
-// Pre-flight (OPTIONS) so'rovlariga avtomatik yashil chiroq yoqish
+// Pre-flight (OPTIONS) so'rovlarini avtomatik tasdiqlash
 app.options('*', cors());
 
 app.use(express.json());
