@@ -5,14 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Muxtasham — Ustoz Paneli</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        if (!localStorage.getItem('loggedInTeacherId')) {
+            window.location.href = 'index.html';
+        }
+    </script>
+    <style>
+        .select-custom { background-color: #0d0a04 !important; color: #ffffff !important; }
+    </style>
 </head>
 <body>
-    <div class="main-wrapper fade-in-up">
-        <div class="moliya-card" style="margin-bottom: 30px; border-color: #f59e0b; display: flex; justify-content: space-between; align-items: center;">
+    <div class="main-wrapper fade-in-up" style="max-width:1100px; margin:50px auto; padding:0 20px;">
+        
+        <div class="moliya-card" style="margin-bottom: 30px; border-color: #f59e0b; display: flex; justify-content: space-between; align-items: center; background: rgba(28, 22, 14, 0.9);">
             <div>
                 <span style="font-size: 13px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px;">O'qituvchi Kabineti</span>
-                <h1 id="active-teacher-name" style="font-size: 28px; font-weight: 900; margin-top: 5px;">Yuklanmoqda...</h1>
-                <p id="active-teacher-info" style="font-size: 15px; color: #a1a1aa; margin-top: 5px;">Fan va guruhlar yuklanmoqda...</p>
+                <h1 id="active-teacher-name" style="font-size: 28px; font-weight: 900; margin-top: 5px; color:#fff;">Ustoz</h1>
+                <p id="active-teacher-info" style="font-size: 15px; color: #a1a1aa; margin-top: 5px;">Yuklanmoqda...</p>
             </div>
             <button onclick="logoutTeacher()" class="btn-premium-dark" style="width: auto; padding: 15px 30px; font-size: 16px; border-radius: 18px; font-weight: 800;">Chiqish 🚪</button>
         </div>
@@ -24,12 +33,18 @@
             </div>
             <div style="font-size: 50px;">💵</div>
         </div>
+
         <div class="moliya-card" style="display: block; padding: 35px; margin-bottom: 40px; background: rgba(245, 158, 11, 0.03); border: 2px dashed #f59e0b;">
-            <h3 style="font-size: 20px; font-weight: 900; color: #fbbf24; margin-bottom: 20px; text-transform: uppercase;">🆕 Noldan Yangi Guruh va O'quvchi Qo'shish</h3>
-            <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <h3 style="font-size: 20px; font-weight: 900; color: #fbbf24; margin-bottom: 20px; text-transform: uppercase;">🆕 Noldan Yangi O'quvchi Ro'yxatga Olish</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                 <input type="text" id="t-new-sname" placeholder="O'quvchi Ism Familiyasi" class="premium-input" style="padding: 15px; font-size: 17px;">
                 <input type="text" id="t-new-sphone" value="+998 " class="premium-input" style="padding: 15px; font-size: 17px;" oninput="formatPhoneInput(this)">
-                <input type="text" id="t-new-gname" placeholder="Guruh Nomi" class="premium-input" style="padding: 15px; font-size: 17px;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <select id="t-group-select" class="premium-input select-custom" style="padding: 15px; font-size: 17px;" onchange="toggleGroupInput(this)">
+                    <option value="new" selected>+ Yangi guruh nomi yozish</option>
+                </select>
+                <input type="text" id="t-new-gname" placeholder="Yangi Guruh Nomini Yozing" class="premium-input" style="padding: 15px; font-size: 17px;">
             </div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                 <select id="t-new-gprice" class="premium-input select-custom" style="padding: 15px; font-size: 17px;">
@@ -37,25 +52,28 @@
                     <option value="250000">250,000 UZS</option>
                     <option value="400000">400,000 UZS</option>
                 </select>
-                <input type="number" id="t-new-sbal" placeholder="To'lov summasi (UZS)" class="premium-input" style="padding: 15px; font-size: 17px;">
+                <input type="number" id="t-new-sbal" placeholder="To'lov summasi (Balans UZS)" class="premium-input" style="padding: 15px; font-size: 17px;">
             </div>
             <button onclick="teacherAddNewGroupAndStudent()" class="btn-premium-gold" style="padding: 15px; font-size: 16px; border-radius: 20px; font-weight: 900; width:100%;">GURUHGA O'QUVCHINI RO'YXATGA OLISH +</button>
         </div>
-
-        <div class="moliya-card" style="display: block; padding: 40px;">
-            <h3 style="font-size: 24px; font-weight: 900; color: #fbbf24; margin-bottom: 10px;">📊 Guruhlar bo'yicha kunlik davomat va ro'yxat</h3>
-            <p style="font-size: 15px; color: #a1a1aa; margin-bottom: 30px;">"Keldi" yoki "Kelmadi" bosilganda dars puli avtomat yechiladi.</p>
+        <div class="moliya-card" style="display: block; padding: 40px; background: rgba(28, 22, 14, 0.85);">
+            <h3 style="font-size: 24px; font-weight: 900; color: #fbbf24; margin-bottom: 10px;">Jadval: Kunlik Davomat va Ro'yxat</h3>
+            <p style="font-size: 15px; color: #a1a1aa; margin-bottom: 30px;">Davomat tugmalari dars soatida bir marta yoqiladi va belgilangach yopiladi.</p>
             <div id="ustoz-groups-box" style="display: flex; flex-direction: column; gap: 45px;"></div>
         </div>
     </div>
+
     <script>
         let currentTeacherId = Number(localStorage.getItem('loggedInTeacherId')) || 1; 
-        let teachers = JSON.parse(localStorage.getItem('teachers')) || [
-            { id: 1, name: "Eshmatov Toshmat", subject: "Matematika", groupName: "Alfa #1", startTime: "14:00", endTime: "16:00", allowedDays: [], login: "ustoz1", pass: "456" }
-        ];
+        let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
         let students = JSON.parse(localStorage.getItem('students')) || [];
         let salaryKey = 'teacherSalary_' + currentTeacherId;
         let teacherSalary = Number(localStorage.getItem(salaryKey)) || 0;
+
+        if (teachers.length === 0) {
+            teachers = [{ id: 1, name: "Test Ustoz", subject: "Matematika", groupName: "Alfa", startTime: "00:00", endTime: "23:59", allowedDays: [], login: "ustoz1", pass: "456" }];
+            localStorage.setItem('teachers', JSON.stringify(teachers));
+        }
 
         function checkTimeAccess(activeTeacher) {
             if (!activeTeacher.allowedDays || activeTeacher.allowedDays.length === 0) return true;
@@ -68,93 +86,148 @@
             return false;
         }
 
+        function isAlreadyMarkedToday(studentId, startTime) {
+            let log = JSON.parse(localStorage.getItem('excelLog')) || [];
+            let todayStr = new Date().toLocaleDateString('uz-UZ');
+            return log.some(item => 
+                item.studentId === studentId && 
+                item.date === todayStr && 
+                item.darsTime === startTime &&
+                (item.status.includes('✅') || item.status.includes('❌'))
+            );
+        }
+
+        function toggleGroupInput(select) {
+            const input = document.getElementById('t-new-gname');
+            if (select.value === 'new') { input.style.display = 'block'; input.value = ''; } 
+            else { input.style.display = 'none'; input.value = select.value; }
+        }
+
+        function updateGroupSelect(myStudents) {
+            const select = document.getElementById('t-group-select');
+            const input = document.getElementById('t-new-gname');
+            let uniqueGroups = [...new Set(myStudents.map(s => s.groupName))];
+            let currentValue = select.value;
+            select.innerHTML = '<option value="new">+ Yangi guruh nomi yozish</option>';
+            uniqueGroups.forEach(g => { select.innerHTML += `<option value="${g}">Mavjud guruh: ${g}</option>`; });
+            if (currentValue && [...select.options].some(o => o.value === currentValue)) { select.value = currentValue; }
+            if (select.value === 'new') { input.style.display = 'block'; } else { input.style.display = 'none'; }
+        }
         function renderTeacherPage() {
-            let activeTeacher = teachers.find(t => t.id == currentTeacherId) || { id: currentTeacherId, name: "Yangi O'qituvchi", subject: "Aniq fanlar", groupName: "Yangi Guruh", startTime: "00:00", endTime: "23:59", allowedDays: [] };
-            let hasAccess = checkTimeAccess(activeTeacher);
-            if (!hasAccess) {
-                document.getElementById('active-teacher-name').innerText = activeTeacher.name;
-                document.getElementById('active-teacher-info').innerHTML = `<span style="color:#f87171; font-weight:900;">TIZIM IMKONIYATI BLOKLANGAN!</span>`;
-                document.getElementById('ustoz-groups-box').innerHTML = `<div style="text-align: center; padding: 50px 20px; background: rgba(239,68,68,0.05); border: 2px solid #f87171; border-radius:24px;"><h3 style="font-size:24px; font-weight:900; color:#f87171;">Tizim vaqti yopiq!</h3><p style="font-size:16px; color:#a1a1aa; margin-top:15px;">Admin belgilagan soatda (${activeTeacher.startTime} - ${activeTeacher.endTime}) kiring.</p></div>`;
-                return;
-            }
+            let activeTeacher = teachers.find(t => t.id == currentTeacherId) || teachers;
+            let hasTimeAccess = checkTimeAccess(activeTeacher);
 
             document.getElementById('active-teacher-name').innerText = activeTeacher.name;
-            document.getElementById('active-teacher-info').innerHTML = `Asosiy fani: <span style="color:#fbbf24; font-weight:700;">${activeTeacher.subject || 'Belgilanmagan'}</span>`;
             document.getElementById('teacher-salary').innerText = Math.round(teacherSalary).toLocaleString() + " UZS";
 
-            const groupsBox = document.getElementById('ustoz-groups-box');
-            groupsBox.innerHTML = '';
-            let myStudents = students.filter(s => s.teacherId == currentTeacherId);
-            let uniqueGroups = [...new Set(myStudents.map(s => s.groupName))];
-            if (activeTeacher.groupName && !uniqueGroups.includes(activeTeacher.groupName)) uniqueGroups.push(activeTeacher.groupName);
+            if (!hasTimeAccess) {
+                document.getElementById('active-teacher-info').innerHTML = `Asosiy fani: <span style="color:#fbbf24; font-weight:700;">${activeTeacher.subject || 'Belgilanmagan'}</span> | <span style="color:#f87171; font-weight:900;">⚠️ DAVOMAT YOPILGAN</span>`;
+            } else {
+                document.getElementById('active-teacher-info').innerHTML = `Asosiy fani: <span style="color:#fbbf24; font-weight:700;">${activeTeacher.subject || 'Belgilanmagan'}</span> | <span style="color:#4ade80; font-weight:900;">🟢 DAVOMAT OCHIQ</span>`;
+            }
 
-            if (uniqueGroups.length === 0 || myStudents.length === 0) {
-                groupsBox.innerHTML = `<p style="color: #a1a1aa; text-align: center; font-size: 18px; padding: 40px 0;">Sizning guruhlaringizda hozircha o'quvchilar mavjud emas.<br><br>Yuqoridagi shakldan guruh va bola qo'shing.</p>`;
+            const groupsBox = document.getElementById('ustoz-groups-box'); groupsBox.innerHTML = '';
+            let myStudents = students.filter(s => s.teacherId == currentTeacherId);
+            updateGroupSelect(myStudents);
+            let uniqueGroups = [...new Set(myStudents.map(s => s.groupName))];
+
+            if (uniqueGroups.length === 0) {
+                groupsBox.innerHTML = `<p style="color: #a1a1aa; text-align: center; font-size: 16px; padding: 30px 0;">O'quvchilar ro'yxati hozircha bo'sh.</p>`;
                 return;
             }
+
             uniqueGroups.forEach(groupName => {
                 let groupStudents = myStudents.filter(s => s.groupName === groupName);
-                if (groupStudents.length === 0) return;
-                let mPrice = groupStudents.monthlyPrice || 200000;
+                let firstStudent = groupStudents || { monthlyPrice: 200000 };
+                let mPrice = firstStudent.monthlyPrice || 200000; 
                 let singlePrice = Math.round(mPrice / 12); 
 
-                let groupHtml = `<div style="background: rgba(0,0,0,0.25); border: 2px solid rgba(245,158,11,0.25); padding: 30px; border-radius: 24px; margin-bottom: 20px;"><div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.05); padding-bottom: 15px; margin-bottom: 20px;"><h4 style="font-size: 22px; font-weight: 900; color: #ffffff;">🏫 GURUH: ${groupName}</h4><span style="font-size: 14px; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.1); padding: 8px 16px; border-radius: 12px;">Kurs: ${mPrice.toLocaleString()} UZS</span></div><div style="display: flex; flex-direction: column; gap: 15px;">`;
+                let groupHtml = `<div style="background: rgba(0,0,0,0.2); border: 1px solid rgba(245,158,11,0.2); padding: 18px 22px; border-radius: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; margin-bottom: 12px;">
+                        <h4 style="font-size: 16px; font-weight: 800; color: #ffffff;">🏫 GURUH: ${groupName}</h4>
+                        <span style="font-size: 12px; font-weight: 700; color: #fbbf24; background: rgba(245,158,11,0.08); padding: 4px 10px; border-radius: 8px;">Kurs: ${mPrice.toLocaleString()} UZS</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">`;
 
                 groupStudents.forEach(student => {
-                    groupHtml += `<div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); padding: 20px; border-radius: 18px; border: 1px solid rgba(255,255,255,0.05);"><div><p style="font-weight: 800; font-size: 19px; color: #ffffff;">${student.name}</p><p style="font-size: 14px; color: #a1a1aa; margin-top: 4px;">Balans: <span style="color: #fbbf24; font-weight: 700;">${student.balance.toLocaleString()} so'm</span> | 📞 Tel: ${student.phone || 'Yo\'q'}</p></div><div style="display: flex; gap: 15px;"><button onclick="markAttendance(${student.id}, true, ${singlePrice})" class="btn-premium-gold" style="width: auto; padding: 14px 28px; font-size: 15px; border-radius: 14px;">KELDI 👍</button><button onclick="markAttendance(${student.id}, false, ${singlePrice})" class="btn-premium-dark" style="width: auto; padding: 14px 28px; font-size: 15px; border-radius: 14px; border-color: #f87171; color: #f87171;">KELMADI ❌</button><button onclick="removeStudentByTeacher(${student.id})" class="btn-premium-dark" style="width: auto; padding: 14px 20px; font-size: 14px; border-radius: 14px;">🗑️</button></div></div>`;
+                    let isMarked = isAlreadyMarkedToday(student.id, activeTeacher.startTime);
+                    let isQarzdorText = student.balance <= -100000;
+                    let isQarzdorKatak = student.balance <= -150000;
+
+                    let textStyle = isQarzdorText ? 'color: #f87171 !important; font-weight: 800;' : 'color: #ffffff;';
+                    let cardBg = isQarzdorKatak ? 'background: rgba(239, 68, 68, 0.12) !important; border: 1.5px solid #f87171 !important;' : 'background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04);';
+
+                    groupHtml += `<div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 16px; border-radius: 12px; ${cardBg}">
+                        <div>
+                            <p style="font-size: 15px; margin: 0; padding: 0; ${textStyle}">${student.name}</p>
+                            <p style="font-size: 12px; color: #a1a1aa; margin: 3px 0 0 0; padding: 0;">Balans: <span style="color: #fbbf24; font-weight: 700;">${Number(student.balance).toLocaleString()} so'm</span> | 📞 Tel: ${student.phone || 'Yo\'q'}</p>
+                        </div>
+                        <div style="display: flex; gap: 8px; align-items: center;">`;
+
+                    if (!hasTimeAccess || isMarked) {
+                        groupHtml += `<button disabled class="btn-premium-gold" style="width: auto; padding: 8px 16px; font-size: 12px; border-radius: 8px; opacity: 0.25; cursor: not-allowed;">KELDI 👍</button>
+                                      <button disabled class="btn-premium-dark" style="width: auto; padding: 8px 16px; font-size: 12px; border-radius: 8px; opacity: 0.25; cursor: not-allowed; border-color: #f87171; color: #f87171;">KELMADI ❌</button>`;
+                    } else {
+                        groupHtml += `<button onclick="markAttendance(${student.id}, true, ${singlePrice}, '${activeTeacher.startTime}')" class="btn-premium-gold" style="width: auto; padding: 8px 16px; font-size: 12px; border-radius: 8px;">KELDI 👍</button>
+                                      <button onclick="markAttendance(${student.id}, false, ${singlePrice}, '${activeTeacher.startTime}')" class="btn-premium-dark" style="width: auto; padding: 8px 16px; font-size: 12px; border-radius: 8px; border-color: #f87171; color: #f87171;">KELMADI ❌</button>`;
+                    }
+                    groupHtml += `<button onclick="removeStudentByTeacher(${student.id})" class="btn-premium-dark" style="width: auto; padding: 8px 12px; font-size: 11px; border-radius: 8px; min-width: auto;">🗑️</button>
+                        </div>
+                    </div>`;
                 });
-                groupHtml += `</div></div>`;
-                groupsBox.innerHTML += groupHtml;
+                groupHtml += `</div></div>`; groupsBox.innerHTML += groupHtml;
             });
         }
 
         function formatPhoneInput(input) {
-            let val = input.value.replace(/\D/g, "");
-            if (!val.startsWith("998")) val = "998" + val;
+            let val = input.value.replace(/\D/g, ""); if (!val.startsWith("998")) val = "998" + val;
             let formatted = "+998 ";
-            if (val.length > 3) formatted += val.substring(3, 5);
-            if (val.length > 5) formatted += " " + val.substring(5, 8);
-            if (val.length > 8) formatted += " " + val.substring(8, 10);
-            if (val.length > 10) formatted += " " + val.substring(10, 12);
+            if (val.length > 3) formatted += val.substring(3, 5); if (val.length > 5) formatted += " " + val.substring(5, 8);
+            if (val.length > 8) formatted += " " + val.substring(8, 10); if (val.length > 10) formatted += " " + val.substring(10, 12);
             input.value = formatted.substring(0, 17);
         }
+
         function teacherAddNewGroupAndStudent() {
-            const sName = document.getElementById('t-new-sname').value.trim();
+            let activeTeacher = teachers.find(t => t.id == currentTeacherId) || teachers;
+            const sName = document.getElementById('t-new-sname').value.trim(); 
             const sPhone = document.getElementById('t-new-sphone').value.trim();
-            const groupName = document.getElementById('t-new-gname').value.trim();
+            const groupSelect = document.getElementById('t-group-select').value;
+            let groupName = groupSelect === 'new' ? document.getElementById('t-new-gname').value.trim() : groupSelect;
             const mPrice = Number(document.getElementById('t-new-gprice').value);
             const sBalance = Number(document.getElementById('t-new-sbal').value) || 0;
             if (sName === '' || groupName === '') { alert("Iltimos, ma'lumotlarni to'liq kiriting!"); return; }
 
-            students.push({ id: Date.now(), name: sName, phone: sPhone, balance: sBalance, teacherId: currentTeacherId, groupName: groupName, monthlyPrice: mPrice });
-            saveLog(sName, `💰 Ustoz yangi guruh ochib o'quvchi qo'shdi`, 0, sPhone);
+            let sId = Date.now();
+            students.push({ id: sId, name: sName, phone: sPhone, balance: sBalance, teacherId: currentTeacherId, groupName: groupName, monthlyPrice: mPrice });
+            saveLog(sName, `💰 Guruhga ro'yxatga olindi`, 0, sPhone, sId, activeTeacher.startTime);
             localStorage.setItem('students', JSON.stringify(students));
+            
             document.getElementById('t-new-sname').value = ''; document.getElementById('t-new-sphone').value = '+998 '; document.getElementById('t-new-gname').value = ''; document.getElementById('t-new-sbal').value = '';
+            document.getElementById('t-group-select').value = 'new';
             renderTeacherPage();
         }
 
-        function markAttendance(studentId, isCame, price) {
+        function markAttendance(studentId, isCame, price, darsTime) {
             let s = students.find(x => x.id === studentId);
-            let activeTeacher = teachers.find(t => t.id == currentTeacherId) || { name: "Yangi Ustoz" };
             s.balance -= price; teacherSalary += (price * 0.5); 
             localStorage.setItem('teacherSalary', (Number(localStorage.getItem('teacherSalary')) || 0) + (price * 0.5));
             localStorage.setItem('centerProfit', (Number(localStorage.getItem('centerProfit')) || 0) + (price * 0.5)); 
-            saveLog(s.name, isCame ? `✅ Keldi (Ustoz: ${activeTeacher.name})` : `❌ Kelmadi (Ustoz: ${activeTeacher.name})`, price, s.phone || "");
-            localStorage.setItem('students', JSON.stringify(students)); localStorage.setItem(salaryKey, teacherSalary);
+            localStorage.setItem(salaryKey, teacherSalary);
+            saveLog(s.name, isCame ? `✅ Keldi` : `❌ Kelmadi`, price, s.phone || "", studentId, darsTime);
+            localStorage.setItem('students', JSON.stringify(students)); 
             renderTeacherPage();
         }
 
         function removeStudentByTeacher(id) {
             if (confirm("O'quvchini o'chirasizmi?")) {
-                let s = students.find(x => x.id === id); saveLog(s.name, "❌ Guruhdan chiqdi (Ustoz o'chirdi)", 0, s.phone || "");
+                let s = students.find(x => x.id === id); saveLog(s.name, "❌ Ro'yxatdan o'chirildi", 0, s.phone || "", id, "00:00");
                 students = students.filter(x => x.id !== id); localStorage.setItem('students', JSON.stringify(students)); renderTeacherPage();
             }
         }
         function logoutTeacher() { localStorage.removeItem('loggedInTeacherId'); window.location.href = 'index.html'; }
-        
-        function saveLog(name, status, sum, phone) {
+        function saveLog(name, status, sum, phone, studentId, darsTime) {
             let log = JSON.parse(localStorage.getItem('excelLog')) || []; 
-            log.push({ name: name, date: new Date().toLocaleDateString('uz-UZ'), status: status, sum: sum, phone: phone || "" });
+            log.push({ name: name, date: new Date().toLocaleDateString('uz-UZ'), status: status, sum: sum, phone: phone || "", studentId: studentId || 0, darsTime: darsTime || "00:00" });
             localStorage.setItem('excelLog', JSON.stringify(log));
         }
         renderTeacherPage();

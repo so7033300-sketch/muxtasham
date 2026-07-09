@@ -14,7 +14,6 @@
         .huge-space-y { display: flex; flex-direction: column; gap: 25px; }
         .form-group { display: flex; flex-direction: column; gap: 12px; text-align: left; margin-bottom: 25px; }
         .form-label { font-size: 15px; font-weight: 700; color: #a1a1aa; text-transform: uppercase; letter-spacing: 1px; padding-left: 4px; }
-        .force-hidden { display: none !important; }
         .btn-back { display: inline-block; font-size: 14px; font-weight: 800; color: #f59e0b; background: rgba(255, 255, 255, 0.03); border: 2px solid rgba(255, 255, 255, 0.08); padding: 12px 24px; border-radius: 14px; cursor: pointer; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
         .btn-back:hover { border-color: #f59e0b; background: rgba(245, 158, 11, 0.1); }
         .form-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255, 255, 255, 0.08); padding-bottom: 20px; margin-bottom: 35px; }
@@ -34,8 +33,7 @@
                 <button onclick="selectRole('teacher')" class="btn-premium-gold">👨‍🏫 O'qituvchi Sahifasiga</button>
             </div>
         </div>
-
-        <div id="login-card" class="premium-card huge-card fade-in-up force-hidden">
+        <div id="login-card" class="premium-card huge-card fade-in-up" style="display: none;">
             <div class="form-header">
                 <h3 id="form-title">Kirish</h3>
                 <button onclick="goBack()" class="btn-back">← ORQAGA</button>
@@ -49,45 +47,28 @@
                     <label class="form-label">Maxfiy Parol</label>
                     <input type="password" id="password" required class="premium-input" placeholder="••••••••">
                 </div>
-                <div id="error-message" class="force-hidden" style="color: #f87171; font-size: 16px; font-weight: 700; text-align: center; background: rgba(239, 68, 68, 0.1); padding: 18px; border-radius: 20px; border: 2px solid rgba(239, 68, 68, 0.2);"></div>
+                <div id="error-message" style="display: none; color: #f87171; font-size: 16px; font-weight: 700; text-align: center; background: rgba(239, 68, 68, 0.1); padding: 18px; border-radius: 20px; border: 2px solid rgba(239, 68, 68, 0.2);"></div>
                 <button type="submit" class="btn-premium-gold" style="margin-top: 15px;">Tizimga Tasdiqlab Kirish →</button>
             </form>
         </div>
     </div>
 
-    <!-- 100% KAFOLATLANGAN YANGI FIREBASE SKRIPTLARI COMPONENTI -->
-    <script src="https://gstatic.com"></script>
-    <script src="https://gstatic.com"></script>
     <script>
-        // SIZNING JONLI BULUTLI FIREBASE MATRITSANGIZ
-        const firebaseConfig = {
-            apiKey: "AIzaSyDwsRvElnUzo-QXb6CBCz9YVBc44upvS7U",
-            authDomain: "://firebaseapp.com",
-            databaseURL: "https://firebaseio.com",
-            projectId: "muxtasham-crm",
-            storageBucket: "muxtasham-crm.firebasestorage.app",
-            messagingSenderId: "266948031437",
-            appId: "1:266948031437:web:e0f79bfeae7f8e693fa25a"
-        };
-
-        if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
-        }
-        const database = firebase.database();
-
+        localStorage.removeItem('adminSessionActive');
+        localStorage.removeItem('loggedInTeacherId');
         let currentRole = '';
+
         function selectRole(role) {
             currentRole = role;
-            document.getElementById('role-card').classList.add('force-hidden');
-            document.getElementById('login-card').classList.remove('force-hidden');
+            document.getElementById('role-card').style.display = 'none';
+            document.getElementById('login-card').style.display = 'block';
             document.getElementById('form-title').innerText = role === 'admin' ? "Admin Kirishi" : "Ustoz Kirishi";
         }
-
         function goBack() {
             currentRole = '';
-            document.getElementById('login-card').classList.add('force-hidden');
-            document.getElementById('role-card').classList.remove('force-hidden');
-            document.getElementById('error-message').classList.add('force-hidden');
+            document.getElementById('login-card').style.display = 'none';
+            document.getElementById('role-card').style.display = 'block';
+            document.getElementById('error-message').style.display = 'none';
             document.getElementById('username').value = '';
             document.getElementById('password').value = '';
         }
@@ -98,28 +79,19 @@
             const err = document.getElementById('error-message');
 
             if (currentRole === 'admin' && user === 'admin' && pass === '123') {
+                localStorage.setItem('adminSessionActive', 'true');
                 window.location.href = 'admin.html';
                 return;
+            } 
+            let savedTeachers = JSON.parse(localStorage.getItem('teachers')) || [];
+            let foundTeacher = savedTeachers.find(t => t.login === user && t.pass === pass);
+            if (currentRole === 'teacher' && foundTeacher) {
+                localStorage.setItem('loggedInTeacherId', foundTeacher.id);
+                window.location.href = 'ustoz.html';
+                return;
             }
-
-            // Ustozlarni real-time internet bazasidan tekshirib to'g'ridan-to'g'ri kirgizish mantiqi
-            database.ref('teachers').once('value').then((snapshot) => {
-                let tData = snapshot.val();
-                let teachersList = tData ? Object.keys(tData).map(k => ({...tData[k], firebaseKey: k})) : [];
-                
-                let foundTeacher = teachersList.find(t => t.login === user && t.pass === pass);
-                if (currentRole === 'teacher' && foundTeacher) {
-                    localStorage.setItem('loggedInTeacherId', foundTeacher.id);
-                    localStorage.setItem('loggedInTeacherFirebaseKey', foundTeacher.firebaseKey);
-                    window.location.href = 'ustoz.html';
-                } else {
-                    err.innerText = "Xatolik: Login yoki parol noto'g'ri!";
-                    err.classList.remove('force-hidden');
-                }
-            }).catch((error) => {
-                err.innerText = "Baza bilan aloqa uzildi: " + error.message;
-                err.classList.remove('force-hidden');
-            });
+            err.innerText = "Xatolik: Login yoki parol noto'g'ri!";
+            err.style.display = 'block';
         }
     </script>
 </body>
