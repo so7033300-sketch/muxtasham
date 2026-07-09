@@ -20,22 +20,23 @@
 </head>
 <body>
 
-    <div class="login-layout fade-in-up">
+    <div class="login-layout">
         
         <div class="login-header">
             <h1>Muhtasham CRM</h1>
             <p>Tizimga kirish uchun login va parolingizni kiriting</p>
         </div>
+
         <!-- PREMIUM CARD FORMA -->
         <div class="premium-card" style="border-color: rgba(245, 158, 11, 0.2);">
             
             <!-- ROLNI TANLASH (ADMIN YOKI USTOZ) -->
             <div class="role-selector">
-                <button type="button" id="btn-role-teacher" onclick="selectRole('teacher')" class="role-btn active">Ustoz Kirishi</button>
-                <button type="button" id="btn-role-admin" onclick="selectRole('admin')" class="role-btn">Admin Kirishi</button>
+                <button type="button" id="btn-role-teacher" onclick="changeLoginRole('teacher')" class="role-btn active">Ustoz Kirishi</button>
+                <button type="button" id="btn-role-admin" onclick="changeLoginRole('admin')" class="role-btn">Admin Kirishi</button>
             </div>
 
-            <form onsubmit="handleLoginSystem(event)">
+            <form onsubmit="executeLoginSystem(event)">
                 
                 <div class="form-group-margin">
                     <label>Tizim Login:</label>
@@ -54,55 +55,51 @@
         </div>
 
     </div>
-    <!-- AVTORIZATSIYA LOGIKASI -->
-    <script>
-        let selectedRole = 'teacher'; // Standart holatda ustoz roli tanlangan
 
-        function selectRole(role) {
-            selectedRole = role;
-            const btnTeacher = document.getElementById('btn-role-teacher');
-            const btnAdmin = document.getElementById('btn-role-admin');
+    <!-- TO'G'RIDAN-TO'G'RI INTERFEYS ICHIDAGI MUSTAQIL LOGIKA -->
+    <script>
+        let currentSelectedRole = 'teacher';
+
+        function changeLoginRole(role) {
+            currentSelectedRole = role;
+            const tBtn = document.getElementById('btn-role-teacher');
+            const aBtn = document.getElementById('btn-role-admin');
+            if (!tBtn || !aBtn) return;
             
             if (role === 'admin') {
-                btnAdmin.classList.add('active');
-                btnTeacher.classList.remove('active');
+                aBtn.classList.add('active');
+                tBtn.classList.remove('active');
             } else {
-                btnTeacher.classList.add('active');
-                btnAdmin.classList.remove('active');
+                tBtn.classList.add('active');
+                aBtn.classList.remove('active');
             }
         }
 
-        function handleLoginSystem(event) {
+        function executeLoginSystem(event) {
             event.preventDefault();
-            const inputLogin = document.getElementById('loginUser').value.trim();
-            const inputPass = document.getElementById('passUser').value.trim();
+            const logVal = document.getElementById('loginUser').value.trim();
+            const passVal = document.getElementById('passUser').value.trim();
 
-            // 1. ADMIN SIFATIDA KIRISH SHARTI
-            if (selectedRole === 'admin') {
-                if (inputLogin === 'admin' && inputPass === 'admin123') {
+            if (currentSelectedRole === 'admin') {
+                if (logVal === 'admin' && passVal === 'admin123') {
                     localStorage.setItem('adminIsactive', 'true');
                     alert("Welcome! Administrator tizimga muvaffaqiyatli kirdi. 🎉");
-                    window.location.href = 'admin.html';
+                    window.location.href = './admin.html'; // Xavfsiz marshrutlash
                 } else {
                     alert("❌ Admin login yoki paroli noto'g'ri!");
                 }
                 return;
             }
 
-            // 2. O'QITUVCHI SIFATIDA KIRISH SHARTI
             let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-            
-            // Local xotiradan kiritilgan login va parolga mos ustozni qidirish
-            const foundTeacher = teachers.find(t => t.login === inputLogin && t.pass === inputPass);
+            const found = teachers.find(t => t.login === logVal && t.pass === passVal);
 
-            if (foundTeacher) {
-                // Ustoz ma'lumotlarini brauzer eslab qolishi uchun saqlash (Eng muhim joyi!)
-                localStorage.setItem('loggedInTeacher', JSON.stringify(foundTeacher));
-                
-                alert(`✅ Xush kelibsiz, ${foundTeacher.name}! Tizim muvaffaqiyatli ochildi.`);
-                window.location.href = 'ustoz.html'; // Ustoz kabinetiga yo'naltirish
+            if (found) {
+                localStorage.setItem('loggedInTeacher', JSON.stringify(found));
+                alert(`✅ Xush kelibsiz, ${found.name}! Tizim muvaffaqiyatli ochildi.`);
+                window.location.href = './ustoz.html'; // Xavfsiz marshrutlash
             } else {
-                alert("❌ Ustoz login yoki paroli noto'g'ri! Yoki administrator sizni hali ro'yxatga olmagan.");
+                alert("❌ Ustoz login yoki paroli noto'g'ri!");
             }
         }
     </script>
