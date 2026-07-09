@@ -1,4 +1,4 @@
-"https://muxtasham-jgqv.onrender.com";
+const = "https://muxtasham-jgqv.onrender.com";
 // 2. MA'LUMOTLARNI RENDER SERVERIGA VA POSTGRESQL BAZASIGA SAQLASH
 async function uploadLocalDataToBackend() {
     console.log("Render pullik serveriga zaxira nusxa yuklanmoqda...");
