@@ -16,6 +16,7 @@
         .role-selector { display: flex; gap: 12px; margin-bottom: 25px; background: #120e07; padding: 6px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.05); }
         .role-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; color: #8a8a8a; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.3s ease; }
         .role-btn.active { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #060508; }
+        .loading-text { color: #fbbf24; text-align: center; margin-top: 10px; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
@@ -27,16 +28,14 @@
             <p>Tizimga kirish uchun login va parolingizni kiriting</p>
         </div>
 
-        <!-- PREMIUM CARD FORMA -->
         <div class="premium-card" style="border-color: rgba(245, 158, 11, 0.2);">
             
-            <!-- ROLNI TANLASH (ADMIN YOKI USTOZ) -->
             <div class="role-selector">
-                <button type="button" id="btn-role-teacher" onclick="selectRole('teacher')" class="role-btn active">Ustoz Kirishi</button>
-                <button type="button" id="btn-role-admin" onclick="selectRole('admin')" class="role-btn">Admin Kirishi</button>
+                <button type="button" id="btn-role-teacher" onclick="changeLoginRole('teacher')" class="role-btn active">Ustoz Kirishi</button>
+                <button type="button" id="btn-role-admin" onclick="changeLoginRole('admin')" class="role-btn">Admin Kirishi</button>
             </div>
 
-            <form onsubmit="handleLoginSystem(event)">
+            <form onsubmit="executeLoginSystem(event)">
                 
                 <div class="form-group-margin">
                     <label>Tizim Login:</label>
@@ -48,44 +47,45 @@
                     <input type="password" id="passUser" class="premium-input" placeholder="••••••••" required>
                 </div>
 
-                <button type="submit" class="btn-premium-gold" style="margin-top: 10px; padding: 16px; font-weight: 800; font-size: 16px;">
+                <button type="submit" id="submit-btn" class="btn-premium-gold" style="margin-top: 10px; padding: 16px; font-weight: 800; font-size: 16px;">
                     TIZIMGA KIRISH →
                 </button>
+                <div id="loading-msg" class="loading-text">Serverdan tekshirilmoqda, iltimos kuting... ⏳</div>
             </form>
         </div>
 
     </div>
 
-    <!-- TO'G'RIDAN-TO'G'RI MUSTAQIL ALGORITM -->
     <script>
-        let selectedRole = 'teacher';
+        let currentSelectedRole = 'teacher';
+        const RENDER_BACKEND_URL = "https://onrender.com";
 
-        function selectRole(role) {
-            selectedRole = role;
-            const btnTeacher = document.getElementById('btn-role-teacher');
-            const btnAdmin = document.getElementById('btn-role-admin');
-            if (!btnTeacher || !btnAdmin) return;
+        function changeLoginRole(role) {
+            currentSelectedRole = role;
+            const tBtn = document.getElementById('btn-role-teacher');
+            const aBtn = document.getElementById('btn-role-admin');
+            if (!tBtn || !aBtn) return;
             
             if (role === 'admin') {
-                btnAdmin.classList.add('active');
-                btnTeacher.classList.remove('active');
+                aBtn.classList.add('active');
+                tBtn.classList.remove('active');
             } else {
-                btnTeacher.classList.add('active');
-                btnAdmin.classList.remove('active');
+                tBtn.classList.add('active');
+                aBtn.classList.remove('active');
             }
         }
 
-        function handleLoginSystem(event) {
+        async function executeLoginSystem(event) {
             event.preventDefault();
-            const inputLogin = document.getElementById('loginUser').value.trim();
-            const inputPass = document.getElementById('passUser').value.trim();
+            const logVal = document.getElementById('loginUser').value.trim();
+            const passVal = document.getElementById('passUser').value.trim();
+            const submitBtn = document.getElementById('submit-btn');
+            const loadingMsg = document.getElementById('loading-msg');
 
-            if (selectedRole === 'admin') {
-                if (inputLogin === 'admin' && inputPass === '123') {
+            if (currentSelectedRole === 'admin') {
+                if (logVal === 'admin' && passVal === '123') {
                     localStorage.setItem('adminIsactive', 'true');
-                    alert("Welcome! Administrator tizimga muvaffaqiyatli kirdi. 🎉");
-                    
-                    // MAJBURIY REDIREKT: Render marshrutlashida xato bermasligi uchun qat'iy havola
+                    alert("Welcome! Administrator tizimga kirdi. 🎉");
                     window.location.replace("admin.html");
                 } else {
                     alert("❌ Admin login yoki paroli noto'g'ri!");
@@ -93,15 +93,39 @@
                 return;
             }
 
-            let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-            const foundTeacher = teachers.find(t => t.login === inputLogin && t.pass === inputPass);
+            // O'QITUVCHINI KIRISHINI JONLI SERVERDAN TEKSHIRISH
+            try {
+                submitBtn.disabled = true;
+                if (loadingMsg) loadingMsg.style.display = "block";
 
-            if (foundTeacher) {
-                localStorage.setItem('loggedInTeacher', JSON.stringify(foundTeacher));
-                alert(`✅ Xush kelibsiz, ${foundTeacher.name}! Tizim muvaffaqiyatli ochildi.`);
-                window.location.replace("ustoz.html");
-            } else {
-                alert("❌ Ustoz login yoki paroli noto'g'ri!");
+                // Serverdan eng oxirgi bazadagi ma'lumotlarni so'rash
+                const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
+                const result = await response.json();
+
+                if (result.success && result.teachers) {
+                    // Ma'lumotlarni lokal xotiraga ham yangilab qo'yamiz xavfsizlik uchun
+                    localStorage.setItem('teachers', JSON.stringify(result.teachers || []));
+                    localStorage.setItem('students', JSON.stringify(result.students || []));
+                    localStorage.setItem('excelLog', JSON.stringify(result.excelLog || []));
+
+                    // Kiritilgan login parolga mos ustozni jonli ro'yxatdan qidirish
+                    const found = result.teachers.find(t => t.login.toLowerCase() === logVal.toLowerCase() && t.pass === passVal);
+
+                    if (found) {
+                        localStorage.setItem('loggedInTeacher', JSON.stringify(found));
+                        alert(`✅ Xush kelibsiz, ${found.name}! Tizim muvaffaqiyatli ochildi.`);
+                        window.location.replace("ustoz.html");
+                    } else {
+                        alert("❌ Ustoz login yoki paroli noto'g'ri!");
+                    }
+                } else {
+                    alert("❌ Serverdan ma'lumot olishda xato bo'ldi!");
+                }
+            } catch (error) {
+                alert("❌ Internet yoki Server ulanishida xatolik: " + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                if (loadingMsg) loadingMsg.style.display = "none";
             }
         }
     </script>
