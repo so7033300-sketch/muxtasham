@@ -1,6 +1,6 @@
 // RENDER SERVER INTEGRATSIYASI (CHALKAShLIKSIZ JONLI REJIM)
 // DIQQAT: Render sizga server ochgach beradigan havolasini (linkini) kelajakda mana shu pastga yozib qo'yasiz:
-const RENDER_BACKEND_URL = window.location.origin; 
+const RENDER_BACKEND_URL = "https://onrender.com";  
 
 async function uploadLocalDataToBackend() {
     console.log("⏳ Render pullik serveriga zaxira nusxa yuklanmoqda...");
