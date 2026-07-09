@@ -58,10 +58,69 @@ async function downloadDataFromBackend() {
 }
 
 // 4. O'QITUVCHINI RO'YXATGA QO'SHISH FUNKSIYASI (ADMIN.HTML UCHUN)
+// 1. RENDER PLATFORMASIDAGI BACKEND SERVINGIZNING INTERNETDAGI HAVOLASI
+const RENDER_BACKEND_URL = "https://onrender.com";
+
+// 2. MA'LUMOTLARNI RENDER SERVERIGA VA POSTGRESQL BAZASIGA SAQLASH
+async function uploadLocalDataToBackend() {
+    console.log("Render pullik serveriga zaxira nusxa yuklanmoqda...");
+
+    let dataToSend = {
+        teachers: JSON.parse(localStorage.getItem('teachers')) || [],
+        students: JSON.parse(localStorage.getItem('students')) || [],
+        excelLog: JSON.parse(localStorage.getItem('excelLog')) || []
+    };
+
+    try {
+        const response = await fetch(`${RENDER_BACKEND_URL}/api/save-all`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            alert("🔥 Dahshat! Hamma ma'lumotlar pullik Render serveriga 100% xavfsiz yuklandi! 🎉");
+        } else {
+            throw new Error(result.error);
+        }
+
+    } catch (error) {
+        alert("❌ Serverga yuklashda xatolik bo'ldi: " + error.message);
+    }
+}
+
+// 3. MA'LUMOTLARNI RENDER SERVERIDAN (POSTGRESQL BAZADAN) BRAUZERGA TIKLASH
+async function downloadDataFromBackend() {
+    if (!confirm("Diqqat! Serverdan yuklasangiz, hozirgi brauzeringizdagi ma'lumotlar o'chib ketadi. Rozimisiz?")) return;
+
+    try {
+        const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
+        const result = await response.json();
+
+        if (result.success) {
+            localStorage.setItem('teachers', JSON.stringify(result.teachers || []));
+            localStorage.setItem('students', JSON.stringify(result.students || []));
+            localStorage.setItem('excelLog', JSON.stringify(result.excelLog || []));
+
+            alert("🟢 Ma'lumotlar serverdan muvaffaqiyatli tiklandi! Sahifa qayta yangilanadi.");
+            window.location.reload();
+        } else {
+            throw new Error(result.error);
+        }
+
+    } catch (error) {
+        alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message);
+    }
+}
+
+// 4. O'QITUVCHINI RO'YXATGA QO'SHISH FUNKSIYASI
 function addTeacher(event) {
     event.preventDefault();
 
-    // Elementlarni ID yoki Placeholder orqali xavfsiz oqish
+    // Elementlarni ID yoki Placeholder orqali xavfsiz o'qish
     const name = (document.getElementById('teacherName') || document.querySelector('[placeholder*="Ism"]'))?.value.trim();
     const subject = (document.getElementById('teacherSubject') || document.querySelector('[placeholder*="Fan"]'))?.value.trim();
     const group_name = (document.getElementById('teacherGroup') || document.querySelector('[placeholder*="Guruh"]'))?.value.trim();
@@ -75,7 +134,6 @@ function addTeacher(event) {
     const checkboxes = document.querySelectorAll('input[name="t-days"]:checked, input[name="days"]:checked');
     checkboxes.forEach(cb => allowed_days.push(cb.value));
 
-    // Local xotiradan eski ro'yxatni olish
     let teachers = [];
     try {
         teachers = JSON.parse(localStorage.getItem('teachers')) || [];
@@ -83,7 +141,6 @@ function addTeacher(event) {
         teachers = [];
     }
     
-    // Yangi o'qituvchi obyekti
     const newTeacher = {
         id: Date.now(),
         name: name || "Nomalum Ustoz",
@@ -103,6 +160,4 @@ function addTeacher(event) {
     
     event.target.reset();
     if (typeof renderTeachers === 'function') renderTeachers();
-}
-
 }
