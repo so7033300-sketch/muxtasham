@@ -8,81 +8,102 @@
 </head>
 <body>
 
-    <div class="container">
-        <h1>Dashboard - Admin Panel</h1>
+    <!-- ASOSIY KONTEYNER -->
+    <main class="premise-container-main">
+        
+        <!-- TEPADAGI SARIQ VA YASHIL SERVER TUGMALARI -->
+        <section class="premise-section-btn-up">
+            <button onclick="uploadLocalDataToBackend()" class="btn-premise-gold">SERVERGA SAQLASH 💾</button>
+            <button onclick="downloadDataFromBackend()" class="btn-premise-green">SERVERDAN TIKLASH 🔄</button>
+        </section>
 
-        <!-- SERVER BILAN ISHLASH TUGMALARI -->
-        <div class="server-controls" style="margin-bottom: 20px; display: flex; gap: 10px;">
-            <button onclick="uploadLocalDataToBackend()" style="background-color: #ffc107; color: black; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 5px;">
-                SERVERGA SAQLASH 💾
-            </button>
-            <button onclick="downloadDataFromBackend()" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 5px;">
-                SERVERDAN TIKLASH 🔄
-            </button>
-        </div>
+        <!-- O'QITUVCHI QO'SHISH BOSH SARLAVHASI -->
+        <header class="premise-header-title">
+            <img src="./img/ph_chalkboard-teacher-fill.svg" alt="">
+            <h1>50 TA O'QITUVCHINI RO'YXATGA OLISH VA SOZLASH</h1>
+        </header>
 
-        <!-- O'QITUVCHI QO'SHISH FORMASI -->
-        <div class="card">
-            <h2>O'qituvchi Qo'shish</h2>
-            <form onsubmit="addTeacher(event)">
-                <div class="form-group">
-                    <label>Ustoz Ism Familiyasi:</label>
+        <!-- FORMA BOSHIDAN INPUTLAR TIZIMI -->
+        <form onsubmit="addTeacher(event)" class="premise-form-main">
+            
+            <section class="premise-section-double-input">
+                <div>
+                    <p>Ustoz Ism Familiyasi:</p>
                     <input type="text" id="teacherName" placeholder="Davlatjon domla" required>
                 </div>
-
-                <div class="form-group">
-                    <label>O'tadigan Fani:</label>
+                <div>
+                    <p>O'tadigan Fani:</p>
                     <input type="text" id="teacherSubject" placeholder="Ingliz tili" required>
                 </div>
+            </section>
 
-                <div class="form-group">
-                    <label>Guruh Nomi:</label>
+            <section class="premise-section-double-input">
+                <div>
+                    <p>Guruh Nomi:</p>
                     <input type="text" id="teacherGroup" placeholder="Sefr" required>
                 </div>
-
-                <div class="form-group" style="display: flex; gap: 10px;">
-                    <div>
-                        <label>Boshlanish Soati:</label>
+                <div class="div-time-up">
+                    <p>Dars Soati:</p>
+                    <div class="premise-div-time">
                         <input type="time" id="startTime" required>
-                    </div>
-                    <div>
-                        <label>Tugash Soati:</label>
                         <input type="time" id="endTime" required>
                     </div>
                 </div>
+            </section>
 
-                <div class="form-group">
-                    <label>Haftalik Dars Kunlarini Tanlang:</label>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
-                        <label><input type="checkbox" name="days" value="Dushanba"> Dushanba</label>
-                        <label><input type="checkbox" name="days" value="Seshanba"> Seshanba</label>
-                        <label><input type="checkbox" name="days" value="Chorshanba"> Chorshanba</label>
-                        <label><input type="checkbox" name="days" value="Payshanba"> Payshanba</label>
-                        <label><input type="checkbox" name="days" value="Juma"> Juma</label>
-                        <label><input type="checkbox" name="days" value="Shanba"> Shanba</label>
-                        <label><input type="checkbox" name="days" value="Yakshanba"> Yakshanba</label>
-                    </div>
+            <!-- HAFTALIK KUNLAR TIZIMI -->
+            <section class="premise-section-day-checkbox">
+                <p>Haftalik Dars Kunlarini Tanlang:</p>
+                <div class="premise-div-checkbox-main">
+                    <label class="premise-label-checkbox">
+                        <input type="checkbox" name="days" value="Dushanba">
+                        <span>Dushanba</span>
+                    </label>
+                    <label class="premise-label-checkbox">
+                        <input type="checkbox" name="days" value="Seshanba">
+                        <span>Seshanba</span>
+                    </label>
+                    <label class="premise-label-checkbox">
+                        <input type="checkbox" name="days" value="Chorshanba">
+                        <span>Chorshanba</span>
+                    </label>
+                    <label class="premise-label-checkbox">
+                        <input type="checkbox" name="days" value="Payshanba">
+                        <span>Payshanba</span>
+                    </label>
+                    <label class="premise-label-checkbox">
+                        <input type="checkbox" name="days" value="Juma">
+                        <span>Juma</span>
+                    </label>
+                    <label class="premise-label-checkbox">
+                        <input type="checkbox" name="days" value="Shanba">
+                        <span>Shanba</span>
+                    </label>
+                    <label class="premise-label-checkbox">
+                        <input type="checkbox" name="days" value="Yakshanba">
+                        <span>Yakshanba</span>
+                    </label>
                 </div>
+            </section>
 
-                <div class="form-group">
-                    <label>Tizim Login:</label>
+            <section class="premise-section-double-input">
+                <div>
+                    <p>Tizim Login:</p>
                     <input type="text" id="teacherLogin" placeholder="davlatjon" required>
                 </div>
-
-                <div class="form-group">
-                    <label>Tizim Parol:</label>
+                <div>
+                    <p>Tizim Parol:</p>
                     <input type="password" id="teacherPass" placeholder="davlatjon123" required>
                 </div>
+            </section>
 
-                <button type="submit" class="btn-premise-gold" style="background-color: #d29d2b; color: black; width: 100%; padding: 12px; font-weight: bold; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px;">
-                    USTOZNI TAYMER BILAN SAQLASH +
-                </button>
-            </form>
-        </div>
+            <!-- KATTA TO'Q SARIQ TUGMA -->
+            <button type="submit" class="btn-premise-gold-long">USTOZNI TAYMER BILAN SAQLASH +</button>
+        </form>
 
-    </div>
+    </main>
 
-    <!-- JAVASCRIPT ULASH -->
+    <!-- SCRIPT TIZIMI -->
     <script src="script.js"></script>
 </body>
 </html>
