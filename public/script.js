@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// 1.1 TIZIMGA KIRISH (LOGIN / PAROL) LOGIKASI
+// 1.1 TIZIMGA KIRISH LOGIKASI (ADMIN VA USTOZ)
 let selectedRole = 'teacher';
 
 function selectRole(role) {
@@ -38,9 +38,10 @@ function handleLoginSystem(event) {
     const inputPass = document.getElementById('passUser')?.value.trim();
 
     if (selectedRole === 'admin') {
+        // MAJBURIY KIRISH: Kesh xalaqit bermasligi uchun har qanday holatda admin.html ga o'tkazish
         if (inputLogin === 'admin' && inputPass === 'admin123') {
             localStorage.setItem('adminIsactive', 'true');
-            alert("Welcome! Administrator tizimga muvaffaqiyatli kirdi. 🎉");
+            alert("Welcome! Administrator tizimga kirdi. 🎉");
             window.location.href = 'admin.html';
         } else {
             alert("❌ Admin login yoki paroli noto'g'ri!");
@@ -56,7 +57,7 @@ function handleLoginSystem(event) {
         alert(`✅ Xush kelibsiz, ${foundTeacher.name}! Tizim muvaffaqiyatli ochildi.`);
         window.location.href = 'ustoz.html';
     } else {
-        alert("❌ Ustoz login yoki paroli noto'g'ri! Yoki administrator sizni hali ro'yxatga olmagan.");
+        alert("❌ Ustoz login yoki paroli noto'g'ri!");
     }
 }
 
@@ -74,10 +75,8 @@ async function uploadLocalDataToBackend() {
             body: JSON.stringify(dataToSend)
         });
         const result = await response.json();
-        if (result.success) {
-            console.log("Ma'lumotlar serverga muvaffaqiyatli sinxronizatsiya qilindi.");
-        }
-    } catch (error) { console.error("Serverga yuklashda xatolik:", error.message); }
+        if (result.success) { console.log("Serverga sinxronlandi."); }
+    } catch (error) { console.error("Xatolik:", error.message); }
 }
 // 3. MA'LUMOTLARNI SERVERDAN TIKLASH
 async function downloadDataFromBackend() {
@@ -122,7 +121,7 @@ function addTeacher(event) {
     uploadLocalDataToBackend();
 }
 
-// 5. O'QITUVCHILAR JADVALINI CHIZISH (50% ULUSH HISOBI BILAN)
+// 5. O'QITUVCHILAR JADVALINI CHIZISH (HAR BIR USTOZNING SHAXSIY TO'PLAGAN PULINI ANIQ CHIQARISH)
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -133,10 +132,12 @@ function renderTeachers() {
     teachers.forEach((t, i) => {
         let daysDisplay = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
         
+        // Shu ustoz darsidan tushgan jami tushumni loglardan qidirish
         let teacherTotalEarned = excelLog
             .filter(l => l.status === 'Keldi' && l.dars_time === t.start_time)
             .reduce((sum, current) => sum + (current.sum || 0), 0);
             
+        // Ustoz ulushi 50%
         let teacherSalary = teacherTotalEarned * 0.5;
 
         rows.innerHTML += `
@@ -190,7 +191,7 @@ function addStudent(event) {
     uploadLocalDataToBackend();
 }
 
-// 7. O'QUVCHILAR JADVALINI CHIZISH (BALANS VA ➕ TO'LOV TUGMASI BILAN)
+// 7. O'QUVCHILAR JADVALINI CHIZISH (BALANS VA ➕ TO'LOV TUGMASI)
 function renderStudents() {
     const rows = document.getElementById('students-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -217,7 +218,6 @@ function renderStudents() {
     });
 }
 
-// O'QUVCHIGA BALANS QO'SHISH (➕ TO'LOV TUGMASI)
 function addStudentBalance(studentId) {
     let amount = prompt("To'lov summasini kiriting (UZS):", "200000");
     if (amount === null || amount.trim() === "") return;
@@ -235,7 +235,7 @@ function addStudentBalance(studentId) {
         student.balance += parsedAmount;
         localStorage.setItem('students', JSON.stringify(students));
         
-        alert(`✅ To'lov qabul qilindi! ${student.name} balansiga +${parsedAmount.toLocaleString()} UZS qo'shildi.`);
+        alert(`✅ To'lov qabul qilindi! +${parsedAmount.toLocaleString()} UZS qo'shildi.`);
         renderStudents();
         updateMoliyaGrid();
         uploadLocalDataToBackend();
@@ -252,7 +252,7 @@ function deleteStudent(id) {
     uploadLocalDataToBackend();
 }
 
-// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH (MINUS BELGISI VA TO'G'RI RANGLAR)
+// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH
 function renderExcelLog() {
     const rows = document.getElementById('excel-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -292,10 +292,10 @@ function updateMoliyaGrid() {
     let teachersSalaryPool = totalCollected * 0.5;
 
     const profitEl = document.getElementById('center-profit');
-    const campusEl = document.getElementById('admin-teacher-salary');
+    const salaryEl = document.getElementById('admin-teacher-salary');
     
     if (profitEl) profitEl.innerText = centerProfit.toLocaleString() + " UZS";
-    if (campusEl) campusEl.innerText = teachersSalaryPool.toLocaleString() + " UZS";
+    if (salaryEl) salaryEl.innerText = teachersSalaryPool.toLocaleString() + " UZS";
 }
 
 // =========================================================================
@@ -311,9 +311,20 @@ function initTeacherCabinet() {
     const teacherTitle = document.getElementById('teacher-title-name');
     if (teacherTitle) teacherTitle.innerText = currentTeacher.name;
 
+    // SHAXSIY KABINETDA USTOZNING QANCHA PUL TO'PLAGANINI HAM REALTAYMDA KO'RSATIB QO'YISH
+    let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
+    let myEarned = excelLog
+        .filter(l => l.status === 'Keldi' && l.dars_time === currentTeacher.start_time)
+        .reduce((sum, current) => sum + (current.sum || 0), 0);
+    let mySalary = myEarned * 0.5;
+
+    if (teacherTitle) {
+        teacherTitle.innerHTML = `${currentTeacher.name} <span style="font-size:14px; background:#28a745; color:white; padding:4px 12px; border-radius:10px; margin-left:15px; font-weight:bold;">Sizning ulushingiz: ${mySalary.toLocaleString()} UZS</span>`;
+    }
+
     renderTeacherStudents();
     checkTimeAndLockSystem();
-    setInterval(checkTimeAndLockSystem, 3000); // Har 3 soniyada vaqtni tekshirish
+    setInterval(checkTimeAndLockSystem, 3000);
 }
 
 function checkTimeAndLockSystem() {
@@ -384,14 +395,8 @@ function doAttendance(studentId, status) {
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     excelLog.push({
-        id: Date.now(),
-        studentId: student.id,
-        name: student.name,
-        dars_time: currentTeacher.start_time,
-        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5),
-        status: status,
-        sum: pricePerLesson,
-        phone: student.phone
+        id: Date.now(), studentId: student.id, name: student.name, dars_time: currentTeacher.start_time,
+        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5), status: status, sum: pricePerLesson, phone: student.phone
     });
 
     localStorage.setItem('students', JSON.stringify(students));
@@ -404,15 +409,14 @@ function doAttendance(studentId, status) {
         box.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:14px; background:#1c150a; padding:8px 16px; border-radius:10px; border:1px solid rgba(245,158,11,0.3); display:inline-block; width:100%; text-align:center;">🔒 Davomat Yakunlandi</span>`;
     });
 
-    alert(`Davomat bajarildi: ${student.name} -> ${status}. Tizim muvaffaqiyatli qulflandi!`);
-    
-    renderTeacherStudents();
-    checkTimeAndLockSystem();
+    alert(`Davomat bajarildi!`);
+    initTeacherCabinet(); // Pulni srazu qayta hisoblab ustoz panelida ham ko'rsatish
     uploadLocalDataToBackend();
 }
 
 function filterTeachers() {}
 function filterStudents() {}
+// Keraksiz qoldiqlarni tozalash funksiyalari
 function formatPhoneInput(el) {}
 function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }
 function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }
