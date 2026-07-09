@@ -20,13 +20,12 @@ const pool = new Pool({
     ssl: { rejectUnauthorized: false }
 });
 
-// BAZADA JADVALLARNI TO'G'RI FORMATDA YARATISH (allowed_days ustuni TEXT qilinadi)
+// BAZANI ENX XAVFSIZ REJIMDA TAYYORLASH
 async function initDatabaseTables() {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
-
-        // Agar eski jadval xalaqit berayotgan bo'lsa, uni to'g'ri ustunlar bilan qayta yaratish
+        
         await client.query(`
             CREATE TABLE IF NOT EXISTS teachers (
                 id BIGINT PRIMARY KEY,
@@ -40,13 +39,6 @@ async function initDatabaseTables() {
                 pass TEXT
             );
         `);
-
-        // Agar allowed_days turi eski massiv bo'lib qolgan bo'lsa, uni TEXT ga majburlash
-        try {
-            await client.query(`ALTER TABLE teachers ALTER COLUMN allowed_days TYPE TEXT;`);
-        } catch(e) {
-            // Agar allaqachon TEXT bo'lsa, xato bermaydi
-        }
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS students (
@@ -74,17 +66,17 @@ async function initDatabaseTables() {
         `);
 
         await client.query('COMMIT');
-        console.log("🟢 PostgreSQL jadvallari to'g'ri tekst formatida tekshirildi!");
+        console.log("🟢 PostgreSQL bazasi xavfsiz holatda yuklandi!");
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error("❌ Jadvallarda xatolik:", err.message);
+        console.error("Bazani tayyorlashda xato:", err.message);
     } finally {
         client.release();
     }
 }
-
 initDatabaseTables();
 
+// MA'LUMOTLARNI SAQLASH API (HAR QANDAY FORMATNI TEXT REJIMIDA SAQLAYDI)
 app.post('/api/save-all', async (req, res) => {
     const { teachers, students, excelLog } = req.body;
     const client = await pool.connect();
@@ -97,7 +89,6 @@ app.post('/api/save-all', async (req, res) => {
 
         if (teachers && Array.isArray(teachers)) {
             for (let t of teachers) {
-                // allowed_days har qanday holatda matn ko'rinishida yoziladi
                 let daysText = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
                 await client.query(`
                     INSERT INTO teachers (id, name, subject, group_name, start_time, end_time, allowed_days, login, pass)
@@ -125,7 +116,7 @@ app.post('/api/save-all', async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json({ success: true });
+        res.json({ success: true, message: "Yuklandi" });
     } catch (err) {
         await client.query('ROLLBACK');
         res.status(500).json({ success: false, error: err.message });
@@ -169,4 +160,4 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => { console.log(`🚀 Server ochiq!`); });
+app.listen(PORT, () => { console.log(`🚀 Server faol!`); });
