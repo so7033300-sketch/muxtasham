@@ -57,13 +57,14 @@ async function downloadDataFromBackend() {
 function addTeacher(event) {
     event.preventDefault();
 
-    const name = document.getElementById('teacherName')?.value.trim();
-    const subject = document.getElementById('teacherSubject')?.value.trim();
-    const group_name = document.getElementById('teacherGroup')?.value.trim();
+        // Formadan ma'lumotlarni olish (HTML elementlariga to'liq moslashtirildi)
+    const name = document.getElementById('teacherName')?.value.trim() || document.getElementById('t-name')?.value.trim();
+    const subject = document.getElementById('teacherSubject')?.value.trim() || document.getElementById('t-subject')?.value.trim();
+    const group_name = document.getElementById('teacherGroup')?.value.trim() || document.getElementById('t-group')?.value.trim();
     const start_time = document.getElementById('startTime')?.value || "14:00";
     const end_time = document.getElementById('endTime')?.value || "16:00";
-    const login = document.getElementById('teacherLogin')?.value.trim();
-    const pass = document.getElementById('teacherPass')?.value.trim();
+    const login = document.getElementById('teacherLogin')?.value.trim() || document.getElementById('t-login')?.value.trim();
+    const pass = document.getElementById('teacherPass')?.value.trim() || document.getElementById('t-pass')?.value.trim();
 
     const allowed_days = [];
     const checkboxes = document.querySelectorAll('input[name="t-days"]:checked, input[name="days"]:checked');
