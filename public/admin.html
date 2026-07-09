@@ -3,57 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Admin Panel</title>
+    <title>Muhtasham - Admin Panel</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Server tugmalari va qulay joylashuv uchun qo'shimcha kichik dizayn */
+        .admin-layout { max-width: 800px; margin: 0 auto; padding-top: 20px; }
+        .server-controls { display: flex; gap: 15px; margin-bottom: 30px; }
+        .server-btn { flex: 1; border-radius: 16px !important; padding: 16px !important; }
+        .form-group-margin { margin-bottom: 20px; }
+        .form-group-margin label { display: block; margin-bottom: 8px; color: #fbbf24; font-weight: bold; font-size: 14px; }
+        .time-grid { display: flex; gap: 15px; }
+        .time-grid div { flex: 1; }
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; background: #120e07; padding: 15px; border-radius: 16px; border: 2px solid rgba(255,255,255,0.08); }
+        .checkbox-grid label { display: flex; align-items: center; gap: 8px; color: #fff; cursor: pointer; font-size: 15px; }
+        .checkbox-grid input[type="checkbox"] { width: 18px; height: 18px; accent-color: #f59e0b; }
+        h1 { color: #fbbf24; margin-bottom: 25px; font-weight: 800; text-align: center; font-size: 28px; }
+        h2 { color: #fff; margin-bottom: 20px; font-weight: 700; font-size: 20px; border-left: 4px solid #f59e0b; padding-left: 10px; }
+    </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="admin-layout fade-in-up">
         <h1>Dashboard - Admin Panel</h1>
 
-        <!-- SERVER TUGMALARI -->
-        <div class="server-controls" style="margin-bottom: 20px; display: flex; gap: 10px;">
-            <button onclick="uploadLocalDataToBackend()" style="background-color: #ffc107; color: black; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 5px;">
-                SERVERGA SAQLASH 💾
-            </button>
-            <button onclick="downloadDataFromBackend()" style="background-color: #28a745; color: white; padding: 10px 20px; border: none; cursor: pointer; font-weight: bold; border-radius: 5px;">
-                SERVERDAN TIKLASH 🔄
-            </button>
+        <!-- SERVER BILAN ISHLASH TUGMALARI -->
+        <div class="server-controls">
+            <button onclick="uploadLocalDataToBackend()" class="btn-premium-gold server-btn">SERVERGA SAQLASH 💾</button>
+            <button onclick="downloadDataFromBackend()" class="btn-premium-dark server-btn">SERVERDAN TIKLASH 🔄</button>
         </div>
 
-        <!-- O'QITUVCHI QO'SHISH FORMASI -->
-        <div class="card">
+        <!-- O'QITUVCHI QO'SHISH FORMASI (PREMIUM CARD) -->
+        <div class="premium-card">
             <h2>O'qituvchi Qo'shish</h2>
             <form onsubmit="addTeacher(event)">
-                <div class="form-group">
+                
+                <div class="form-group-margin">
                     <label>Ustoz Ism Familiyasi:</label>
-                    <input type="text" id="teacherName" placeholder="Davlatjon domla" required>
+                    <input type="text" id="teacherName" class="premium-input" placeholder="Davlatjon domla" required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group-margin">
                     <label>O'tadigan Fani:</label>
-                    <input type="text" id="teacherSubject" placeholder="Ingliz tili" required>
+                    <input type="text" id="teacherSubject" class="premium-input" placeholder="Ingliz tili" required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group-margin">
                     <label>Guruh Nomi:</label>
-                    <input type="text" id="teacherGroup" placeholder="Sefr" required>
+                    <input type="text" id="teacherGroup" class="premium-input" placeholder="Sefr" required>
                 </div>
 
-                <div class="form-group" style="display: flex; gap: 10px;">
+                <div class="form-group-margin time-grid">
                     <div>
                         <label>Boshlanish Soati:</label>
-                        <input type="time" id="startTime" required>
+                        <input type="time" id="startTime" class="premium-input" required>
                     </div>
                     <div>
                         <label>Tugash Soati:</label>
-                        <input type="time" id="endTime" required>
+                        <input type="time" id="endTime" class="premium-input" required>
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group-margin">
                     <label>Haftalik Dars Kunlarini Tanlang:</label>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
+                    <div class="checkbox-grid">
                         <label><input type="checkbox" name="days" value="Dushanba"> Dushanba</label>
                         <label><input type="checkbox" name="days" value="Seshanba"> Seshanba</label>
                         <label><input type="checkbox" name="days" value="Chorshanba"> Chorshanba</label>
@@ -64,17 +76,17 @@
                     </div>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group-margin">
                     <label>Tizim Login:</label>
-                    <input type="text" id="teacherLogin" placeholder="admin" required>
+                    <input type="text" id="teacherLogin" class="premium-input" placeholder="admin" required>
                 </div>
 
-                <div class="form-group">
+                <div class="form-group-margin">
                     <label>Tizim Parol:</label>
-                    <input type="password" id="teacherPass" placeholder="..." required>
+                    <input type="password" id="teacherPass" class="premium-input" placeholder="••••••••" required>
                 </div>
 
-                <button type="submit" class="btn-premise-gold" style="background-color: #d29d2b; color: black; width: 100%; padding: 12px; font-weight: bold; border: none; cursor: pointer; border-radius: 5px; margin-top: 10px;">
+                <button type="submit" class="btn-premium-gold" style="margin-top: 15px;">
                     USTOZNI TAYMER BILAN SAQLASH +
                 </button>
             </form>
@@ -82,7 +94,7 @@
 
     </div>
 
-    <!-- JAVASCRIPT ULASH -->
+    <!-- JAVASCRIPT SYSTEM -->
     <script src="script.js"></script>
 </body>
 </html>
