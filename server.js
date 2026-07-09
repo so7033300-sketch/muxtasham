@@ -5,27 +5,16 @@ const path = require('path');
 
 const app = express();
 
-// 1. CORS SOZLAMALARI (Siz aytgan barcha domen havolalarini ruxsat berish uchun)
-const allowedOrigins = [
-    'https://onrender.com', // Render tekin domeni
-    'http://localhost:3000',               // Localhost test uchun
-    'http://127.0.0.1:5500'                 // VS Code Live Server uchun
-];
-
+// 1. CORS SOZLAMASI — Barcha kelayotgan so'rovlarni so'zsiz qabul qilish
 app.use(cors({
-    origin: function (origin, callback) {
-        // Agar so'rov brauzer ichidan (masalan, fetch) kelayotgan bo'lsa va ro'yxatda bo'lsa ruxsat beradi
-        if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin === 'null') {
-            callback(null, true);
-        } else {
-            // Agar yangi shaxsiy domen ulasangiz ham xato bermasligi uchun default ruxsat
-            callback(null, true); 
-        }
-    },
+    origin: true, // Har qanday domendan (shu jumladan sizning onrender havolangizdan) kelgan so'rovga avtomatik ruxsat beradi
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    credentials: true // Xavfsizlik sertifikatlarini qabul qilish uchun
 }));
+
+// Pre-flight (OPTIONS) so'rovlariga avtomatik yashil chiroq yoqish
+app.options('*', cors());
 
 app.use(express.json());
 
@@ -43,7 +32,6 @@ async function initDatabaseTables() {
     try {
         await client.query('BEGIN');
 
-        // O'qituvchilar jadvali
         await client.query(`
             CREATE TABLE IF NOT EXISTS teachers (
                 id BIGINT PRIMARY KEY,
@@ -58,7 +46,6 @@ async function initDatabaseTables() {
             );
         `);
 
-        // O'quvchilar jadvali
         await client.query(`
             CREATE TABLE IF NOT EXISTS students (
                 id BIGINT PRIMARY KEY,
@@ -71,7 +58,6 @@ async function initDatabaseTables() {
             );
         `);
 
-        // Loglar jadvali
         await client.query(`
             CREATE TABLE IF NOT EXISTS excel_log (
                 id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
