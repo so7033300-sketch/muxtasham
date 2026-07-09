@@ -267,7 +267,7 @@ function initTeacherCabinet() {
 
     renderTeacherStudents();
     checkTimeAndLockSystem();
-    setInterval(checkTimeAndLockSystem, 10000); // Har 10 soniyada vaqtni tekshirish
+    setInterval(checkTimeAndLockSystem, 5000); // Tezroq tekshirish uchun 5 soniya qilindi
 }
 
 function checkTimeAndLockSystem() {
@@ -286,16 +286,13 @@ function checkTimeAndLockSystem() {
     const todayDateStr = now.toLocaleDateString();
     const isAlreadyDoneToday = localStorage.getItem(`davomat_done_${currentTeacher.id}_${todayDateStr}`) === "true";
 
-    const allActionDivs = document.querySelectorAll('td div, td, div');
-    
-    if (isRightDay && isRightTime && !isAlreadyDoneToday) {
-        allActionDivs.forEach(div => {
-            if(div.innerHTML.includes('KELDI') && div.tagName === 'DIV') div.style.display = "flex";
-        });
-    } else {
-        allActionDivs.forEach(div => {
-            if((div.innerHTML.includes('KELDI') || div.innerHTML.includes('doAttendance')) && div.tagName === 'DIV') {
-                div.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:14px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.3)">🔒 Davomat Yakunlandi</span>`;
+    // QAT'IY BLOKLASH: Agar dars soati bo'lmasa yoki bugun ALLAQACHON BITTA TUGMA BOSILGAN bo'lsa
+    if (!isRightDay || !isRightTime || isAlreadyDoneToday) {
+        // Ekrandagi barcha KELDI / KELMADI tugmalari turgan konteynerlarni tozalab, blokka olish
+        const actionContainers = document.querySelectorAll('td div, td');
+        actionContainers.forEach(div => {
+            if (div.innerHTML.includes('KELDI') || div.innerHTML.includes('doAttendance')) {
+                div.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:14px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.3); display:inline-block;">🔒 Davomat Yakunlandi</span>`;
             }
         });
     }
@@ -315,7 +312,7 @@ function renderTeacherStudents() {
                 <td><b>${s.name}</b><br><small>${s.phone}</small></td>
                 <td><span style="color:#fbbf24; font-weight:bold;">${s.balance.toLocaleString()} UZS</span></td>
                 <td>
-                    <div style="display:flex; gap:10px; align-items:center;">
+                    <div class="attendance-actions-box" style="display:flex; gap:10px; align-items:center;">
                         <button onclick="doAttendance(${s.id}, 'Keldi')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">KELDI</button>
                         <button onclick="doAttendance(${s.id}, 'Kelmadi')" style="background:#ff4747; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold;">KELMADI</button>
                     </div>
@@ -325,6 +322,7 @@ function renderTeacherStudents() {
     });
 }
 
+// TUGMA BOSILGAN ZAHOTI TIZIMNI SHU SIKUNDNING O'ZIDA ZUMLIK BILAN BLOKLASH
 function doAttendance(studentId, status) {
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
@@ -352,13 +350,20 @@ function doAttendance(studentId, status) {
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
+    // 1 marta bosilishi bilan bugungi darsni yopish flagini srazu xotiraga yozish
     localStorage.setItem(`davomat_done_${currentTeacher.id}_${now.toLocaleDateString()}`, "true");
 
-    alert(`Davomat bajarildi: ${student.name} -> ${status}. Tizim qulflanadi.`);
+    // ZUMLIK BILAN BLOKLASH: Ekrandagi hamma dars tugmalarini shu sekundda o'chirib yuborish
+    const allBoxes = document.querySelectorAll('.attendance-actions-box');
+    allBoxes.forEach(box => {
+        box.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:14px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.3); display:inline-block;">🔒 Davomat Yakunlandi</span>`;
+    });
+
+    alert(`Davomat bajarildi: ${student.name} -> ${status}. Tizim muvaffaqiyatli qulflandi!`);
     
     renderTeacherStudents();
-    checkTimeAndLockSystem();
-    uploadLocalDataToBackend();
+    checkTimeAndLockSystem(); // Qayta tekshirib qulflashni tasdiqlash
+    uploadLocalDataToBackend(); // Serverga yuborish
 }
 
 function filterTeachers() {}
