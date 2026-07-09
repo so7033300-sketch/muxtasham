@@ -109,11 +109,11 @@ app.post('/api/save-all', async (req, res) => {
         await client.query('DELETE FROM excel_log;');
 
         if (teachers && Array.isArray(teachers)) {
-            for (let t of teachers) {
-                await client.query(`
-                    INSERT INTO teachers (id, name, subject, group_name, start_time, end_time, allowed_days, login, pass)
-                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
-                `, [t.id, t.name, t.subject, t.group_name, t.start_time, t.end_time, JSON.stringify(t.allowed_days) || '[]', t.login, t.pass]);
+            for (let t of teachers) {-
+                       await client.query(`
+            INSERT INTO teachers (id, name, subject, group_name, start_time, end_time, allowed_days, login, pass)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+        `, [t.id, t.name, t.subject, t.group_name, t.start_time, t.end_time, Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || ''), t.login, t.pass]);
             }
         }
 
