@@ -70,10 +70,9 @@ function addTeacher(event) {
     const end_time = document.getElementById('endTime')?.value || document.querySelectorAll('input[type="time"]')[1]?.value;
     const login = (document.getElementById('teacherLogin') || document.querySelector('[placeholder*="Login"]'))?.value.trim();
     const pass = (document.getElementById('teacherPass') || document.querySelector('[placeholder*="Parol"]'))?.value.trim();
-
-    // Haftalik kunlarni yig'ish (Checkbox)
+        // Haftalik kunlarni yig'ish (Checkbox)
     const allowed_days = [];
-    const checkboxes = document.querySelectorAll('input[name="days"]:checked');
+    const checkboxes = document.querySelectorAll('input[name="t-days"]:checked');
     checkboxes.forEach(cb => allowed_days.push(cb.value));
 
     if (!name || !subject || !login || !pass) {
@@ -101,8 +100,5 @@ function addTeacher(event) {
     localStorage.setItem('teachers', JSON.stringify(teachers));
 
     alert("✅ O'qituvchi muvaffaqiyatli qo'shildi! Endi 'SERVERGA SAQLASH' tugmasini bosib bazaga yuklashingiz mumkin.");
-    
-    // Formani tozalash
-    event.target.reset();
-    if (typeof renderTeachers === 'function') renderTeachers(); // Agar jadvalni chizish funksiyasi bo'lsa
+
 }
