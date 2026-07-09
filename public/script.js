@@ -1,7 +1,5 @@
-// 1. BACKEND SERVER HAVOLASI
-const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
+const RENDER_BACKEND_URL = "https://onrender.com";
 
-// Tizim yuklanganda jadvallarni chizish
 document.addEventListener("DOMContentLoaded", () => {
     renderTeachers();
     renderStudents();
@@ -9,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateMoliyaGrid();
 });
 
-// 2. MA'LUMOTLARNI BACKEND-GA SAQLASH
 async function uploadLocalDataToBackend() {
     let dataToSend = {
         teachers: JSON.parse(localStorage.getItem('teachers')) || [],
@@ -35,7 +32,6 @@ async function uploadLocalDataToBackend() {
     }
 }
 
-// 3. MA'LUMOTLARNI SERVERDAN TIKLASH
 async function downloadDataFromBackend() {
     if (!confirm("Diqqat! Serverdan yuklasangiz, hozirgi brauzeringizdagi ma'lumotlar o'chib ketadi. Rozimisiz?")) return;
 
@@ -58,7 +54,6 @@ async function downloadDataFromBackend() {
     }
 }
 
-// 4. O'QITUVCHINI RO'YXATGA QO'SHISH
 function addTeacher(event) {
     event.preventDefault();
 
@@ -78,7 +73,14 @@ function addTeacher(event) {
     
     const newTeacher = {
         id: Date.now(),
-        name, subject, group_name, start_time, end_time, allowed_days, login, pass
+        name: name || "Nomalum Ustoz",
+        subject: subject || "Kiritilmagan",
+        group_name: group_name || "Guruhsiz",
+        start_time,
+        end_time,
+        allowed_days,
+        login: login || "user",
+        pass: pass || "123"
     };
 
     teachers.push(newTeacher);
@@ -89,7 +91,6 @@ function addTeacher(event) {
     renderTeachers();
 }
 
-// 5. O'QITUVCHILAR JADVALINI CHIZISH
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
     if (!rows) return;
@@ -97,12 +98,13 @@ function renderTeachers() {
     
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     teachers.forEach((t, i) => {
+        let daysDisplay = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
         rows.innerHTML += `
             <tr>
                 <td>${i+1}</td>
-                <td><b>${t.name}</b><br><span style="color:#fbbf24">${t.subject}</span><br><small>${t.start_time}-${t.end_time} (${t.allowed_days.join(', ')})</small></td>
-                <td>Login: ${t.login}<br>Parol: ${t.pass}</td>
-                <td style="text-align: right; color:#28a745;">Faol</td>
+                <td><b>${t.name || 'Nomalum'}</b><br><span style="color:#fbbf24">${t.subject || 'Yoq'}</span><br><small>${t.start_time || ''}-${t.end_time || ''} (${daysDisplay})</small></td>
+                <td>Login: ${t.login || ''}<br>Parol: ${t.pass || ''}</td>
+                <td style="text-align: right; color:#28a745;">${t.group_name || 'Guruhsiz'}</td>
                 <td><button onclick="deleteTeacher(${t.id})" style="color:#ff4747; background:none; border:none; cursor:pointer;">❌ O'chirish</button></td>
             </tr>
         `;
@@ -127,7 +129,6 @@ function updateTeacherSelect() {
     });
 }
 
-// 6. O'QUVCHINI QO'SHISH
 function addStudent(event) {
     event.preventDefault();
     const name = document.getElementById('s-name')?.value.trim();
@@ -149,7 +150,6 @@ function addStudent(event) {
     updateMoliyaGrid();
 }
 
-// 7. O'QUVCHILAR JADVALINI CHIZISH
 function renderStudents() {
     const rows = document.getElementById('students-rows');
     if (!rows) return;
@@ -182,7 +182,6 @@ function deleteStudent(id) {
     updateMoliyaGrid();
 }
 
-// 8. EXCEL LOG VA DAVOMAT TIZIMI
 function renderExcelLog() {
     const rows = document.getElementById('excel-rows');
     if (!rows) return;
@@ -203,7 +202,6 @@ function renderExcelLog() {
     });
 }
 
-// 9. MOLIYA PANELINI YANGILASH
 function updateMoliyaGrid() {
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let totalProfit = students.reduce((acc, curr) => acc + (curr.balance || 0), 0);
@@ -212,10 +210,9 @@ function updateMoliyaGrid() {
     const salaryEl = document.getElementById('admin-teacher-salary');
     
     if (profitEl) profitEl.innerText = totalProfit.toLocaleString() + " UZS";
-    if (salaryEl) salaryEl.innerText = (totalProfit * 0.4).toLocaleString() + " UZS"; // Ustozlarga 40% misol uchun
+    if (salaryEl) salaryEl.innerText = (totalProfit * 0.4).toLocaleString() + " UZS";
 }
 
-// Qidiruv funksiyalari (Xato bermasligi uchun bo'sh qoldirildi)
 function filterTeachers() {}
 function filterStudents() {}
 function formatPhoneInput(el) {}
