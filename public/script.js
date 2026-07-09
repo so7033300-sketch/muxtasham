@@ -44,9 +44,10 @@ async function uploadLocalDataToBackend() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dataToSend)
         });
-        const result = await response.json();
-        if (result.success) { console.log("Serverga sinxronlandi."); }
-    } catch (error) { console.error("Xatolik:", error.message); }
+       const result = await response.json();
+if (result.success) {
+    alert("🔥 Dahshat! Hamma ma'lumotlar pullik Render serveriga 100% xavfsiz yuklandi! 🎉");
+}
 }
 // 3. MA'LUMOTLARNI SERVERDAN TIKLASH
 async function downloadDataFromBackend() {
