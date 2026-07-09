@@ -81,10 +81,11 @@
             const passVal = document.getElementById('passUser').value.trim();
 
             if (currentSelectedRole === 'admin') {
-                if (logVal === 'admin' && passVal === 'admin123') {
+                // SIZ AYTGAN ESKI PAROL BILAN LOGINKA: admin va 123
+                if (logVal === 'admin' && passVal === '123') {
                     localStorage.setItem('adminIsactive', 'true');
                     alert("Welcome! Administrator tizimga muvaffaqiyatli kirdi. 🎉");
-                    window.location.href = './admin.html'; // Xavfsiz marshrutlash
+                    window.location.href = './admin.html';
                 } else {
                     alert("❌ Admin login yoki paroli noto'g'ri!");
                 }
@@ -97,7 +98,7 @@
             if (found) {
                 localStorage.setItem('loggedInTeacher', JSON.stringify(found));
                 alert(`✅ Xush kelibsiz, ${found.name}! Tizim muvaffaqiyatli ochildi.`);
-                window.location.href = './ustoz.html'; // Xavfsiz marshrutlash
+                window.location.href = './ustoz.html';
             } else {
                 alert("❌ Ustoz login yoki paroli noto'g'ri!");
             }
