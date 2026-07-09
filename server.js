@@ -5,47 +5,28 @@ const path = require('path');
 
 const app = express();
 
-// 1. CORS SOZLAMALARI — Frontend domenini aniq ko'rsatish
-const allowedOrigins = [
-    'https://onrender.com', // Sizning rasmiy frontend va backend domeningiz
-    'http://localhost:3000',               // Localhost test qilish uchun
-    'http://127.0.0.1:5500'                 // VS Code Live Server uchun
-];
-
 app.use(cors({
-    origin: function (origin, callback) {
-        // Kelayotgan so'rov domenini tekshirish
-        if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin === 'null') {
-            callback(null, true);
-        } else {
-            // Biror sabab bilan domen nomi o'zgarsa ham xato bermasligi uchun yashil chiroq
-            callback(null, true);
-        }
-    },
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     credentials: true
 }));
 
-// Pre-flight (OPTIONS) so'rovlarini avtomatik tasdiqlash
 app.options('*', cors());
-
 app.use(express.json());
 
-// 2. POSTGRESQL BAZASIGA ULANISH (SSL BILAN)
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: { rejectUnauthorized: false }
 });
 
-// 3. BAZADA JADVALLARNI AVTOMATIK YARATISH FUNKSIYASI
+// BAZADA JADVALLARNI TO'G'RI FORMATDA YARATISH (allowed_days ustuni TEXT qilinadi)
 async function initDatabaseTables() {
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
+        // Agar eski jadval xalaqit berayotgan bo'lsa, uni to'g'ri ustunlar bilan qayta yaratish
         await client.query(`
             CREATE TABLE IF NOT EXISTS teachers (
                 id BIGINT PRIMARY KEY,
@@ -59,6 +40,13 @@ async function initDatabaseTables() {
                 pass TEXT
             );
         `);
+
+        // Agar allowed_days turi eski massiv bo'lib qolgan bo'lsa, uni TEXT ga majburlash
+        try {
+            await client.query(`ALTER TABLE teachers ALTER COLUMN allowed_days TYPE TEXT;`);
+        } catch(e) {
+            // Agar allaqachon TEXT bo'lsa, xato bermaydi
+        }
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS students (
@@ -86,10 +74,10 @@ async function initDatabaseTables() {
         `);
 
         await client.query('COMMIT');
-        console.log("🟢 PostgreSQL jadvallari muvaffaqiyatli tekshirildi/yaratildi!");
+        console.log("🟢 PostgreSQL jadvallari to'g'ri tekst formatida tekshirildi!");
     } catch (err) {
         await client.query('ROLLBACK');
-        console.error("❌ Jadvallarni yaratishda xatolik:", err.message);
+        console.error("❌ Jadvallarda xatolik:", err.message);
     } finally {
         client.release();
     }
@@ -97,7 +85,6 @@ async function initDatabaseTables() {
 
 initDatabaseTables();
 
-// 4. MA'LUMOTLARNI BAZAGA SAQLASH (SAVE API)
 app.post('/api/save-all', async (req, res) => {
     const { teachers, students, excelLog } = req.body;
     const client = await pool.connect();
@@ -109,11 +96,13 @@ app.post('/api/save-all', async (req, res) => {
         await client.query('DELETE FROM excel_log;');
 
         if (teachers && Array.isArray(teachers)) {
-            for (let t of teachers) {-
-                       await client.query(`
-            INSERT INTO teachers (id, name, subject, group_name, start_time, end_time, allowed_days, login, pass)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
-        `, [t.id, t.name, t.subject, t.group_name, t.start_time, t.end_time, Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || ''), t.login, t.pass]);
+            for (let t of teachers) {
+                // allowed_days har qanday holatda matn ko'rinishida yoziladi
+                let daysText = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
+                await client.query(`
+                    INSERT INTO teachers (id, name, subject, group_name, start_time, end_time, allowed_days, login, pass)
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+                `, [t.id, t.name, t.subject, t.group_name, t.start_time, t.end_time, daysText, t.login, t.pass]);
             }
         }
 
@@ -136,7 +125,7 @@ app.post('/api/save-all', async (req, res) => {
         }
 
         await client.query('COMMIT');
-        res.json({ success: true, message: "Dahshat! Hamma ma'lumotlar pullik bazaga saqlandi! 🎉" });
+        res.json({ success: true });
     } catch (err) {
         await client.query('ROLLBACK');
         res.status(500).json({ success: false, error: err.message });
@@ -145,7 +134,6 @@ app.post('/api/save-all', async (req, res) => {
     }
 });
 
-// 5. MA'LUMOTLARNI BAZADAN OQISH (LOAD API)
 app.get('/api/load-all', async (req, res) => {
     const client = await pool.connect();
     try {
@@ -155,7 +143,7 @@ app.get('/api/load-all', async (req, res) => {
 
         const teachers = teachersRes.rows.map(t => ({
             id: Number(t.id), name: t.name, subject: t.subject, group_name: t.group_name,
-            start_time: t.start_time, end_time: t.end_time, allowed_days: JSON.parse(t.allowed_days || '[]'),
+            start_time: t.start_time, end_time: t.end_time, allowed_days: t.allowed_days ? t.allowed_days.split(', ') : [],
             login: t.login, pass: t.pass
         }));
 
@@ -177,14 +165,8 @@ app.get('/api/load-all', async (req, res) => {
     }
 });
 
-// 6. FRONTEND FAYLLARINI INTERNETGA CHIQARISH
 app.use(express.static(path.join(__dirname, 'public')));
-
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`🚀 Server ${PORT}-portda ishga tushdi!`);
-});
+app.listen(PORT, () => { console.log(`🚀 Server ochiq!`); });
