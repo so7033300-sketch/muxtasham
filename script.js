@@ -1,6 +1,5 @@
 // 1. RENDER PLATFORMASIDAGI BACKEND SERVINGIZNING INTERNETDAGI HAVOLASI
 const RENDER_BACKEND_URL = "https://onrender.com";
-
 // 2. MA'LUMOTLARNI RENDER SERVERIGA VA POSTGRESQL BAZASIGA SAQLASH
 async function uploadLocalDataToBackend() {
     console.log("Render pullik serveriga zaxira nusxa yuklanmoqda...");
