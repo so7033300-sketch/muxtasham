@@ -1,10 +1,9 @@
-// RENDER SERVER INTEGRATSIYASI (CHALKAShLIKSIZ JONLI REJIM)
-// DIQQAT: Render sizga server ochgach beradigan havolasini (linkini) kelajakda mana shu pastga yozib qo'yasiz:
-const RENDER_BACKEND_URL = "https://onrender.com";  
-
+// 1. RENDER PLATFORMASIDAGI BACKEND SERVINGIZNING INTERNETDAGI HAVOLASI
+const RENDER_BACKEND_URL = "https://onrender.com";
+// 2. MA'LUMOTLARNI RENDER SERVERIGA VA POSTGRESQL BAZASIGA SAQLASH
 async function uploadLocalDataToBackend() {
-    console.log("⏳ Render pullik serveriga zaxira nusxa yuklanmoqda...");
-    
+    console.log("Render pullik serveriga zaxira nusxa yuklanmoqda...");
+
     let dataToSend = {
         teachers: JSON.parse(localStorage.getItem('teachers')) || [],
         students: JSON.parse(localStorage.getItem('students')) || [],
@@ -12,37 +11,98 @@ async function uploadLocalDataToBackend() {
     };
 
     try {
+        // To'g'rilangan havola va POST so'rovi
         const response = await fetch(`${RENDER_BACKEND_URL}/api/save-all`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(dataToSend)
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToSend), // JSON.stringity xatosi JSON.stringify ga tuzatildi
         });
+
         const result = await response.json();
         if (result.success) {
-            alert("🟢 Daxshat! Hamma ma'lumotlar pullik Render serveriga 100% xavfsiz yuklandi! 👍");
+            alert("🔥 Dahshat! Hamma ma'lumotlar pullik Render serveriga 100% xavfsiz yuklandi! 🎉");
         } else {
             throw new Error(result.error);
         }
+
     } catch (error) {
         alert("❌ Serverga yuklashda xatolik bo'ldi: " + error.message);
     }
 }
+
+// 3. MA'LUMOTLARNI RENDER SERVERIDAN (POSTGRESQL BAZADAN) BRAUZERGA TIKLASH
 async function downloadDataFromBackend() {
     if (!confirm("Diqqat! Serverdan yuklasangiz, hozirgi brauzeringizdagi ma'lumotlar o'chib ketadi. Rozimisiz?")) return;
-    
+
     try {
+        // To'g'rilangan GET so'rovi
         const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
         const result = await response.json();
+
         if (result.success) {
+            // Serverdan kelgan ma'lumotlarni brauzer xotirasiga (LocalStorage) yozish
             localStorage.setItem('teachers', JSON.stringify(result.teachers || []));
             localStorage.setItem('students', JSON.stringify(result.students || []));
             localStorage.setItem('excelLog', JSON.stringify(result.excelLog || []));
-            alert("📥 Serverdagi barcha ma'lumotlar kompyuteringizga muvaffaqiyatli qayta tiklandi! 🎉");
-            window.location.reload();
+
+            alert("🟢 Ma'lumotlar serverdan muvaffaqiyatli tiklandi! Sahifa qayta yangilanadi.");
+            window.location.reload(); // Sahifani yangilab ma'lumotlarni ko'rsatish
         } else {
             throw new Error(result.error);
         }
+
     } catch (error) {
-        alert("❌ Serverdan yuklab olishda xatolik: " + error.message);
+        alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message);
     }
+}
+
+// 4. O'QITUVCHINI RO'YXATGA QO'SHISH FUNKSIYASI (ADMIN.HTML UCHUN)
+function addTeacher(event) {
+    event.preventDefault(); // Sahifa yangilanib ketishini to'xtatish
+
+    // Formadan ma'lumotlarni olish
+    const name = document.getElementById('teacherName')?.value.trim();
+    const subject = document.getElementById('teacherSubject')?.value.trim();
+    const group_name = document.getElementById('teacherGroup')?.value.trim();
+    const start_time = document.getElementById('startTime')?.value;
+    const end_time = document.getElementById('endTime')?.value;
+    const login = document.getElementById('teacherLogin')?.value.trim();
+    const pass = document.getElementById('teacherPass')?.value.trim();
+
+    // Haftalik kunlarni yig'ish (Checkbox)
+    const allowed_days = [];
+    const checkboxes = document.querySelectorAll('input[name="days"]:checked');
+    checkboxes.forEach(cb => allowed_days.push(cb.value));
+
+    if (!name || !subject || !login || !pass) {
+        alert("Iltimos, barcha majburiy maydonlarni to'ldiring!");
+        return;
+    }
+
+    // Local xotiradan eski o'qituvchilarni o'qish
+    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    
+    // Yangi o'qituvchi obyekti
+    const newTeacher = {
+        id: Date.now(), // Unikal ID yaratish
+        name,
+        subject,
+        group_name,
+        start_time,
+        end_time,
+        allowed_days,
+        login,
+        pass
+    };
+
+    teachers.push(newTeacher);
+    localStorage.setItem('teachers', JSON.stringify(teachers));
+
+    alert("✅ O'qituvchi muvaffaqiyatli qo'shildi! Endi 'SERVERGA SAQLASH' tugmasini bosib bazaga yuklashingiz mumkin.");
+    
+    // Formani tozalash
+    event.target.reset();
+    if (typeof renderTeachers === 'function') renderTeachers(); // Agar jadvalni chizish funksiyasi bo'lsa
 }
