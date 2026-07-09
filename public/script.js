@@ -1,4 +1,3 @@
-// 1. RENDER PLATFORMASIDAGI BACKEND SERVINGIZNING INTERNETDAGI HAVOLASI
 const RENDER_BACKEND_URL = "https://onrender.com";
 // 2. MA'LUMOTLARNI RENDER SERVERIGA VA POSTGRESQL BAZASIGA SAQLASH
 async function uploadLocalDataToBackend() {
@@ -15,7 +14,7 @@ async function uploadLocalDataToBackend() {
         const response = await fetch(`${RENDER_BACKEND_URL}/api/save-all`, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/json'  
             },
             body: JSON.stringify(dataToSend), // JSON.stringity xatosi JSON.stringify ga tuzatildi
         });
@@ -62,14 +61,15 @@ async function downloadDataFromBackend() {
 function addTeacher(event) {
     event.preventDefault(); // Sahifa yangilanib ketishini to'xtatish
 
-    // Formadan ma'lumotlarni olish
-    const name = document.getElementById('teacherName')?.value.trim();
-    const subject = document.getElementById('teacherSubject')?.value.trim();
-    const group_name = document.getElementById('teacherGroup')?.value.trim();
-    const start_time = document.getElementById('startTime')?.value;
-    const end_time = document.getElementById('endTime')?.value;
-    const login = document.getElementById('teacherLogin')?.value.trim();
-    const pass = document.getElementById('teacherPass')?.value.trim();
+    
+    // Formadan ma'lumotlarni olish (To'g'rilangan element qidiruvlari)
+    const name = (document.getElementById('teacherName') || document.querySelector('[placeholder*="Ism"]'))?.value.trim();
+    const subject = (document.getElementById('teacherSubject') || document.querySelector('[placeholder*="Fan"]'))?.value.trim();
+    const group_name = (document.getElementById('teacherGroup') || document.querySelector('[placeholder*="Guruh"]'))?.value.trim();
+    const start_time = document.getElementById('startTime')?.value || document.querySelectorAll('input[type="time"]')[0]?.value;
+    const end_time = document.getElementById('endTime')?.value || document.querySelectorAll('input[type="time"]')[1]?.value;
+    const login = (document.getElementById('teacherLogin') || document.querySelector('[placeholder*="Login"]'))?.value.trim();
+    const pass = (document.getElementById('teacherPass') || document.querySelector('[placeholder*="Parol"]'))?.value.trim();
 
     // Haftalik kunlarni yig'ish (Checkbox)
     const allowed_days = [];
