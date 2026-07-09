@@ -59,45 +59,50 @@ async function downloadDataFromBackend() {
 
 // 4. O'QITUVCHINI RO'YXATGA QO'SHISH FUNKSIYASI (ADMIN.HTML UCHUN)
 function addTeacher(event) {
-    event.preventDefault(); // Sahifa yangilanib ketishini to'xtatish
+    event.preventDefault();
 
-    
-       // Formadan ma'lumotlarni olish (HTML elementlariga to'liq moslashtirildi)
-    const name = document.getElementById('teacherName')?.value.trim();
-    const subject = document.getElementById('teacherSubject')?.value.trim();
-    const group_name = document.getElementById('teacherGroup')?.value.trim();
-    const start_time = document.getElementById('startTime')?.value;
-    const end_time = document.getElementById('endTime')?.value;
-    const login = document.getElementById('teacherLogin')?.value.trim();
-    const pass = document.getElementById('teacherPass')?.value.trim();
+    // Elementlarni ID yoki Placeholder orqali xavfsiz oqish
+    const name = (document.getElementById('teacherName') || document.querySelector('[placeholder*="Ism"]'))?.value.trim();
+    const subject = (document.getElementById('teacherSubject') || document.querySelector('[placeholder*="Fan"]'))?.value.trim();
+    const group_name = (document.getElementById('teacherGroup') || document.querySelector('[placeholder*="Guruh"]'))?.value.trim();
+    const start_time = document.getElementById('startTime')?.value || "14:00";
+    const end_time = document.getElementById('endTime')?.value || "16:00";
+    const login = (document.getElementById('teacherLogin') || document.querySelector('[placeholder*="Login"]'))?.value.trim();
+    const pass = (document.getElementById('teacherPass') || document.querySelector('[placeholder*="Parol"]'))?.value.trim();
+
+    // Haftalik kunlarni t-days yoki days orqali yig'ish
     const allowed_days = [];
-    const checkboxes = document.querySelectorAll('input[name="t-days"]:checked');
+    const checkboxes = document.querySelectorAll('input[name="t-days"]:checked, input[name="days"]:checked');
     checkboxes.forEach(cb => allowed_days.push(cb.value));
 
-    if (!name || !subject || !login || !pass) {
-        alert("Iltimos, barcha majburiy maydonlarni to'ldiring!");
-        return;
+    // Local xotiradan eski ro'yxatni olish
+    let teachers = [];
+    try {
+        teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    } catch(e) {
+        teachers = [];
     }
-
-    // Local xotiradan eski o'qituvchilarni o'qish
-    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     
     // Yangi o'qituvchi obyekti
     const newTeacher = {
-        id: Date.now(), // Unikal ID yaratish
-        name,
-        subject,
-        group_name,
+        id: Date.now(),
+        name: name || "Nomalum Ustoz",
+        subject: subject || "Fan kiritilmagan",
+        group_name: group_name || "Guruhsiz",
         start_time,
         end_time,
         allowed_days,
-        login,
-        pass
+        login: login || "user_" + Date.now(),
+        pass: pass || "12345"
     };
 
     teachers.push(newTeacher);
     localStorage.setItem('teachers', JSON.stringify(teachers));
 
     alert("✅ O'qituvchi muvaffaqiyatli qo'shildi! Endi 'SERVERGA SAQLASH' tugmasini bosib bazaga yuklashingiz mumkin.");
+    
+    event.target.reset();
+    if (typeof renderTeachers === 'function') renderTeachers();
+}
 
 }
