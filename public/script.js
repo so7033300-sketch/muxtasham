@@ -1,9 +1,9 @@
-// 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
+// 1. BACKEND SERVER HAVOLASI
 const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
 
 // Tizim yuklanganda JONLI SERVERDAN ma'lumotlarni majburiy tortib olish
 document.addEventListener("DOMContentLoaded", async () => {
-    // Har qanday qurilmadan (telefon, noutbuk) kirganda birinchi bo'lib bazani jonli yangilaymiz
+    // Har qanday qurilmadan kirganda birinchi bo'lib bazani jonli yangilaymiz
     await syncDataFromDatabaseSilently();
 
     if (document.getElementById('teachers-rows')) renderTeachers();
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTeacherGroupDropdownSystem();
 });
 
-// BAZADAN TOZA NUSXANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH (MULTIPLE DEVICE REJIM)
+// BAZADAN TOZA NUQLANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH FUNKSIYASI
 async function syncDataFromDatabaseSilently() {
     try {
         const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
@@ -32,7 +32,7 @@ async function syncDataFromDatabaseSilently() {
     } catch (e) { console.error("Jonli sinxronizatsiyada xato:", e.message); }
 }
 
-// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH (ADMIN VA USTOZ PANEL UCHUN)
+// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH
 async function uploadLocalDataToBackend() {
     let dataToSend = {
         teachers: JSON.parse(localStorage.getItem('teachers')) || [],
@@ -47,26 +47,18 @@ async function uploadLocalDataToBackend() {
         });
     } catch (error) { console.error("Serverga avto-yuklashda xato:", error.message); }
 }
-// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH (VERGULSIZ TOZA PROBELLAR)
+// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH TIZIMI
 function initPhoneFormatters() {
     const phoneInputs = document.querySelectorAll('#s-phone, #ts-phone, [id*="phone"]');
     phoneInputs.forEach(input => {
         if (!input) return;
-        if (input.value === "" || input.value === "+998") {
-            input.value = "+998 ";
-        }
+        if (input.value === "" || input.value === "+998 ") input.value = "+998 ";
 
         input.addEventListener('input', (e) => {
             let val = e.target.value;
-            if (!val.startsWith("+998")) {
-                e.target.value = "+998 ";
-                return;
-            }
-
+            if (!val.startsWith("+998")) { e.target.value = "+998 "; return; }
             let digits = val.substring(4).replace(/\D/g, '');
-            if (digits.length > 9) {
-                digits = digits.substring(0, 9);
-            }
+            if (digits.length > 9) digits = digits.substring(0, 9);
 
             let formatted = "+998 ";
             if (digits.length > 0) formatted += digits.substring(0, 2);
@@ -78,9 +70,7 @@ function initPhoneFormatters() {
         });
 
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && e.target.value.length <= 5) {
-                e.preventDefault();
-            }
+            if (e.key === 'Backspace' && e.target.value.length <= 5) e.preventDefault();
         });
     });
 }
@@ -133,7 +123,7 @@ function initTeacherGroupDropdownSystem() {
 // 4. O'QITUVCHINI QO'SHISH (ADMIN PANEL)
 async function addTeacher(event) {
     event.preventDefault();
-    await syncDataFromDatabaseSilently(); 
+    await syncDataFromDatabaseSilently(); // Eski qurilma ma'lumotlarini tozalab yuborishni oldini olish
 
     const name = document.getElementById('teacherName')?.value.trim() || document.getElementById('t-name')?.value.trim();
     const subject = document.getElementById('teacherSubject')?.value.trim() || document.getElementById('t-subject')?.value.trim();
@@ -153,7 +143,7 @@ async function addTeacher(event) {
 
     alert("✅ O'qituvchi muvaffaqiyatli qo'shildi!");
     event.target.reset();
-    await uploadLocalDataToBackend(); 
+    await uploadLocalDataToBackend(); // Srazu bazaga qulflash
     renderTeachers();
     updateMoliyaGrid();
 }
@@ -168,7 +158,7 @@ function renderTeachers() {
     teachers.forEach((t, i) => {
         let daysDisplay = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
         let teacherTotalEarned = excelLog
-            .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && Number(l.teacherId || l.teacher_id) === Number(t.id))
+            .filter(l => l.status === 'Keldi' && Number(l.teacherId || l.teacher_id) === Number(t.id))
             .reduce((sum, current) => sum + (current.sum || 0), 0);
         let teacherSalary = teacherTotalEarned * 0.5;
 
@@ -280,7 +270,7 @@ async function addStudentBalance(studentId) {
     if (amount === null || amount.trim() === "") return;
     let parsedAmount = Math.abs(Number(amount)); if (isNaN(parsedAmount) || parsedAmount === 0) return;
 
-    await syncDataFromDatabaseSilently(); 
+    await syncDataFromDatabaseSilently(); // Boshqa telefondagi oxirgi holatni olish
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
@@ -325,7 +315,6 @@ function renderExcelLog() {
             sumDisplay = `- ${l.sum.toLocaleString()} UZS`; sumColor = "#ff4747";
         } else if (l.status === 'Kelmadi') {
             statusBadge = `<span style="background:#ff4747; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">✖ Kelmadi</span>`;
-            sumDisplay = `- ${l.sum.toLocaleString()} UZS`; sumColor = "#ff4747"; // Kelmadi bo'lsa ham qizil minus chiqadi
         } else if (l.status === "To'lov qilindi") {
             statusBadge = `<span style="background:#ffc107; color:black; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">💵 To'lov</span>`;
             sumDisplay = `+ ${l.sum.toLocaleString()} UZS`; sumColor = "#28a745";
@@ -349,29 +338,25 @@ async function deleteLogItem(index) {
 }
 function updateMoliyaGrid() {
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    // Markaz foydasi ham Keldi ham Kelmadi darslaridan to'liq yig'iladi
-    let totalCollected = excelLog.filter(l => l.status === 'Keldi' || l.status === 'Kelmadi').reduce((acc, curr) => acc + (curr.sum || 0), 0);
+    let totalCollected = excelLog.filter(l => l.status === 'Keldi').reduce((acc, curr) => acc + (curr.sum || 0), 0);
     if (document.getElementById('center-profit')) document.getElementById('center-profit').innerText = (totalCollected * 0.5).toLocaleString() + " UZS";
     if (document.getElementById('admin-teacher-salary')) document.getElementById('admin-teacher-salary').innerText = (totalCollected * 0.5).toLocaleString() + " UZS";
 }
 
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (MULTIPLE DEVICE REJIM)
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (MULTIPLE DEVICE LIVE REJIM)
 // =========================================================================
 async function initTeacherCabinet() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
     if (!loggedInUser) return;
     currentTeacher = loggedInUser;
 
+    // Har kirganda boshqa telefonlardan tushgan davomatlarni srazu yuklash
     await syncDataFromDatabaseSilently();
 
     const teacherTitle = document.getElementById('teacher-title-name');
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    
-    // QOIDAGA MUVOFIQ: Ustozga ham Keldi, ham Kelmadi statusidagi darslardan pul to'liq yoziladi!
-    let myEarned = excelLog
-        .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && Number(l.teacherId || l.teacher_id) === Number(currentTeacher.id))
-        .reduce((sum, current) => sum + (current.sum || 0), 0);
+    let myEarned = excelLog.filter(l => l.status === 'Keldi' && Number(l.teacherId || l.teacher_id) === Number(currentTeacher.id)).reduce((sum, current) => sum + (current.sum || 0), 0);
     
     if (teacherTitle) {
         teacherTitle.innerHTML = `${currentTeacher.name} <span style="font-size:14px; background:#28a745; color:white; padding:4px 12px; border-radius:10px; margin-left:15px; font-weight:bold;">Sizning ulushingiz: ${(myEarned * 0.5).toLocaleString()} UZS</span>`;
@@ -406,7 +391,7 @@ function checkTimeAndLockSystem() {
         let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
         if (String(kunlarMatni).includes('1') || String(kunlarMatni).includes('3') || String(kunlarMatni).includes('5')) kunlarMatni = "Dushanba, Chorshanba, Juma";
         
-        if (isRightDay && isRightTime) lockMessage.innerHTML = `🟢 <b>Dars vaqti faol!</b> Davomat oynalari ochiq. Guruh dars tugashi bilan soat <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
+        if (isRightDay && isRightTime) lockMessage.innerHTML = `🟢 <b>Dars vaqti faol!</b> Davomat dars tugashi bilan soat <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
         else lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari: ${kunlarMatni} | Soat: <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
     }
 
@@ -416,7 +401,7 @@ function checkTimeAndLockSystem() {
         });
     }
 }
-// GURUHLARNI PREMIMUM JADVAL BLOKLARIGA DOIMO BO'LIB CHIZISH TIZIMI
+
 function renderTeacherStudents() {
     const mainBox = document.getElementById('teacher-students-rows') || document.getElementById('students-rows') || document.getElementById('davomat-table-container');
     if (!mainBox || !currentTeacher) return;
@@ -455,9 +440,8 @@ function renderTeacherStudents() {
     });
 }
 
-// 🔒 KELDI HAM KELMADI HAM BO'LSA PUL YECHIB USTOZGA YOZISH YAKUNIY MANTIQLI ALGORITMI
 async function doAttendance(studentId, status) {
-    await syncDataFromDatabaseSilently(); 
+    await syncDataFromDatabaseSilently(); // Boshqa telefondan tushgan oxirgi holatni majburiy olish
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
@@ -465,9 +449,7 @@ async function doAttendance(studentId, status) {
 
     const now = new Date();
     let pricePerLesson = Math.round(student.monthlyPrice / 12);
-    
-    // Keldi yoki Kelmadi bo'lishidan qat'iy nazar dars haqi 100% balansdan yechiladi!
-    student.balance = student.balance - pricePerLesson;
+    if (status === 'Keldi') student.balance = student.balance - pricePerLesson;
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     excelLog.push({
@@ -481,8 +463,8 @@ async function doAttendance(studentId, status) {
     const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
     if (specificBox) specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
 
-    alert(`Davomat tasdiqlandi: Dars haqi balansdan yechildi!`);
-    await uploadLocalDataToBackend(); 
+    alert(`Davomat muvaffaqiyatli saqlandi!`);
+    await uploadLocalDataToBackend(); // Jonli serverga saqlash
     initTeacherCabinet();
 }
 
