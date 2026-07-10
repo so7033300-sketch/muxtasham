@@ -14,7 +14,7 @@ const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejec
 // SAYT OCHILGANDA JONLI REJIMDA PUBLIC PAPKASINI ISHGA TUSHIRISH
 app.use(express.static(path.join(__dirname, 'public')));
 
-// BAZADA JADVALLAR BO'LMASA, AVTOMATIK PRO-REJIMDA YARATIB OLISH (ALLOWED_DAYS TEXT FORMATGA SOZLANDI)
+// BAZADA JADVALLAR BO'LMASA, AVTOMATIK PRO-REJIMDA YARATIB OLISH
 async function initDatabaseTables() {
     const client = await pool.connect();
     try {
@@ -55,7 +55,7 @@ async function initDatabaseTables() {
 }
 initDatabaseTables();
 
-// BARCHA MA'LUMOTLARNY SAQLASH (SAVE API) - FRONTEND VA BASE ULANISHI ZANJIRLANDI
+// BARCHA MA'LUMOTLARNY SAQLASH (SAVE API)
 app.post('/api/save-all', async (req, res) => {
     const { teachers, students, excelLog } = req.body; 
     const client = await pool.connect();
@@ -95,7 +95,7 @@ app.post('/api/save-all', async (req, res) => {
     } finally { client.release(); }
 });
 
-// BARCHA MA'LUMOTLARNI YUKLASH (LOAD API) - JONLI REJIM FORMATLARI MUKAMMAL QILINDI
+// BARCHA MA'LUMOTLARNI YUKLASH (LOAD API)
 app.get('/api/load-all', async (req, res) => {
     try {
         const teachersRes = await pool.query('SELECT * FROM teachers'); 
@@ -104,43 +104,27 @@ app.get('/api/load-all', async (req, res) => {
         res.json({
             success: true,
             teachers: teachersRes.rows.map(t => ({ 
-                id: Number(t.id), 
-                name: t.name, 
-                subject: t.subject, 
-                group_name: t.group_name, 
-                start_time: t.start_time, 
-                end_time: t.end_time, 
-                allowed_days: t.allowed_days ? t.allowed_days.split(', ') : [], 
-                login: t.login, 
-                pass: t.pass 
+                id: Number(t.id), name: t.name, subject: t.subject, group_name: t.group_name, 
+                start_time: t.start_time, end_time: t.end_time, allowed_days: t.allowed_days ? t.allowed_days.split(', ') : [], 
+                login: t.login, pass: t.pass 
             })),
             students: studentsRes.rows.map(s => ({ 
-                id: Number(s.id), 
-                name: s.name, 
-                phone: s.phone, 
-                balance: Number(s.balance), 
-                teacherId: s.teacher_id ? Number(s.teacher_id) : null, 
-                groupName: s.group_name, 
-                monthlyPrice: Number(s.monthly_price) 
+                id: Number(s.id), name: s.name, phone: s.phone, balance: Number(s.balance), 
+                teacherId: s.teacher_id ? Number(s.teacher_id) : null, groupName: s.group_name, monthlyPrice: Number(s.monthly_price) 
             })),
             excelLog: logsRes.rows.map(l => ({ 
-                id: Number(l.id),
-                studentId: l.student_id ? Number(l.student_id) : null, 
-                dars_time: l.dars_time, 
-                name: l.name, 
-                date: l.date, 
-                status: l.status, 
-                sum: Number(l.sum), 
-                phone: l.phone 
+                id: Number(l.id), studentId: l.student_id ? Number(l.student_id) : null, 
+                dars_time: l.dars_time, name: l.name, date: l.date, status: l.status, sum: Number(l.sum), phone: l.phone 
             }))
         });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// SAYT INTERNETDA 0 DAN OCHILGANDA TO'G'RIDAN-TO'G'RI KIRISH OYNASINI PORTLATIB OCHISH TIZIMI
-app.get('*', (req, res) => { 
-    res.sendFile(path.join(__dirname, 'public', 'index.html')); 
-});
+// 📌 ENg MUHIM TUZATISH: FALLLRNI TO'G'RI YO'NALTIRISH (ROUTING)
+app.get('/admin.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
+app.get('/ustoz.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'ustoz.html')); });
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 const PORT = process.env.PORT || 10000; 
-app.listen(PORT, () => console.log(`🚀 Pullik Render serveri ${PORT}-portda daxshatli tezlikda ishga tushdi!`));
+app.listen(PORT, () => console.log(`🚀 Tizim marshrutlari muvaffaqiyatli zanjirlandi!`));
