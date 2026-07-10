@@ -65,10 +65,10 @@ function initPhoneFormatters() {
             
             let parts = value.match(/(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
             let formatted = "+998 ";
-            if (parts[1]) formatted += parts[1];
-            if (parts[2]) formatted += " " + parts[2];
-            if (parts[3]) formatted += " " + parts[3];
-            if (parts[4]) formatted += " " + parts[4];
+            if (parts) formatted += parts;
+            if (parts) formatted += " " + parts;
+            if (parts) formatted += " " + parts;
+            if (parts) formatted += " " + parts;
             
             e.target.value = formatted.trim();
         });
@@ -79,7 +79,7 @@ function initPhoneFormatters() {
     });
 }
 
-// 📦 USTOZ TANLANGANDA UNING MAVJUD GURUHLARINI RO'YXAT QILISH YOKI YANGI GURUH YOZISH TIZIMI
+// 📦 USTOZ TANLANGANDA UNING MAVJUD GURUHLARINI RO'YXAT QILISH TIZIMI
 function initTeacherGroupDropdownSystem() {
     const teacherSelect = document.getElementById('s-teacher');
     const groupInput = document.getElementById('s-group');
@@ -218,7 +218,7 @@ function addStudent(event) {
     event.preventDefault();
     const name = document.getElementById('s-name')?.value.trim();
     const phone = document.getElementById('s-phone')?.value.trim();
-    const balance = Math.abs(Number(document.getElementById('s-balance')?.value)) || 0;
+    const balance = Number(document.getElementById('s-balance')?.value) || 0;
     const teacherId = document.getElementById('s-teacher')?.value;
     const groupName = document.getElementById('s-group')?.value.trim();
     const monthlyPrice = Number(document.getElementById('s-price')?.value) || 200000;
@@ -254,10 +254,10 @@ function addStudent(event) {
     uploadLocalDataToBackend();
     initPhoneFormatters();
 }
-// 7. O'QUVCHILAR JADVALINI CHIZISH
+// 7. O'QUVCHILAR JADVALINI CHIZISH (ADMIN PANELDA HAM RANG QOIDASI ISHLAYDI)
 function renderStudents() {
     const rows = document.getElementById('students-rows');
-    if (!rows) return; rows.innerHTML = "";
+    if (!rows) return ""; rows.innerHTML = "";
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     
@@ -265,13 +265,22 @@ function renderStudents() {
         const teacher = teachers.find(t => Number(t.id) === Number(s.teacherId));
         const teacherNameDisplay = teacher ? teacher.name : "Yo'q";
 
+        // Rang kodlari shartlari
+        let rowStyle = "";
+        let textStyle = "";
+        if (s.balance < -150000) {
+            rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`; // Ponniy qizil fon
+        } else if (s.balance < -100000) {
+            textStyle = `style="color: #ff4747 !important;"`; // Faqat harflar qizil
+        }
+
         rows.innerHTML += `
-            <tr class="student-search-row" data-name="${s.name.toLowerCase()}" data-phone="${s.phone}">
-                <td>${i+1}</td>
-                <td><b>${s.name}</b><br><small>${s.phone}</small></td>
-                <td>${teacherNameDisplay}</td>
-                <td>${s.groupName}</td>
-                <td style="color:#fbbf24; font-weight:bold;">${s.balance.toLocaleString()} UZS</td>
+            <tr class="student-search-row" ${rowStyle} data-name="${s.name.toLowerCase()}" data-phone="${s.phone}">
+                <td ${textStyle}>${i+1}</td>
+                <td ${textStyle}><b>${s.name}</b><br><small>${s.phone}</small></td>
+                <td ${textStyle}>${teacherNameDisplay}</td>
+                <td ${textStyle}>${s.groupName}</td>
+                <td style="font-weight:bold; ${s.balance < 0 ? 'color:#ff4747;' : 'color:#fbbf24;'}">${s.balance.toLocaleString()} UZS</td>
                 <td>
                     <div style="display:flex; gap:10px;">
                         <button onclick="addStudentBalance(${s.id})" style="background:#28a745; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">➕ To'lov</button>
@@ -451,7 +460,6 @@ function checkTimeAndLockSystem() {
     const lockMessage = document.getElementById('lock-message');
     const allLists = document.querySelectorAll('.guruh-premium-card-box');
 
-    // 🔒 JONLI TAYMER: Dars vaqti bo'lmasa umumiy qulflash matnini aytib turish
     if (isRightDay && isRightTime) {
         if (lockMessage) lockMessage.style.display = "none";
         allLists.forEach(box => box.style.display = "block");
@@ -470,7 +478,7 @@ function checkTimeAndLockSystem() {
     }
 }
 
-// 👨‍🏫 O'QUVCHILAR RO'YXATINI DOIMO CHIZISH VA INDIVIDUAL TUGMALARNI QULFLASH
+// 👨‍🏫 USTRIZ PANELIDAGI RO'YXAT: MINUSGA CHЕKSIZ KЕTISH VA RANG BERISH TIZIMI MUKAMMAL QILINDI
 function renderTeacherStudents() {
     const mainBox = document.getElementById('teacher-students-rows') || document.getElementById('students-rows') || document.getElementById('davomat-table-container');
     if (!mainBox || !currentTeacher) return;
@@ -493,7 +501,6 @@ function renderTeacherStudents() {
         let studentRowsHtml = "";
         groups[gName].forEach((s, idx) => {
             
-            // QAT'IY QOIDA: Shu o'quvchiga bugun allaqachon davomat urilganmi yoki yo'qligini qidirish
             const isStudentDoneToday = excelLog.some(l => 
                 Number(l.studentId) === Number(s.id) && 
                 l.date.startsWith(todayDateStr) && 
@@ -502,10 +509,8 @@ function renderTeacherStudents() {
 
             let actionCellHtml = "";
             if (isStudentDoneToday) {
-                // Agar o'quvchiga bosilgan bo'lsa faqat uni o'zi "🔒 Yakunlandi" bo'ladi
                 actionCellHtml = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
             } else {
-                // Bosilmagan bo'lsa tugmalar doimo ochiq turadi
                 actionCellHtml = `
                     <div class="individual-btn-box-${s.id}" style="display:flex; gap:10px; align-items:center; width:100%;">
                         <button onclick="doAttendance(${s.id}, 'Keldi')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELDI</button>
@@ -514,11 +519,20 @@ function renderTeacherStudents() {
                 `;
             }
 
+            // 🔴 SIZ AYTGAN QAT'IY QIZIL RANG TALABLARI SHARTLARI
+            let rowStyle = "";
+            let textStyle = "";
+            if (s.balance < -150000) {
+                rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`; // Ponniy to'q qizil fon
+            } else if (s.balance < -100000) {
+                textStyle = `style="color: #ff4747 !important;"`; // Faqat harflar qizil
+            }
+
             studentRowsHtml += `
-                <tr>
-                    <td>${idx + 1}</td>
-                    <td><b>${s.name}</b><br><small>${s.phone}</small></td>
-                    <td><span style="color:#fbbf24; font-weight:bold;">${s.balance.toLocaleString()} UZS</span></td>
+                <tr ${rowStyle}>
+                    <td ${textStyle}>${idx + 1}</td>
+                    <td ${textStyle}><b>${s.name}</b><br><small>${s.phone}</small></td>
+                    <td style="font-weight:bold; ${s.balance < 0 ? 'color:#ff4747;' : 'color:#fbbf24;'}">${s.balance.toLocaleString()} UZS</td>
                     <td>${actionCellHtml}</td>
                 </tr>
             `;
@@ -556,7 +570,8 @@ function doAttendance(studentId, status) {
     let pricePerLesson = Math.round(student.monthlyPrice / 12);
 
     if (status === 'Keldi') {
-        student.balance = Math.max(0, student.balance - pricePerLesson);
+        // Balans minusga qarab cheksiz ketaveradi (Math.max olib tashlandi)
+        student.balance = student.balance - pricePerLesson;
     }
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
@@ -568,14 +583,8 @@ function doAttendance(studentId, status) {
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
-    // O'quvchi tugmalar qutisini o'sha zahoti o'zgartirish
-    const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
-    if (specificBox) {
-        specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
-    }
-
-    alert(`Davomat tasdiqlandi: ${student.name} -> ${status}.`);
-    renderTeacherStudents();
+    alert(`Davomat tasdiqlandi!`);
+    renderTeacherStudents(); // Sahifani zumlikda qayta chizib, ranglarni real vaqtda o'zgartirish
     uploadLocalDataToBackend();
 }
 
@@ -583,3 +592,4 @@ setTimeout(() => { if(typeof initPhoneFormatters === 'function') initPhoneFormat
 function formatPhoneInput(el) {}
 function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }
 function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }
+function clearAllLogs() { if(confirm("O'chirish?")) { localStorage.setItem('excelLog', '[]'); window.location.reload(); } }
