@@ -3,7 +3,7 @@ const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
 
 // Tizim yuklanganda JONLI SERVERDAN ma'lumotlarni majburiy tortib olish
 document.addEventListener("DOMContentLoaded", async () => {
-    // Har qanday qurilmadan (telefon, noutbuk) kirganda birinchi bo'lib bazani jonli yangilaymiz
+    // Faqat bir marta sahifa ochilganda bazani xavfsiz yangilaymiz
     await syncDataFromDatabaseSilently();
 
     if (document.getElementById('teachers-rows')) renderTeachers();
@@ -32,7 +32,7 @@ async function syncDataFromDatabaseSilently() {
     } catch (e) { console.error("Jonli sinxronizatsiyada xato:", e.message); }
 }
 
-// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH (QAT'IY VA XATOSIZ REJIM)
+// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH (KUTISH REJIMI QO'SHILDI)
 async function uploadLocalDataToBackend() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     let students = JSON.parse(localStorage.getItem('students')) || [];
@@ -49,8 +49,12 @@ async function uploadLocalDataToBackend() {
         const res = await response.json();
         if (res.success) {
             console.log("🟢 Ma'lumotlar server bazasiga muhrlandi!");
+            return true;
         }
-    } catch (error) { console.error("Serverga avto-yuklashda xato:", error.message); }
+    } catch (error) { 
+        console.error("Serverga avto-yuklashda xato:", error.message); 
+        return false;
+    }
 }
 // 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH
 function initPhoneFormatters() {
@@ -138,11 +142,11 @@ function initTeacherGroupDropdownSystem() {
         };
     });
 }
-// 4. O'QITUVCHINI QO'SHISH (YANGILASH ZANJIRI SRAZU BAZAGA ULASH BILAN TO'G'RILANDI)
+// 4. O'QITUVCHINI QO'SHISH (SERVER JONLI QABUL QILGUNCHA KUTISH SHARTI QO'SHILDI)
 async function addTeacher(event) {
     event.preventDefault();
     
-    // Qurilmalar chalkashmasligi uchun avval oxirgi nusxani tortamiz
+    // 1. Birinchi navbatda bazadagi eng oxirgi toza arxivni tortamiz (qurilmalar urilmasligi uchun)
     await syncDataFromDatabaseSilently(); 
 
     const name = document.getElementById('teacherName')?.value.trim() || document.getElementById('t-name')?.value.trim();
@@ -162,14 +166,17 @@ async function addTeacher(event) {
     teachers.push(newTeacher);
     localStorage.setItem('teachers', JSON.stringify(teachers));
 
-    // ⚡ QAT'IY QOIDA: Formani tozalashdan oldin serverga srazu yuboramiz va saqlanishini kutamiz!
-    await uploadLocalDataToBackend(); 
+    // ⚡ ENg MUHIM TUGUN: Serverga yuborishni buyuramiz va u TAYYOR bo'lguncha kutamiz!
+    const isSaved = await uploadLocalDataToBackend(); 
 
-    alert("✅ O'qituvchi muvaffaqiyatli qo'shildi va serverga saqlandi!");
-    event.target.reset();
-    
-    renderTeachers();
-    updateMoliyaGrid();
+    if (isSaved) {
+        alert("🔥 Daxshat! Yangi o'qituvchi pullik PostgreSQL bazasiga 100% muvaffaqiyatli qulflandi! Yangilasa ham o'chmaydi. 🎉");
+        event.target.reset();
+        renderTeachers();
+        updateMoliyaGrid();
+    } else {
+        alert("❌ Serverga saqlashda xatolik bo'ldi. Internetni tekshirib qayta urinib ko'ring.");
+    }
 }
 
 // 5. O'QITUVCHILAR JADVALINI CHIZISH
@@ -243,13 +250,14 @@ async function addStudent(event) {
     });
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
-    await uploadLocalDataToBackend(); // Srazu bazaga muhrlash
+    const isSaved = await uploadLocalDataToBackend(); // Srazu bazaga muhrlash
 
-    alert("✅ Yangi o'quvchi ro'yxatga olindi!");
-    event.target.reset();
-    if (document.getElementById('s-group-select')) document.getElementById('s-group-select').style.display = 'none';
-
-    renderStudents(); renderExcelLog(); updateMoliyaGrid(); initPhoneFormatters();
+    if (isSaved) {
+        alert("✅ Yangi o'quvchi muvaffaqiyatli ro'yxatga olindi va serverga yozildi!");
+        event.target.reset();
+        if (document.getElementById('s-group-select')) document.getElementById('s-group-select').style.display = 'none';
+        renderStudents(); renderExcelLog(); updateMoliyaGrid(); initPhoneFormatters();
+    }
 }
 
 // 7. O'QUVCHILARI JADVALINI CHIZISH
@@ -472,41 +480,4 @@ function renderTeacherStudents() {
             studentRowsHtml += `<tr ${rowStyle}><td ${textStyle}>${idx + 1}</td><td ${textStyle}><b>${s.name}</b><br><small>${s.phone}</small></td><td style="font-weight:bold; ${s.balance < 0 ? 'color:#ff4747;' : 'color:#fbbf24;'}">${s.balance.toLocaleString()} UZS</td><td>${actionCellHtml}</td></tr>`;
         });
 
-        mainBox.innerHTML += `<div class="guruh-premium-card-box moliya-card" style="margin-bottom:30px; border-color:rgba(245,158,11,0.2); padding:20px; background:rgba(20,16,10,0.4); display:block !important;"><h4 style="color:#fbbf24; font-size:16px; font-weight:800; text-transform:uppercase; margin-bottom:15px; letter-spacing:0.5px;">📦 Guruh Nomi: ${gName}</h4><div class="excel-wrapper" style="display:block !important;"><table class="excel-table" style="display:table !important;"><thead><tr><th>#</th><th>O'quvchi Ismi / Telefoni</th><th>Mavjud Balansi</th><th style="text-align:center;">Kunlik Davomat Amali</th></tr></thead><tbody>${studentRowsHtml}</tbody></table></div></div>`;
-    });
-}
-
-async function doAttendance(studentId, status) {
-    await syncDataFromDatabaseSilently(); 
-
-    let students = JSON.parse(localStorage.getItem('students')) || [];
-    let student = students.find(s => s.id == studentId);
-    if (!student || !currentTeacher) return;
-
-    const now = new Date();
-    let currentMonthlyPrice = student.monthlyPrice || student.monthly_price || 200000;
-    let pricePerLesson = Math.round(currentMonthlyPrice / 12);
-    student.balance = student.balance - pricePerLesson;
-
-    let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    excelLog.push({
-        id: Date.now(), studentId: student.id, teacherId: currentTeacher.id, teacher_id: currentTeacher.id, name: student.name, dars_time: currentTeacher.start_time || currentTeacher.startTime, darsTime: currentTeacher.start_time || currentTeacher.startTime,
-        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5), status: status, sum: pricePerLesson, phone: student.phone
-    });
-
-    localStorage.setItem('students', JSON.stringify(students));
-    localStorage.setItem('excelLog', JSON.stringify(excelLog));
-
-    const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
-    if (specificBox) specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
-
-    await uploadLocalDataToBackend(); 
-    initTeacherCabinet();
-    alert(`Davomat tasdiqlandi!`);
-}
-
-setTimeout(() => { if(typeof initPhoneFormatters === 'function') initPhoneFormatters(); }, 1000);
-function formatPhoneInput(el) {}
-function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }
-function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }
-function clearAllLogs() { if(confirm("O'chirish?")) { localStorage.setItem('excelLog', '[]'); window.location.reload(); } }
+        mainBox.innerHTML += `<div class="guruh-premium-card-box moliya-
