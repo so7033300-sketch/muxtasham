@@ -428,7 +428,7 @@ function updateMoliyaGrid() {
 }
 
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (VAQTNI QAT'IY NAZORAT QILISH)
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (JADVAL DOIMO OCHIQ TURADI)
 // =========================================================================
 function initTeacherCabinet() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
@@ -446,9 +446,9 @@ function initTeacherCabinet() {
         teacherTitle.innerHTML = `${currentTeacher.name} <span style="font-size:14px; background:#28a745; color:white; padding:4px 12px; border-radius:10px; margin-left:15px; font-weight:bold;">Sizning ulushingiz: ${mySalary.toLocaleString()} UZS</span>`;
     }
 
-    renderTeacherStudents();
+    renderTeacherStudents(); // O'quvchilar jadvalini doimo chizish (Hech qachon yashirmaslik)
     checkTimeAndLockSystem();
-    setInterval(checkTimeAndLockSystem, 2000); // Tezkor tekshirish uchun 2 soniya
+    setInterval(checkTimeAndLockSystem, 2000); // Har 2 soniyada tugmalarni jonli nazorat qilish
 }
 function checkTimeAndLockSystem() {
     if (!currentTeacher) return;
@@ -472,28 +472,36 @@ function checkTimeAndLockSystem() {
     const isRightTime = currentMinutes >= (startH * 60 + startM) && currentMinutes <= (endH * 60 + endM);
     const lockMessage = document.getElementById('lock-message');
     
-    // HTML dagi barcha ortiqcha static (soxta) jadvallarni va premium bloklarni topish
-    const allLists = document.querySelectorAll('.guruh-premium-card-box, .excel-wrapper, table');
-
-    if (isRightDay && isRightTime) {
-        if (lockMessage) lockMessage.style.display = "none";
-        allLists.forEach(box => { if(box.id !== "excel-rows") box.style.display = "block"; });
-    } else {
-        // Vaqt bo'lmasa Hamma jadvallarni va tugmalarni ko'rinmas qilish
-        allLists.forEach(box => { if(box.id !== "excel-rows" && box.parentElement.id !== "excel-rows") box.style.display = "none"; });
-        if (lockMessage) {
-            lockMessage.style.display = "block";
-            lockMessage.style.color = "#fbbf24";
-            lockMessage.style.fontWeight = "bold";
-            let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
-            if (kunlarMatni.includes('1') || kunlarMatni.includes('3') || kunlarMatni.includes('5')) {
-                kunlarMatni = "Dushanba, Chorshanba, Juma";
-            }
-            lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari soat <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
+    // 🔒 JONLI TAYMER MATNI: Dars kunlari va soatini doimo oltin rangda ogohlantirib turish
+    if (lockMessage) {
+        lockMessage.style.display = "block";
+        lockMessage.style.color = "#fbbf24";
+        lockMessage.style.fontWeight = "bold";
+        lockMessage.style.fontSize = "15px";
+        lockMessage.style.marginBottom = "20px";
+        
+        let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
+        if (kunlarMatni.includes('1') || kunlarMatni.includes('3') || kunlarMatni.includes('5')) {
+            kunlarMatni = "Dushanba, Chorshanba, Juma";
         }
+        
+        if (isRightDay && isRightTime) {
+            lockMessage.innerHTML = `🟢 <b>Dars vaqti faol!</b> Davomat oynalari ochiq. Guruh dars tugashi bilan soat <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
+        } else {
+            lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari: ${kunlarMatni} | Soat: <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
+        }
+    }
+
+    // 🔒 TUGMALARNI INDIVIDUAL BLOKLASH: Agar dars soati bo'lmasa, ekrandagi hamma faol tugmalarni qulflash
+    if (!isRightDay || !isRightTime) {
+        const allActionBoxes = document.querySelectorAll('[class^="individual-btn-box-"]');
+        allActionBoxes.forEach(box => {
+            box.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block; width:100%; text-align:center;">🔒 Vaqti Emas</span>`;
+        });
     }
 }
 
+// 👨‍🏫 O'QUVCHILAR RO'YXATINI DOIMO CHIZISH TIZIMI (HECH QACHON YASHIRILMAYDI)
 function renderTeacherStudents() {
     const mainBox = document.getElementById('teacher-students-rows') || document.getElementById('students-rows') || document.getElementById('davomat-table-container');
     if (!mainBox || !currentTeacher) return;
@@ -553,10 +561,10 @@ function renderTeacherStudents() {
         });
 
         mainBox.innerHTML += `
-            <div class="guruh-premium-card-box moliya-card" style="margin-bottom:30px; border-color:rgba(245,158,11,0.2); padding:20px; background:rgba(20,16,10,0.4);">
+            <div class="guruh-premium-card-box moliya-card" style="margin-bottom:30px; border-color:rgba(245,158,11,0.2); padding:20px; background:rgba(20,16,10,0.4); display:block !important;">
                 <h4 style="color:#fbbf24; font-size:16px; font-weight:800; text-transform:uppercase; margin-bottom:15px; letter-spacing:0.5px;">📦 Guruh Nomi: ${gName}</h4>
-                <div class="excel-wrapper">
-                    <table class="excel-table">
+                <div class="excel-wrapper" style="display:block !important;">
+                    <table class="excel-table" style="display:table !important;">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -595,12 +603,6 @@ function doAttendance(studentId, status) {
 
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
-    localStorage.setItem(`davomat_done_${currentTeacher.id}_${now.toLocaleDateString()}`, "true");
-
-    const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
-    if (specificBox) {
-        specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
-    }
 
     alert(`Davomat tasdiqlandi!`);
     renderTeacherStudents();
