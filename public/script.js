@@ -1,9 +1,9 @@
-// 1. BACKEND SERVER HAVOLASI
-const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
+// 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
+const RENDER_BACKEND_URL = "https://onrender.com";
 
 // Tizim yuklanganda JONLI SERVERDAN ma'lumotlarni majburiy tortib olish
 document.addEventListener("DOMContentLoaded", async () => {
-    // Har qanday qurilmadan kirganda birinchi bo'lib bazani jonli yangilaymiz
+    // Har qanday qurilmadan (telefon, noutbuk) kirganda birinchi bo'lib bazani jonli yangilaymiz
     await syncDataFromDatabaseSilently();
 
     if (document.getElementById('teachers-rows')) renderTeachers();
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTeacherGroupDropdownSystem();
 });
 
-// BAZADAN TOZA NUQLANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH FUNKSIYASI
+// BAZADAN TOZA NUSXANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH (MULTIPLE DEVICE REJIM)
 async function syncDataFromDatabaseSilently() {
     try {
         const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
@@ -47,18 +47,26 @@ async function uploadLocalDataToBackend() {
         });
     } catch (error) { console.error("Serverga avto-yuklashda xato:", error.message); }
 }
-// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH TIZIMI
+// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH (VERGULSIZ TOZA PROBELLAR)
 function initPhoneFormatters() {
     const phoneInputs = document.querySelectorAll('#s-phone, #ts-phone, [id*="phone"]');
     phoneInputs.forEach(input => {
         if (!input) return;
-        if (input.value === "" || input.value === "+998 ") input.value = "+998 ";
+        if (input.value === "" || input.value === "+998") {
+            input.value = "+998 ";
+        }
 
         input.addEventListener('input', (e) => {
             let val = e.target.value;
-            if (!val.startsWith("+998")) { e.target.value = "+998 "; return; }
+            if (!val.startsWith("+998")) {
+                e.target.value = "+998 ";
+                return;
+            }
+
             let digits = val.substring(4).replace(/\D/g, '');
-            if (digits.length > 9) digits = digits.substring(0, 9);
+            if (digits.length > 9) {
+                digits = digits.substring(0, 9);
+            }
 
             let formatted = "+998 ";
             if (digits.length > 0) formatted += digits.substring(0, 2);
@@ -70,7 +78,9 @@ function initPhoneFormatters() {
         });
 
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && e.target.value.length <= 5) e.preventDefault();
+            if (e.key === 'Backspace' && e.target.value.length <= 5) {
+                e.preventDefault();
+            }
         });
     });
 }
@@ -123,7 +133,7 @@ function initTeacherGroupDropdownSystem() {
 // 4. O'QITUVCHINI QO'SHISH (ADMIN PANEL)
 async function addTeacher(event) {
     event.preventDefault();
-    await syncDataFromDatabaseSilently(); // Eski qurilma ma'lumotlarini tozalab yuborishni oldini olish
+    await syncDataFromDatabaseSilently(); 
 
     const name = document.getElementById('teacherName')?.value.trim() || document.getElementById('t-name')?.value.trim();
     const subject = document.getElementById('teacherSubject')?.value.trim() || document.getElementById('t-subject')?.value.trim();
@@ -143,12 +153,12 @@ async function addTeacher(event) {
 
     alert("✅ O'qituvchi muvaffaqiyatli qo'shildi!");
     event.target.reset();
-    await uploadLocalDataToBackend(); // Srazu bazaga qulflash
+    await uploadLocalDataToBackend(); 
     renderTeachers();
     updateMoliyaGrid();
 }
 
-// 5. O'QITUVCHILAR JADVALINI CHIZISH
+// 5. O'QITUVCHILAR JADVALINI CHIZISH (PULLARNI INTEGRATSIYA QILISH TUZATILDI)
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -157,9 +167,12 @@ function renderTeachers() {
 
     teachers.forEach((t, i) => {
         let daysDisplay = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
+        
+        // AQLLI QIDIRUV: Keldi ham Kelmadi ham darslardan tushgan pulni faqat shu ustoz ID siga qarab yig'ish!
         let teacherTotalEarned = excelLog
-            .filter(l => l.status === 'Keldi' && Number(l.teacherId || l.teacher_id) === Number(t.id))
+            .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (Number(l.teacherId) === Number(t.id) || Number(l.teacher_id) === Number(t.id)))
             .reduce((sum, current) => sum + (current.sum || 0), 0);
+            
         let teacherSalary = teacherTotalEarned * 0.5;
 
         rows.innerHTML += `
@@ -167,7 +180,7 @@ function renderTeachers() {
                 <td>${i+1}</td>
                 <td><b>${t.name}</b><br><span style="color:#fbbf24">${t.subject}</span><br><small>${t.start_time}-${t.end_time} (${daysDisplay})</small></td>
                 <td>Login: ${t.login}<br>Parol: ${t.pass}</td>
-                <td style="text-align: right; color:#28a745; font-weight:bold;">${teacherSalary.toLocaleString()} UZS</td>
+                <td style="text-align: right; color:#28a745; font-weight:bold; font-size:15px;">${teacherSalary.toLocaleString()} UZS</td>
                 <td><button onclick="deleteTeacher(${t.id})" style="color:#ff4747; background:none; border:none; cursor:pointer; font-weight:bold;">❌ O'chirish</button></td>
             </tr>
         `;
@@ -191,7 +204,6 @@ function updateTeacherSelect() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     teachers.forEach(t => { select.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
 }
-
 // 6. O'QUVCHINI QO'SHISH (ADMIN PANEL)
 async function addStudent(event) {
     event.preventDefault();
@@ -224,7 +236,8 @@ async function addStudent(event) {
     await uploadLocalDataToBackend();
     renderStudents(); renderExcelLog(); updateMoliyaGrid(); initPhoneFormatters();
 }
-// 7. O'QUVCHILAR JADVALINI CHIZISH
+
+// 7. O'QUVCHILARI JADVALINI CHIZISH
 function renderStudents() {
     const rows = document.getElementById('students-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -264,13 +277,12 @@ function filterStudents() {
         row.style.display = (name.includes(searchInput) || phone.includes(searchInput)) ? "" : "none";
     });
 }
-
 async function addStudentBalance(studentId) {
     let amount = prompt("To'lov summasini kiriting (UZS):", "200000");
     if (amount === null || amount.trim() === "") return;
     let parsedAmount = Math.abs(Number(amount)); if (isNaN(parsedAmount) || parsedAmount === 0) return;
 
-    await syncDataFromDatabaseSilently(); // Boshqa telefondagi oxirgi holatni olish
+    await syncDataFromDatabaseSilently(); 
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
@@ -302,7 +314,6 @@ async function deleteStudent(id) {
     renderStudents(); updateMoliyaGrid();
 }
 
-// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH
 function renderExcelLog() {
     const rows = document.getElementById('excel-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -315,6 +326,7 @@ function renderExcelLog() {
             sumDisplay = `- ${l.sum.toLocaleString()} UZS`; sumColor = "#ff4747";
         } else if (l.status === 'Kelmadi') {
             statusBadge = `<span style="background:#ff4747; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">✖ Kelmadi</span>`;
+            sumDisplay = `- ${l.sum.toLocaleString()} UZS`; sumColor = "#ff4747"; 
         } else if (l.status === "To'lov qilindi") {
             statusBadge = `<span style="background:#ffc107; color:black; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">💵 To'lov</span>`;
             sumDisplay = `+ ${l.sum.toLocaleString()} UZS`; sumColor = "#28a745";
@@ -338,25 +350,28 @@ async function deleteLogItem(index) {
 }
 function updateMoliyaGrid() {
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    let totalCollected = excelLog.filter(l => l.status === 'Keldi').reduce((acc, curr) => acc + (curr.sum || 0), 0);
+    let totalCollected = excelLog.filter(l => l.status === 'Keldi' || l.status === 'Kelmadi').reduce((acc, curr) => acc + (curr.sum || 0), 0);
     if (document.getElementById('center-profit')) document.getElementById('center-profit').innerText = (totalCollected * 0.5).toLocaleString() + " UZS";
     if (document.getElementById('admin-teacher-salary')) document.getElementById('admin-teacher-salary').innerText = (totalCollected * 0.5).toLocaleString() + " UZS";
 }
 
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (MULTIPLE DEVICE LIVE REJIM)
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI
 // =========================================================================
 async function initTeacherCabinet() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
     if (!loggedInUser) return;
     currentTeacher = loggedInUser;
 
-    // Har kirganda boshqa telefonlardan tushgan davomatlarni srazu yuklash
     await syncDataFromDatabaseSilently();
 
     const teacherTitle = document.getElementById('teacher-title-name');
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    let myEarned = excelLog.filter(l => l.status === 'Keldi' && Number(l.teacherId || l.teacher_id) === Number(currentTeacher.id)).reduce((sum, current) => sum + (current.sum || 0), 0);
+    
+    // QAT'IY JONLI ID REJIMDA USTOZ SHAXSIY ULUSHINI JONLI CHIZISH
+    let myEarned = excelLog
+        .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (Number(l.teacherId) === Number(currentTeacher.id) || Number(l.teacher_id) === Number(currentTeacher.id)))
+        .reduce((sum, current) => sum + (current.sum || 0), 0);
     
     if (teacherTitle) {
         teacherTitle.innerHTML = `${currentTeacher.name} <span style="font-size:14px; background:#28a745; color:white; padding:4px 12px; border-radius:10px; margin-left:15px; font-weight:bold;">Sizning ulushingiz: ${(myEarned * 0.5).toLocaleString()} UZS</span>`;
@@ -391,7 +406,7 @@ function checkTimeAndLockSystem() {
         let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
         if (String(kunlarMatni).includes('1') || String(kunlarMatni).includes('3') || String(kunlarMatni).includes('5')) kunlarMatni = "Dushanba, Chorshanba, Juma";
         
-        if (isRightDay && isRightTime) lockMessage.innerHTML = `🟢 <b>Dars vaqti faol!</b> Davomat dars tugashi bilan soat <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
+        if (isRightDay && isRightTime) lockMessage.innerHTML = `🟢 <b>Dars vaqti faol!</b> Davomat oynalari ochiq. Guruh dars tugashi bilan soat <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
         else lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari: ${kunlarMatni} | Soat: <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
     }
 
@@ -441,7 +456,7 @@ function renderTeacherStudents() {
 }
 
 async function doAttendance(studentId, status) {
-    await syncDataFromDatabaseSilently(); // Boshqa telefondan tushgan oxirgi holatni majburiy olish
+    await syncDataFromDatabaseSilently(); 
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
@@ -449,7 +464,7 @@ async function doAttendance(studentId, status) {
 
     const now = new Date();
     let pricePerLesson = Math.round(student.monthlyPrice / 12);
-    if (status === 'Keldi') student.balance = student.balance - pricePerLesson;
+    student.balance = student.balance - pricePerLesson;
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     excelLog.push({
@@ -463,8 +478,8 @@ async function doAttendance(studentId, status) {
     const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
     if (specificBox) specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
 
-    alert(`Davomat muvaffaqiyatli saqlandi!`);
-    await uploadLocalDataToBackend(); // Jonli serverga saqlash
+    alert(`Davomat tasdiqlandi!`);
+    await uploadLocalDataToBackend(); 
     initTeacherCabinet();
 }
 
