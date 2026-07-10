@@ -1,5 +1,5 @@
 // 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
-const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
+const RENDER_BACKEND_URL = "https://onrender.com";
 
 // Tizim yuklanganda barcha sahifalar uchun dinamik funksiyalarni ishga tushirish
 document.addEventListener("DOMContentLoaded", () => {
@@ -37,61 +37,47 @@ async function uploadLocalDataToBackend() {
     } catch (error) { console.error("Serverga yuklashda xatolik:", error.message); }
 }
 
-// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH (VERGUL MUAMMOSI TO'LIQ TUZATILDI)
+// 3. MA'LUMOTLARNI SERVERDAN TIKLASH
+async function downloadDataFromBackend() {
+    if (!confirm("Diqqat! Serverdan yuklasangiz, hozirgi brauzeringizdagi ma'lumotlar o'chib ketadi. Rozimisiz?")) return;
+    try {
+        const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
+        const result = await response.json();
+        if (result.success) {
+            localStorage.setItem('teachers', JSON.stringify(result.teachers || []));
+            localStorage.setItem('students', JSON.stringify(result.students || []));
+            localStorage.setItem('excelLog', JSON.stringify(result.excelLog || []));
+            alert("🟢 Ma'lumotlar serverdan muvaffaqiyatli tiklandi!");
+            window.location.reload();
+        }
+    } catch (error) { alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message); }
+}
+// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH TIZIMI
 function initPhoneFormatters() {
     const phoneInputs = document.querySelectorAll('#s-phone, #ts-phone, [id*="phone"]');
     phoneInputs.forEach(input => {
         if (!input) return;
-        
-        // Boshlang'ich holatda qotirib qo'yish
-        if (input.value === "" || input.value === "+998") {
-            input.value = "+998 ";
-        }
+        if (input.value === "" || input.value === "+998 ") input.value = "+998 ";
 
         input.addEventListener('input', (e) => {
-            let val = e.target.value;
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.startsWith('998')) value = value.substring(3);
             
-            // Agar foydalanuvchi majburlab +998 ni o'chirsa, srazu qaytaramiz
-            if (!val.startsWith("+998")) {
-                e.target.value = "+998 ";
-                return;
-            }
-
-            // Faqat raqamlarni ajratib olish (998 dan keyingi qismini)
-            let digits = val.substring(4).replace(/\D/g, '');
-            
-            // Maksimal 9 ta raqam kiritishga ruxsat (901234567)
-            if (digits.length > 9) {
-                digits = digits.substring(0, 9);
-            }
-
-            // Bo'laklarga ajratib, o'rtasiga faqat probel qo'shish (Vergulsiz!)
+            let parts = value.match(/(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
             let formatted = "+998 ";
-            if (digits.length > 0) {
-                formatted += digits.substring(0, 2); // 90
-            }
-            if (digits.length > 2) {
-                formatted += " " + digits.substring(2, 5); // 123
-            }
-            if (digits.length > 5) {
-                formatted += " " + digits.substring(5, 7); // 45
-            }
-            if (digits.length > 7) {
-                formatted += " " + digits.substring(7, 9); // 67
-            }
-
-            e.target.value = formatted;
+            if (parts) formatted += parts;
+            if (parts) formatted += " " + parts;
+            if (parts) formatted += " " + parts;
+            if (parts) formatted += " " + parts;
+            
+            e.target.value = formatted.trim();
         });
 
-        // O'chirish (Backspace) tugmasi bosilganda +998 ni o'chirishga yo'l qo'ymaslik
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && e.target.value.length <= 5) {
-                e.preventDefault();
-            }
+            if (e.key === 'Backspace' && e.target.value.length <= 5) e.preventDefault();
         });
     });
 }
-
 
 // 📦 USTOZ TANLANGANDA UNING MAVJUD GURUHLARINI RO'YXAT QILISH TIZIMI
 function initTeacherGroupDropdownSystem() {
@@ -181,7 +167,7 @@ function addTeacher(event) {
     uploadLocalDataToBackend();
 }
 
-// 5. O'QITUVCHILAR JADVALINI CHIZISH
+// 5. O'QITUVCHILAR JADVALINI CHIZISH (FAQAT USTOZID BO'YICHA PUL QO'SHISH TUZATILDI)
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -191,8 +177,10 @@ function renderTeachers() {
 
     teachers.forEach((t, i) => {
         let daysDisplay = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
+        
+        // AQLLI FILTR: Pullarni faqat va faqat shu ustozning o'z ID raqamiga qarab hisoblash!
         let teacherTotalEarned = excelLog
-            .filter(l => l.status === 'Keldi' && (l.dars_time === t.start_time || l.darsTime === t.start_time))
+            .filter(l => l.status === 'Keldi' && Number(l.teacherId || l.teacher_id) === Number(t.id))
             .reduce((sum, current) => sum + (current.sum || 0), 0);
             
         let teacherSalary = teacherTotalEarned * 0.5;
@@ -250,7 +238,7 @@ function addStudent(event) {
     const now = new Date();
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     excelLog.push({
-        id: Date.now(), studentId: newStudent.id, name: name, dars_time: "00:00",
+        id: Date.now(), studentId: newStudent.id, teacherId: newStudent.teacherId, teacher_id: newStudent.teacherId, name: name, dars_time: "00:00",
         date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5),
         status: "Yangi talaba", sum: 0, phone: phone
     });
@@ -268,7 +256,7 @@ function addStudent(event) {
     uploadLocalDataToBackend();
     initPhoneFormatters();
 }
-// 7. O'QUVCHILAR JADVALINI CHIZISH (ADMIN PANELDA HAM RANG QOIDASI ISHLAYDI)
+// 7. O'QUVCHILAR JADVALINI CHIZISH
 function renderStudents() {
     const rows = document.getElementById('students-rows');
     if (!rows) return ""; rows.innerHTML = "";
@@ -279,13 +267,12 @@ function renderStudents() {
         const teacher = teachers.find(t => Number(t.id) === Number(s.teacherId));
         const teacherNameDisplay = teacher ? teacher.name : "Yo'q";
 
-        // Rang kodlari shartlari
         let rowStyle = "";
         let textStyle = "";
         if (s.balance < -150000) {
-            rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`; // Ponniy qizil fon
+            rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`;
         } else if (s.balance < -100000) {
-            textStyle = `style="color: #ff4747 !important;"`; // Faqat harflar qizil
+            textStyle = `style="color: #ff4747 !important;"`;
         }
 
         rows.innerHTML += `
@@ -335,7 +322,7 @@ function addStudentBalance(studentId) {
         const now = new Date();
         let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
         excelLog.push({
-            id: Date.now(), studentId: student.id, name: student.name, dars_time: "00:00",
+            id: Date.now(), studentId: student.id, teacherId: student.teacherId, teacher_id: student.teacherId, name: student.name, dars_time: "00:00",
             date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5),
             status: "To'lov qilindi", sum: parsedAmount, phone: student.phone
         });
@@ -428,7 +415,7 @@ function updateMoliyaGrid() {
 }
 
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (JADVAL DOIMO OCHIQ TURADI)
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI
 // =========================================================================
 function initTeacherCabinet() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
@@ -437,8 +424,10 @@ function initTeacherCabinet() {
 
     const teacherTitle = document.getElementById('teacher-title-name');
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
+    
+    // Ustozning o'z ID siga qarab shaxsiy foydasini ko'rsatish
     let myEarned = excelLog
-        .filter(l => l.status === 'Keldi' && (l.dars_time === currentTeacher.start_time || l.darsTime === currentTeacher.start_time))
+        .filter(l => l.status === 'Keldi' && Number(l.teacherId || l.teacher_id) === Number(currentTeacher.id))
         .reduce((sum, current) => sum + (current.sum || 0), 0);
     let mySalary = myEarned * 0.5;
 
@@ -446,10 +435,11 @@ function initTeacherCabinet() {
         teacherTitle.innerHTML = `${currentTeacher.name} <span style="font-size:14px; background:#28a745; color:white; padding:4px 12px; border-radius:10px; margin-left:15px; font-weight:bold;">Sizning ulushingiz: ${mySalary.toLocaleString()} UZS</span>`;
     }
 
-    renderTeacherStudents(); // O'quvchilar jadvalini doimo chizish (Hech qachon yashirmaslik)
+    renderTeacherStudents();
     checkTimeAndLockSystem();
-    setInterval(checkTimeAndLockSystem, 2000); // Har 2 soniyada tugmalarni jonli nazorat qilish
+    setInterval(checkTimeAndLockSystem, 3000);
 }
+
 function checkTimeAndLockSystem() {
     if (!currentTeacher) return;
     const now = new Date();
@@ -471,43 +461,32 @@ function checkTimeAndLockSystem() {
 
     const isRightTime = currentMinutes >= (startH * 60 + startM) && currentMinutes <= (endH * 60 + endM);
     const lockMessage = document.getElementById('lock-message');
-    
-    // 🔒 JONLI TAYMER MATNI: Dars kunlari va soatini doimo oltin rangda ogohlantirib turish
-    if (lockMessage) {
-        lockMessage.style.display = "block";
-        lockMessage.style.color = "#fbbf24";
-        lockMessage.style.fontWeight = "bold";
-        lockMessage.style.fontSize = "15px";
-        lockMessage.style.marginBottom = "20px";
-        
-        let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
-        if (kunlarMatni.includes('1') || kunlarMatni.includes('3') || kunlarMatni.includes('5')) {
-            kunlarMatni = "Dushanba, Chorshanba, Juma";
-        }
-        
-        if (isRightDay && isRightTime) {
-            lockMessage.innerHTML = `🟢 <b>Dars vaqti faol!</b> Davomat oynalari ochiq. Guruh dars tugashi bilan soat <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
-        } else {
-            lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari: ${kunlarMatni} | Soat: <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
-        }
-    }
+    const allLists = document.querySelectorAll('.guruh-premium-card-box');
 
-    // 🔒 TUGMALARNI INDIVIDUAL BLOKLASH: Agar dars soati bo'lmasa, ekrandagi hamma faol tugmalarni qulflash
-    if (!isRightDay || !isRightTime) {
-        const allActionBoxes = document.querySelectorAll('[class^="individual-btn-box-"]');
-        allActionBoxes.forEach(box => {
-            box.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block; width:100%; text-align:center;">🔒 Vaqti Emas</span>`;
-        });
+    if (isRightDay && isRightTime) {
+        if (lockMessage) lockMessage.style.display = "none";
+        allLists.forEach(box => box.style.display = "block");
+    } else {
+        allLists.forEach(box => box.style.display = "none");
+        if (lockMessage) {
+            lockMessage.style.display = "block";
+            lockMessage.style.color = "#fbbf24";
+            lockMessage.style.fontWeight = "bold";
+            let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
+            if (kunlarMatni.includes('1') || kunlarMatni.includes('3') || kunlarMatni.includes('5')) {
+                kunlarMatni = "Dushanba, Chorshanba, Juma";
+            }
+            lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari soat <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
+        }
     }
 }
 
-// 👨‍🏫 O'QUVCHILAR RO'YXATINI DOIMO CHIZISH TIZIMI (HECH QACHON YASHIRILMAYDI)
 function renderTeacherStudents() {
     const mainBox = document.getElementById('teacher-students-rows') || document.getElementById('students-rows') || document.getElementById('davomat-table-container');
     if (!mainBox || !currentTeacher) return;
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
-    let myStudents = students.filter(s => s.teacherId == currentTeacher.id);
+    let myStudents = students.filter(s => Number(s.teacherId) === Number(currentTeacher.id));
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     const todayDateStr = new Date().toLocaleDateString();
 
@@ -596,21 +575,33 @@ function doAttendance(studentId, status) {
     }
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
+    
+    // QAT'IY O'ZGARISH: Log yozilayotganda ushbu davomat aynan qaysi ustozga tegishli ekanini (currentTeacher.id) mahkam muhrlash!
     excelLog.push({
-        id: Date.now(), studentId: student.id, name: student.name, dars_time: currentTeacher.start_time, darsTime: currentTeacher.start_time,
-        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5), status: status, sum: pricePerLesson, phone: student.phone
+        id: Date.now(), 
+        studentId: student.id, 
+        teacherId: currentTeacher.id, 
+        teacher_id: currentTeacher.id, 
+        name: student.name, 
+        dars_time: currentTeacher.start_time, 
+        darsTime: currentTeacher.start_time,
+        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5), 
+        status: status, 
+        sum: pricePerLesson, 
+        phone: student.phone
     });
 
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
+    const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
+    if (specificBox) {
+        specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
+    }
+
     alert(`Davomat tasdiqlandi!`);
-    renderTeacherStudents();
+    initTeacherCabinet(); // Admin panel moliya griddini ham to'g'ri yangilash buyrug'i
     uploadLocalDataToBackend();
 }
 
-setTimeout(() => { if(typeof initPhoneFormatters === 'function') initPhoneFormatters(); }, 1000);
-function formatPhoneInput(el) {}
-function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }
-function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }
-function clearAllLogs() { if(confirm("O'chirish?")) { localStorage.setItem('excelLog', '[]'); window.location.reload(); } }
+setTimeout(() => { if(typeof initPhoneFormatters === 'function') initPhoneFormatters(); }, 1000);function formatPhoneInput(el) {}function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }function clearAllLogs() { if(confirm("O'chirish?")) { localStorage.setItem('excelLog', '[]'); window.location.reload(); } }
