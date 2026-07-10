@@ -4,20 +4,22 @@ const cors = require('cors');
 const path = require('path');
 const app = express();
 
-// INTERNET BLOKLARINI VA CORS TAQIQLARINI BUTUNLAY YECHISH
+// 🔓 INTERNET BLOKLARINI VA CORS TAQIQLARINI BUTUNLAY YECHISH
 app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'], allowedHeaders: ['Content-Type'] }));
 app.use(express.json());
 
-// PULLIK POSTGRESQL BAZASIGA MAHKAM ZANJIRLASH
+// 💾 PULLIK POSTGRESQL BAZASIGA MAHKAM ZANJIRLASH
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 // SAYT OCHILGANDA JONLI REJIMDA PUBLIC PAPKASINI ISHGA TUSHIRISH
 app.use(express.static(path.join(__dirname, 'public')));
 
-// BAZADA JADVALLAR BO'LMASA, AVTOMATIK PRO-REJIMDA YARATIB OLISH
+// 🛠️ BAZANI ENG TOZA VA MUKAMMAL FORMATDA QAYTA QURISH
 async function initDatabaseTables() {
     const client = await pool.connect();
     try {
+        console.log("🔄 PostgreSQL jadvallari tekshirilmoqda...");
+        
         await client.query(`
             CREATE TABLE IF NOT EXISTS teachers (
                 id BIGINT PRIMARY KEY, 
@@ -30,6 +32,7 @@ async function initDatabaseTables() {
                 login TEXT, 
                 pass TEXT
             );
+            
             CREATE TABLE IF NOT EXISTS students (
                 id BIGINT PRIMARY KEY, 
                 name TEXT, 
@@ -39,9 +42,11 @@ async function initDatabaseTables() {
                 group_name TEXT, 
                 monthly_price NUMERIC DEFAULT 200000
             );
+
             CREATE TABLE IF NOT EXISTS excel_log (
                 id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, 
                 student_id BIGINT, 
+                teacher_id BIGINT,
                 dars_time TEXT, 
                 name TEXT, 
                 date TEXT, 
@@ -50,12 +55,13 @@ async function initDatabaseTables() {
                 phone TEXT
             );
         `);
-        console.log("🟢 PostgreSQL jadvallari Render serverida tayyor!");
+        console.log("🟢 PostgreSQL jadvallari 100% ideal holatda tayyor!");
+    } catch (err) {
+        console.error("❌ Jadvallarni qurishda xatolik:", err.message);
     } finally { client.release(); }
 }
 initDatabaseTables();
-
-// BARCHA MA'LUMOTLARNY SAQLASH (SAVE API)
+// ⚡ BARCHA MA'LUMOTLARNI SRAZU AVTOMAT BAZAGA SAQLASH (SAVE API)
 app.post('/api/save-all', async (req, res) => {
     const { teachers, students, excelLog } = req.body; 
     const client = await pool.connect();
@@ -67,64 +73,76 @@ app.post('/api/save-all', async (req, res) => {
         
         if (teachers && Array.isArray(teachers)) {
             for (let t of teachers) { 
-                let daysText = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
+                let daysText = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : (Array.isArray(t.allowedDays) ? t.allowedDays.join(', ') : String(t.allowed_days || t.allowedDays || ''));
+                let sTime = t.start_time || t.startTime || "14:00";
+                let eTime = t.end_time || t.endTime || "16:00";
+                let gName = t.group_name || t.groupName || "";
+
                 await client.query(`INSERT INTO teachers (id, name, subject, group_name, start_time, end_time, allowed_days, login, pass) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, 
-                [t.id, t.name, t.subject, t.group_name, t.start_time, t.end_time, daysText, t.login, t.pass]); 
+                [t.id, t.name, t.subject, gName, sTime, eTime, daysText, t.login, t.pass]); 
             }
         }
         
         if (students && Array.isArray(students)) {
             for (let s of students) { 
+                let gName = s.groupName || s.group_name || "";
+                let mPrice = s.monthlyPrice || s.monthly_price || 200000;
                 await client.query(`INSERT INTO students (id, name, phone, balance, teacher_id, group_name, monthly_price) VALUES ($1, $2, $3, $4, $5, $6, $7)`, 
-                [s.id, s.name, s.phone || "", s.balance || 0, s.teacherId || null, s.groupName || s.group_name, s.monthlyPrice || 200000]); 
+                [s.id, s.name, s.phone || "", s.balance || 0, s.teacherId || null, gName, mPrice]); 
             }
         }
         
         if (excelLog && Array.isArray(excelLog)) {
             for (let l of excelLog) { 
-                await client.query(`INSERT INTO excel_log (student_id, dars_time, name, date, status, sum, phone) VALUES ($1, $2, $3, $4, $5, $6, $7)`, 
-                [l.studentId || null, l.dars_time || l.darsTime || "00:00", l.name, l.date, l.status, l.sum || 0, l.phone || ""]); 
+                let tId = l.teacherId || l.teacher_id || null;
+                let dTime = l.dars_time || l.darsTime || "00:00";
+                await client.query(`INSERT INTO excel_log (student_id, teacher_id, dars_time, name, date, status, sum, phone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, 
+                [l.studentId || null, tId, dTime, l.name, l.date, l.status, l.sum || 0, l.phone || ""]); 
             }
         }
         
         await client.query('COMMIT'); 
-        res.json({ success: true });
+        res.json({ success: true, message: "Srazu bazaga yozildi!" });
     } catch (err) { 
         await client.query('ROLLBACK'); 
         res.status(500).json({ success: false, error: err.message }); 
     } finally { client.release(); }
 });
 
-// BARCHA MA'LUMOTLARNI YUKLASH (LOAD API)
+// 🔄 BARCHA MA'LUMOTLARNI JONLI YUKLASH (LOAD API)
 app.get('/api/load-all', async (req, res) => {
     try {
         const teachersRes = await pool.query('SELECT * FROM teachers'); 
         const studentsRes = await pool.query('SELECT * FROM students'); 
         const logsRes = await pool.query('SELECT * FROM excel_log ORDER BY id DESC');
+        
         res.json({
             success: true,
             teachers: teachersRes.rows.map(t => ({ 
-                id: Number(t.id), name: t.name, subject: t.subject, group_name: t.group_name, 
-                start_time: t.start_time, end_time: t.end_time, allowed_days: t.allowed_days ? t.allowed_days.split(', ') : [], 
+                id: Number(t.id), name: t.name, subject: t.subject, group_name: t.group_name, groupName: t.group_name,
+                start_time: t.start_time, startTime: t.start_time, end_time: t.end_time, endTime: t.end_time,
+                allowed_days: t.allowed_days ? t.allowed_days.split(', ') : [], allowedDays: t.allowed_days ? t.allowed_days.split(', ') : [],
                 login: t.login, pass: t.pass 
             })),
             students: studentsRes.rows.map(s => ({ 
                 id: Number(s.id), name: s.name, phone: s.phone, balance: Number(s.balance), 
-                teacherId: s.teacher_id ? Number(s.teacher_id) : null, groupName: s.group_name, monthlyPrice: Number(s.monthly_price) 
+                teacherId: s.teacher_id ? Number(s.teacher_id) : null, groupName: s.group_name, group_name: s.group_name,
+                monthlyPrice: Number(s.monthly_price), monthly_price: Number(s.monthly_price)
             })),
             excelLog: logsRes.rows.map(l => ({ 
                 id: Number(l.id), studentId: l.student_id ? Number(l.student_id) : null, 
-                dars_time: l.dars_time, name: l.name, date: l.date, status: l.status, sum: Number(l.sum), phone: l.phone 
+                teacherId: l.teacher_id ? Number(l.teacher_id) : null, teacher_id: l.teacher_id ? Number(l.teacher_id) : null,
+                dars_time: l.dars_time, darsTime: l.dars_time, name: l.name, date: l.date, status: l.status, sum: Number(l.sum), phone: l.phone 
             }))
         });
     } catch (err) { res.status(500).json({ success: false, error: err.message }); }
 });
 
-// 📌 ENg MUHIM TUZATISH: FALLLRNI TO'G'RI YO'NALTIRISH (ROUTING)
+// 📌 ROUTING TIZIMI (SAHIFALARNI INTERNETDA TO'G'RI OCHISH)
 app.get('/admin.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
 app.get('/ustoz.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'ustoz.html')); });
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 const PORT = process.env.PORT || 10000; 
-app.listen(PORT, () => console.log(`🚀 Tizim marshrutlari muvaffaqiyatli zanjirlandi!`));
+app.listen(PORT, () => console.log(`🚀 Pullik server xatoliklarsiz, pro-rejimda ishga tushdi!`));
