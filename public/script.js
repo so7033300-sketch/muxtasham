@@ -1,5 +1,5 @@
 // 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
-const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
+const RENDER_BACKEND_URL = "https://onrender.com";
 
 // Tizim yuklanganda barcha sahifalar uchun dinamik funksiyalarni ishga tushirish
 document.addEventListener("DOMContentLoaded", () => {
@@ -65,10 +65,10 @@ function initPhoneFormatters() {
             
             let parts = value.match(/(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
             let formatted = "+998 ";
-            if (parts) formatted += parts;
-            if (parts) formatted += " " + parts;
-            if (parts) formatted += " " + parts;
-            if (parts) formatted += " " + parts;
+            if (parts) formatted += parts[1];
+            if (parts) formatted += " " + parts[2];
+            if (parts) formatted += " " + parts[3];
+            if (parts) formatted += " " + parts[4];
             
             e.target.value = formatted.trim();
         });
@@ -167,7 +167,7 @@ function addTeacher(event) {
     uploadLocalDataToBackend();
 }
 
-// 5. O'QITUVCHILAR JADVALINI CHIZISH (FAQAT USTOZID BO'YICHA PUL QO'SHISH TUZATILDI)
+// 5. O'QITUVCHILAR JADVALINI CHIZISH (QAT'IY ID BO'YICHA)
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -178,7 +178,6 @@ function renderTeachers() {
     teachers.forEach((t, i) => {
         let daysDisplay = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
         
-        // AQLLI FILTR: Pullarni faqat va faqat shu ustozning o'z ID raqamiga qarab hisoblash!
         let teacherTotalEarned = excelLog
             .filter(l => l.status === 'Keldi' && Number(l.teacherId || l.teacher_id) === Number(t.id))
             .reduce((sum, current) => sum + (current.sum || 0), 0);
@@ -415,7 +414,7 @@ function updateMoliyaGrid() {
 }
 
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (FORMASIZ PREMIUM INTEGRATSIYA)
 // =========================================================================
 function initTeacherCabinet() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
@@ -425,7 +424,7 @@ function initTeacherCabinet() {
     const teacherTitle = document.getElementById('teacher-title-name');
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     
-    // Ustozning o'z ID siga qarab shaxsiy foydasini ko'rsatish
+    // Qat'iy ID bo'yicha hisoblash
     let myEarned = excelLog
         .filter(l => l.status === 'Keldi' && Number(l.teacherId || l.teacher_id) === Number(currentTeacher.id))
         .reduce((sum, current) => sum + (current.sum || 0), 0);
@@ -575,8 +574,6 @@ function doAttendance(studentId, status) {
     }
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    
-    // QAT'IY O'ZGARISH: Log yozilayotganda ushbu davomat aynan qaysi ustozga tegishli ekanini (currentTeacher.id) mahkam muhrlash!
     excelLog.push({
         id: Date.now(), 
         studentId: student.id, 
@@ -600,8 +597,11 @@ function doAttendance(studentId, status) {
     }
 
     alert(`Davomat tasdiqlandi!`);
-    initTeacherCabinet(); // Admin panel moliya griddini ham to'g'ri yangilash buyrug'i
+    initTeacherCabinet();
     uploadLocalDataToBackend();
 }
 
-setTimeout(() => { if(typeof initPhoneFormatters === 'function') initPhoneFormatters(); }, 1000);function formatPhoneInput(el) {}function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }function clearAllLogs() { if(confirm("O'chirish?")) { localStorage.setItem('excelLog', '[]'); window.location.reload(); } }
+setTimeout(() => { if(typeof initPhoneFormatters === 'function') initPhoneFormatters(); }, 1000);
+function formatPhoneInput(el) {}
+// Ortiqcha elementlarni boshqarish
+function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }function clearAllLogs() { if(confirm("O'chirish?")) { localStorage.setItem('excelLog', '[]'); window.location.reload(); } }
