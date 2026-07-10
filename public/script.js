@@ -1,5 +1,5 @@
 // 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
-const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
+const RENDER_BACKEND_URL = "https://onrender.com";
 
 // Tizim yuklanganda barcha sahifalar uchun dinamik funksiyalarni ishga tushirish
 document.addEventListener("DOMContentLoaded", () => {
@@ -12,9 +12,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (window.location.pathname.includes('ustoz.html') || document.getElementById('excel-rows') === null) {
         initTeacherCabinet();
     }
+    
+    // Telefon raqami formatlagichni ishga tushirish
+    initPhoneFormatters();
+    // Ustoz tanlanganda guruhni avto-to'ldirishni ulash
+    initTeacherGroupAutoFiller();
 });
 
-// 2. MA'LUMOTLARNI BACKEND-GA SAQLASH (AVTOMATIK SINXRONIZATSIYA)
+// 2. MA'LUMOTLARNI BACKEND-GA SAQLASH
 async function uploadLocalDataToBackend() {
     let dataToSend = {
         teachers: JSON.parse(localStorage.getItem('teachers')) || [],
@@ -49,6 +54,63 @@ async function downloadDataFromBackend() {
         }
     } catch (error) { alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message); }
 }
+// 📱 TELEFON RAQAMINI +998 90 123 45 67 FORMATIGA AVTOMATIK SOLISH TIZIMI
+function initPhoneFormatters() {
+    const phoneInputs = document.querySelectorAll('#s-phone, #ts-phone, [id*="phone"]');
+    
+    phoneInputs.forEach(input => {
+        if (!input) return;
+        
+        // Boshlang'ich qiymat doim +998 bo'lib tursin
+        if (input.value === "" || input.value === "+998 ") {
+            input.value = "+998 ";
+        }
+
+        input.addEventListener('input', (e) => {
+            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
+            
+            // Agar foydalanuvchi +998 ni o'chirib tashlamoqchi bo'lsa, qaytarib qo'yamiz
+            if (!x || x[1] !== "998" && e.target.value.length < 5) {
+                e.target.value = "+998 ";
+                return;
+            }
+
+            // Avtomatik probellar bilan chiroyli formatlash
+            let formatted = "+998";
+            if (x[2]) formatted += " " + x[2];
+            if (x[3]) formatted += " " + x[3];
+            if (x[4]) formatted += " " + x[4];
+            if (x[5]) formatted += " " + x[5];
+            
+            e.target.value = formatted;
+        });
+
+        // O'chirayotganda majburiy qotirish
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Backspace' && e.target.value.length <= 5) {
+                e.preventDefault();
+            }
+        });
+    });
+}
+
+// ✍️ ADMIN PANELDA USTOZ TANLANGANDA UNING GURUH NOMINI AVTOMATIK INPUTGA YOZISH TIZIMI
+function initTeacherGroupAutoFiller() {
+    const teacherSelect = document.getElementById('s-teacher');
+    const groupInput = document.getElementById('s-group');
+
+    if (teacherSelect && groupInput) {
+        teacherSelect.addEventListener('change', () => {
+            const selectedTeacherId = teacherSelect.value;
+            let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+            const foundTeacher = teachers.find(t => Number(t.id) === Number(selectedTeacherId));
+            
+            if (foundTeacher && foundTeacher.group_name) {
+                groupInput.value = foundTeacher.group_name; // Guruh nomini avto-to'ldirish
+            }
+        });
+    }
+}
 // 4. O'QITUVCHINI QO'SHISH (ADMIN PANEL)
 function addTeacher(event) {
     event.preventDefault();
@@ -56,8 +118,8 @@ function addTeacher(event) {
     const subject = document.getElementById('teacherSubject')?.value.trim() || document.getElementById('t-subject')?.value.trim();
     const group_name = document.getElementById('teacherGroup')?.value.trim() || document.getElementById('t-group')?.value.trim();
     
-    const start_time = document.getElementById('startTime')?.value || document.getElementById('t-start')?.value || "14:00";
-    const end_time = document.getElementById('endTime')?.value || document.getElementById('t-end')?.value || "16:00";
+    let start_time = document.getElementById('startTime')?.value || document.getElementById('t-start')?.value || "14:00";
+    let end_time = document.getElementById('endTime')?.value || document.getElementById('t-end')?.value || "16:00";
     
     const login = document.getElementById('teacherLogin')?.value.trim() || document.getElementById('t-login')?.value.trim();
     const pass = document.getElementById('teacherPass')?.value.trim() || document.getElementById('t-pass')?.value.trim();
@@ -135,22 +197,16 @@ function addStudent(event) {
     const monthlyPrice = Number(document.getElementById('s-price')?.value) || 200000;
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
-    const newStudent = { id: Date.now(), name, phone, balance, teacherId, groupName, monthlyPrice };
+    const newStudent = { id: Date.now(), name, phone, balance, teacherId: teacherId ? Number(teacherId) : null, groupName, monthlyPrice };
     students.push(newStudent);
     localStorage.setItem('students', JSON.stringify(students));
     
-    // 📝 YANGI O'QUVCHI TARIXI LOGGA QO'SHILADI
     const now = new Date();
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     excelLog.push({
-        id: Date.now(),
-        studentId: newStudent.id,
-        name: name,
-        dars_time: "00:00",
+        id: Date.now(), studentId: newStudent.id, name: name, dars_time: "00:00",
         date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5),
-        status: "Yangi talaba",
-        sum: 0,
-        phone: phone
+        status: "Yangi talaba", sum: 0, phone: phone
     });
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
@@ -160,9 +216,10 @@ function addStudent(event) {
     renderExcelLog();
     updateMoliyaGrid();
     uploadLocalDataToBackend();
+    initPhoneFormatters(); // Formatlagichni qayta yangilash
 }
 
-// 7. O'QUVCHILARI JADVALINI CHIZISH
+// 7. O'QUVCHILAR JADVALINI CHIZISH
 function renderStudents() {
     const rows = document.getElementById('students-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -170,12 +227,14 @@ function renderStudents() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     
     students.forEach((s, i) => {
-        const teacher = teachers.find(t => t.id == s.teacherId);
+        const teacher = teachers.find(t => Number(t.id) === Number(s.teacherId));
+        const teacherNameDisplay = teacher ? teacher.name : "Yo'q";
+
         rows.innerHTML += `
-            <tr>
+            <tr class="student-search-row" data-name="${s.name.toLowerCase()}" data-phone="${s.phone}">
                 <td>${i+1}</td>
                 <td><b>${s.name}</b><br><small>${s.phone}</small></td>
-                <td>${teacher ? teacher.name : "Yo'q"}</td>
+                <td>${teacherNameDisplay}</td>
                 <td>${s.groupName}</td>
                 <td style="color:#fbbf24; font-weight:bold;">${s.balance.toLocaleString()} UZS</td>
                 <td>
@@ -189,7 +248,25 @@ function renderStudents() {
     });
 }
 
-// ➕ O'QUVCHIGA PUL SOLINSA TARIXGA CHIQISH REJIMINI SOZLASH
+function filterStudents() {
+    const searchInput = (document.getElementById('search-student-input') || document.querySelector('[placeholder*="qidirish"]'))?.value.toLowerCase().trim();
+    const rows = document.querySelectorAll('.student-search-row');
+    
+    rows.forEach(row => {
+        const name = row.getAttribute('data-name') || '';
+        const phone = row.getAttribute('data-phone') || '';
+        if (name.includes(searchInput) || phone.includes(searchInput)) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+setTimeout(() => {
+    const inp = document.getElementById('search-student-input') || document.querySelector('[placeholder*="qidirish"]');
+    if (inp) inp.oninput = filterStudents;
+}, 1000);
 function addStudentBalance(studentId) {
     let amount = prompt("To'lov summasini kiriting (UZS):", "200000");
     if (amount === null || amount.trim() === "") return;
@@ -207,22 +284,16 @@ function addStudentBalance(studentId) {
         student.balance += parsedAmount;
         localStorage.setItem('students', JSON.stringify(students));
         
-        // 📝 TO'LOV TARIXI JURNALGA YOZILADI
         const now = new Date();
         let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
         excelLog.push({
-            id: Date.now(),
-            studentId: student.id,
-            name: student.name,
-            dars_time: "00:00",
+            id: Date.now(), studentId: student.id, name: student.name, dars_time: "00:00",
             date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5),
-            status: "To'lov qilindi",
-            sum: parsedAmount,
-            phone: student.phone
+            status: "To'lov qilindi", sum: parsedAmount, phone: student.phone
         });
         localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
-        alert(`✅ To'lov qabul qilindi! +${parsedAmount.toLocaleString()} UZS qo'shildi.`);
+        alert(`✅ To'lov qabul qilindi!`);
         renderStudents();
         renderExcelLog();
         updateMoliyaGrid();
@@ -240,7 +311,7 @@ function deleteStudent(id) {
     uploadLocalDataToBackend();
 }
 
-// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH
+// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH (YUZ FOIZ MINUS BILAN TELEFON CHIQADI)
 function renderExcelLog() {
     const rows = document.getElementById('excel-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -253,7 +324,7 @@ function renderExcelLog() {
 
         if (l.status === 'Keldi') {
             statusBadge = `<span style="background:#28a745; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">✔ Keldi</span>`;
-            sumDisplay = `- ${l.sum.toLocaleString()} UZS`;
+            sumDisplay = `- ${l.sum.toLocaleString()} UZS`; // MINUS BELGISI QAT'IY TURIBDI
             sumColor = "#ff4747";
         } else if (l.status === 'Kelmadi') {
             statusBadge = `<span style="background:#ff4747; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">✖ Kelmadi</span>`;
@@ -269,11 +340,12 @@ function renderExcelLog() {
         }
 
         let displayName = l.status === "To'lov qilindi" ? `${l.name} / + To'lov qilindi` : (l.status === "Yangi talaba" ? `${l.name} / Yangi o'quvchi ro'yxatga olindi` : l.name);
+        let phoneDisplay = l.phone ? `<br><small style="color:#8a8a8a;">Tel: ${l.phone}</small>` : "";
 
         rows.innerHTML += `
             <tr>
                 <td>${i+1}</td>
-                <td><b>${displayName}</b></td>
+                <td><b>${displayName}</b>${phoneDisplay}</td>
                 <td>${l.date || '-'}</td>
                 <td>${statusBadge}</td>
                 <td style="color:${sumColor}; font-weight:bold;">${sumDisplay}</td>
@@ -291,7 +363,7 @@ function deleteLogItem(index) {
     updateMoliyaGrid();
     uploadLocalDataToBackend();
 }
-// 9. MOLIYA PANELINI YANGILASH
+
 function updateMoliyaGrid() {
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     let totalCollected = excelLog
@@ -307,9 +379,8 @@ function updateMoliyaGrid() {
     if (profitEl) profitEl.innerText = centerProfit.toLocaleString() + " UZS";
     if (salaryEl) salaryEl.innerText = teachersSalaryPool.toLocaleString() + " UZS";
 }
-
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (RAQAMLI KUNLAR VA 1 MARTADA SHURTTA YOPISH)
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (GURUHLAR ALOHIDA BLOK BO'LADI)
 // =========================================================================
 let currentTeacher = null;
 
@@ -337,7 +408,6 @@ function initTeacherCabinet() {
 function checkTimeAndLockSystem() {
     if (!currentTeacher) return;
     const now = new Date();
-    
     const daysUz = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
     const currentDayUz = daysUz[now.getDay()];
     const currentDayNum = now.getDay() === 0 ? 7 : now.getDay(); 
@@ -346,7 +416,6 @@ function checkTimeAndLockSystem() {
     const [startH, startM] = currentTeacher.start_time.split(':').map(Number);
     const [endH, endM] = currentTeacher.end_time.split(':').map(Number);
     
-    // AQLLI TEKSHIRUV: (1, 3, 5) shaklidagi raqamlarni va matnlarni baravar tanish tizimi
     let isRightDay = false;
     if (Array.isArray(currentTeacher.allowed_days)) {
         isRightDay = currentTeacher.allowed_days.includes(currentDayUz) || currentTeacher.allowed_days.includes(currentDayNum) || currentTeacher.allowed_days.includes(String(currentDayNum));
@@ -356,7 +425,6 @@ function checkTimeAndLockSystem() {
     }
 
     const isRightTime = currentMinutes >= (startH * 60 + startM) && currentMinutes <= (endH * 60 + endM);
-
     const todayDateStr = now.toLocaleDateString();
     const isAlreadyDoneToday = localStorage.getItem(`davomat_done_${currentTeacher.id}_${todayDateStr}`) === "true";
 
@@ -372,41 +440,77 @@ function checkTimeAndLockSystem() {
             lockMessage.style.display = "block";
             lockMessage.style.color = "#fbbf24";
             lockMessage.style.fontWeight = "bold";
-            lockMessage.style.fontSize = "15px";
             
             if (isAlreadyDoneToday) {
-                lockMessage.innerHTML = `🔒 <b>Bugungi dars davomati muvaffaqiyatli yakunlandi va tizim qulflandi!</b>`;
+                lockMessage.innerHTML = `🔒 <b>Bugungi dars davomati muvaffaqiyatli yakunlandi va guruh qulflandi!</b>`;
             } else {
                 let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
                 if (kunlarMatni.includes('1') || kunlarMatni.includes('3') || kunlarMatni.includes('5')) {
                     kunlarMatni = "Dushanba, Chorshanba, Juma";
                 }
-                lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Ushbu guruh dars kunlari: ${kunlarMatni} | Soat: <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
+                lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari soat <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
             }
         }
     }
 }
 
+// 👨‍🏫 GURUHLARNI ALOHIDA BLOKLARGA BO'LIB PREMIUM CHIZISH
 function renderTeacherStudents() {
-    const rows = document.getElementById('teacher-students-rows') || document.getElementById('students-rows');
-    if (!rows || !currentTeacher) return; rows.innerHTML = "";
+    const mainBox = document.getElementById('teacher-students-rows') || document.getElementById('students-rows') || document.getElementById('davomat-table-container');
+    if (!mainBox || !currentTeacher) return;
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let myStudents = students.filter(s => s.teacherId == currentTeacher.id);
 
-    myStudents.forEach((s, i) => {
-        rows.innerHTML += `
-            <tr>
-                <td>${i+1}</td>
-                <td><b>${s.name}</b><br><small>${s.phone}</small></td>
-                <td><span style="color:#fbbf24; font-weight:bold;">${s.balance.toLocaleString()} UZS</span></td>
-                <td>
-                    <div class="attendance-actions-box" style="display:flex; gap:10px; align-items:center; width:100%;">
-                        <button onclick="doAttendance(${s.id}, 'Keldi')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELDI</button>
-                        <button onclick="doAttendance(${s.id}, 'Kelmadi')" style="background:#ff4747; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELMADI</button>
-                    </div>
-                </td>
-            </tr>
+    // O'quvchilarni guruh nomlari bo'yicha guruhlash (Grouping)
+    let groups = {};
+    myStudents.forEach(s => {
+        let gName = s.groupName || "Asosiy Guruh";
+        if (!groups[gName]) groups[gName] = [];
+        groups[gName].push(s);
+    });
+
+    // Agar ustoz sahifasida jadval konteyneri topilsa ichini butunlay yangilaymiz
+    mainBox.innerHTML = "";
+
+    // Har bir guruh uchun alohida jadval bloki chiziladi
+    Object.keys(groups).forEach(gName => {
+        let studentRowsHtml = "";
+        groups[gName].forEach((s, idx) => {
+            studentRowsHtml += `
+                <tr>
+                    <td>${idx + 1}</td>
+                    <td><b>${s.name}</b><br><small>${s.phone}</small></td>
+                    <td><span style="color:#fbbf24; font-weight:bold;">${s.balance.toLocaleString()} UZS</span></td>
+                    <td>
+                        <div class="attendance-actions-box" style="display:flex; gap:10px; align-items:center; width:100%;">
+                            <button onclick="doAttendance(${s.id}, 'Keldi')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELDI</button>
+                            <button onclick="doAttendance(${s.id}, 'Kelmadi')" style="background:#ff4747; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELMADI</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+
+        mainBox.innerHTML += `
+            <div class="moliya-card" style="margin-bottom:30px; border-color:rgba(245,158,11,0.2); padding:20px; background:rgba(20,16,10,0.4);">
+                <h4 style="color:#fbbf24; font-size:16px; font-weight:800; text-transform:uppercase; margin-bottom:15px; letter-spacing:0.5px;">📦 Guruh Nomi: ${gName}</h4>
+                <div class="excel-wrapper">
+                    <table class="excel-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>O'quvchi Ismi / Telefoni</th>
+                                <th>Mavjud Balansi</th>
+                                <th style="text-align:center;">Kunlik Davomat Amali</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${studentRowsHtml}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         `;
     });
 }
@@ -443,8 +547,6 @@ function doAttendance(studentId, status) {
     uploadLocalDataToBackend();
 }
 
-function filterTeachers() {}
-function filterStudents() {}
 function formatPhoneInput(el) {}
 function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }
 function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }
