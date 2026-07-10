@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-// 2. MA'LUMOTLARNI BACKEND-GA SAQLASH
+// 2. MA'LUMOTLARNI BACKEND-GA SAQLASH (AVTOMATIK SINXRONIZATSIYA)
 async function uploadLocalDataToBackend() {
     let dataToSend = {
         teachers: JSON.parse(localStorage.getItem('teachers')) || [],
@@ -29,7 +29,7 @@ async function uploadLocalDataToBackend() {
         });
         const result = await response.json();
         if (result.success) {
-            console.log("Ma'lumotlar serverga sinxronizatsiya qilindi.");
+            console.log("Ma'lumotlar serverga muvaffaqiyatli sinxronizatsiya qilindi.");
         }
     } catch (error) { console.error("Serverga yuklashda xatolik:", error.message); }
 }
@@ -49,7 +49,6 @@ async function downloadDataFromBackend() {
         }
     } catch (error) { alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message); }
 }
-
 // 4. O'QITUVCHINI QO'SHISH (ADMIN PANEL)
 function addTeacher(event) {
     event.preventDefault();
@@ -78,6 +77,7 @@ function addTeacher(event) {
     updateMoliyaGrid();
     uploadLocalDataToBackend();
 }
+
 // 5. O'QITUVCHILAR JADVALINI CHIZISH
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
@@ -124,8 +124,7 @@ function updateTeacherSelect() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     teachers.forEach(t => { select.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
 }
-
-// 6. O'QUVCHINI QO'SHISH (YANGI O'QUVCHI ARXIVI TARIXGA AVTOMATIK YOZILADI)
+// 6. O'QUVCHINI QO'SHISH (ADMIN PANEL)
 function addStudent(event) {
     event.preventDefault();
     const name = document.getElementById('s-name')?.value.trim();
@@ -155,13 +154,14 @@ function addStudent(event) {
     });
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
-    alert("✅ Yangi o'quvchi ro'yxatga olindi!");
+    alert("✅ Yangi o'quvchi muvaffaqiyatli ro'yxatga olindi!");
     event.target.reset();
     renderStudents();
     renderExcelLog();
     updateMoliyaGrid();
     uploadLocalDataToBackend();
 }
+
 // 7. O'QUVCHILARI JADVALINI CHIZISH
 function renderStudents() {
     const rows = document.getElementById('students-rows');
@@ -189,7 +189,7 @@ function renderStudents() {
     });
 }
 
-// ➕ O'QUVCHIGA PUL SOLINSA TARIXDA CHIQISH REJIMINI SOZLASH
+// ➕ O'QUVCHIGA PUL SOLINSA TARIXGA CHIQISH REJIMINI SOZLASH
 function addStudentBalance(studentId) {
     let amount = prompt("To'lov summasini kiriting (UZS):", "200000");
     if (amount === null || amount.trim() === "") return;
@@ -240,7 +240,7 @@ function deleteStudent(id) {
     uploadLocalDataToBackend();
 }
 
-// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH (TO'LOV VA YANGI O'QUVCHI MATNLARI QO'SHILDI)
+// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH
 function renderExcelLog() {
     const rows = document.getElementById('excel-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -309,7 +309,7 @@ function updateMoliyaGrid() {
 }
 
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (TAYMER JONLI MATNI VA AVTO-QULFLASH)
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (RAQAMLI KUNLAR VA 1 MARTADA SHURTTA YOPISH)
 // =========================================================================
 let currentTeacher = null;
 
@@ -337,14 +337,24 @@ function initTeacherCabinet() {
 function checkTimeAndLockSystem() {
     if (!currentTeacher) return;
     const now = new Date();
+    
     const daysUz = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
     const currentDayUz = daysUz[now.getDay()];
+    const currentDayNum = now.getDay() === 0 ? 7 : now.getDay(); 
 
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const [startH, startM] = currentTeacher.start_time.split(':').map(Number);
     const [endH, endM] = currentTeacher.end_time.split(':').map(Number);
     
-    const isRightDay = currentTeacher.allowed_days.includes(currentDayUz);
+    // AQLLI TEKSHIRUV: (1, 3, 5) shaklidagi raqamlarni va matnlarni baravar tanish tizimi
+    let isRightDay = false;
+    if (Array.isArray(currentTeacher.allowed_days)) {
+        isRightDay = currentTeacher.allowed_days.includes(currentDayUz) || currentTeacher.allowed_days.includes(currentDayNum) || currentTeacher.allowed_days.includes(String(currentDayNum));
+    } else {
+        let daysStr = String(currentTeacher.allowed_days || '');
+        isRightDay = daysStr.includes(currentDayUz) || daysStr.includes(String(currentDayNum));
+    }
+
     const isRightTime = currentMinutes >= (startH * 60 + startM) && currentMinutes <= (endH * 60 + endM);
 
     const todayDateStr = now.toLocaleDateString();
@@ -353,7 +363,6 @@ function checkTimeAndLockSystem() {
     const davomatContainer = document.getElementById('davomat-table-container') || document.querySelector('.excel-wrapper');
     const lockMessage = document.getElementById('lock-message');
 
-    // 🔒 TIZIM VAQTINI AYTIB TURISH VA TUGMALARNI 1 MARTADA BERKITISH SHARTI
     if (isRightDay && isRightTime && !isAlreadyDoneToday) {
         if (davomatContainer) davomatContainer.style.display = "block";
         if (lockMessage) lockMessage.style.display = "none";
@@ -368,7 +377,11 @@ function checkTimeAndLockSystem() {
             if (isAlreadyDoneToday) {
                 lockMessage.innerHTML = `🔒 <b>Bugungi dars davomati muvaffaqiyatli yakunlandi va tizim qulflandi!</b>`;
             } else {
-                lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Ushbu guruh dars kunlari soat <b>${currentTeacher.start_time}</b> da ochiladi va <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
+                let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
+                if (kunlarMatni.includes('1') || kunlarMatni.includes('3') || kunlarMatni.includes('5')) {
+                    kunlarMatni = "Dushanba, Chorshanba, Juma";
+                }
+                lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Ushbu guruh dars kunlari: ${kunlarMatni} | Soat: <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
             }
         }
     }
@@ -398,7 +411,6 @@ function renderTeacherStudents() {
     });
 }
 
-// 🔒 BITTA TUGMA BOSILISHI BILAN BUOYUNGI DARSNI SHU SEKUNDDA QULFLASH
 function doAttendance(studentId, status) {
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
@@ -413,28 +425,22 @@ function doAttendance(studentId, status) {
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     excelLog.push({
-        id: Date.now(),
-        studentId: student.id,
-        name: student.name,
-        dars_time: currentTeacher.start_time,
-        darsTime: currentTeacher.start_time,
-        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5),
-        status: status,
-        sum: pricePerLesson,
-        phone: student.phone
+        id: Date.now(), studentId: student.id, name: student.name, dars_time: currentTeacher.start_time, darsTime: currentTeacher.start_time,
+        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5), status: status, sum: pricePerLesson, phone: student.phone
     });
 
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
-
-    // Bugungi kun uchun qulflash bayrog'ini qo'yish
     localStorage.setItem(`davomat_done_${currentTeacher.id}_${now.toLocaleDateString()}`, "true");
 
-    alert(`Davomat tasdiqlandi: Tizim zunlik bilan qulflanadi.`);
-    
-    renderTeacherStudents();
-    checkTimeAndLockSystem(); // Ekrandagi barcha tugmalarni shubhasiz berkitadi
-    uploadLocalDataToBackend(); // Serverga nusxalash
+    const allBoxes = document.querySelectorAll('.attendance-actions-box');
+    allBoxes.forEach(box => {
+        box.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:14px; background:#1c150a; padding:8px 16px; border-radius:10px; border:1px solid rgba(245,158,11,0.3); display:inline-block; width:100%; text-align:center;">🔒 Davomat Yakunlandi</span>`;
+    });
+
+    alert(`Davomat bajarildi!`);
+    initTeacherCabinet();
+    uploadLocalDataToBackend();
 }
 
 function filterTeachers() {}
