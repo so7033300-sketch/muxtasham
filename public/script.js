@@ -37,47 +37,61 @@ async function uploadLocalDataToBackend() {
     } catch (error) { console.error("Serverga yuklashda xatolik:", error.message); }
 }
 
-// 3. MA'LUMOTLARNI SERVERDAN TIKLASH
-async function downloadDataFromBackend() {
-    if (!confirm("Diqqat! Serverdan yuklasangiz, hozirgi brauzeringizdagi ma'lumotlar o'chib ketadi. Rozimisiz?")) return;
-    try {
-        const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
-        const result = await response.json();
-        if (result.success) {
-            localStorage.setItem('teachers', JSON.stringify(result.teachers || []));
-            localStorage.setItem('students', JSON.stringify(result.students || []));
-            localStorage.setItem('excelLog', JSON.stringify(result.excelLog || []));
-            alert("🟢 Ma'lumotlar serverdan muvaffaqiyatli tiklandi!");
-            window.location.reload();
-        }
-    } catch (error) { alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message); }
-}
-// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH TIZIMI
+// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH (VERGUL MUAMMOSI TO'LIQ TUZATILDI)
 function initPhoneFormatters() {
     const phoneInputs = document.querySelectorAll('#s-phone, #ts-phone, [id*="phone"]');
     phoneInputs.forEach(input => {
         if (!input) return;
-        if (input.value === "" || input.value === "+998 ") input.value = "+998 ";
+        
+        // Boshlang'ich holatda qotirib qo'yish
+        if (input.value === "" || input.value === "+998") {
+            input.value = "+998 ";
+        }
 
         input.addEventListener('input', (e) => {
-            let value = e.target.value.replace(/\D/g, '');
-            if (value.startsWith('998')) value = value.substring(3);
+            let val = e.target.value;
             
-            let parts = value.match(/(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
+            // Agar foydalanuvchi majburlab +998 ni o'chirsa, srazu qaytaramiz
+            if (!val.startsWith("+998")) {
+                e.target.value = "+998 ";
+                return;
+            }
+
+            // Faqat raqamlarni ajratib olish (998 dan keyingi qismini)
+            let digits = val.substring(4).replace(/\D/g, '');
+            
+            // Maksimal 9 ta raqam kiritishga ruxsat (901234567)
+            if (digits.length > 9) {
+                digits = digits.substring(0, 9);
+            }
+
+            // Bo'laklarga ajratib, o'rtasiga faqat probel qo'shish (Vergulsiz!)
             let formatted = "+998 ";
-            if (parts) formatted += parts;
-            if (parts) formatted += " " + parts;
-            if (parts) formatted += " " + parts;
-            if (parts) formatted += " " + parts;
-            
-            e.target.value = formatted.trim();
+            if (digits.length > 0) {
+                formatted += digits.substring(0, 2); // 90
+            }
+            if (digits.length > 2) {
+                formatted += " " + digits.substring(2, 5); // 123
+            }
+            if (digits.length > 5) {
+                formatted += " " + digits.substring(5, 7); // 45
+            }
+            if (digits.length > 7) {
+                formatted += " " + digits.substring(7, 9); // 67
+            }
+
+            e.target.value = formatted;
         });
 
+        // O'chirish (Backspace) tugmasi bosilganda +998 ni o'chirishga yo'l qo'ymaslik
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && e.target.value.length <= 5) e.preventDefault();
+            if (e.key === 'Backspace' && e.target.value.length <= 5) {
+                e.preventDefault();
+            }
         });
     });
 }
+
 
 // 📦 USTOZ TANLANGANDA UNING MAVJUD GURUHLARINI RO'YXAT QILISH TIZIMI
 function initTeacherGroupDropdownSystem() {
