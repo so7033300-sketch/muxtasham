@@ -29,7 +29,7 @@ async function uploadLocalDataToBackend() {
         });
         const result = await response.json();
         if (result.success) {
-            console.log("Ma'lumotlar serverga muvaffaqiyatli sinxronizatsiya qilindi.");
+            console.log("Ma'lumotlar serverga sinxronizatsiya qilindi.");
         }
     } catch (error) { console.error("Serverga yuklashda xatolik:", error.message); }
 }
@@ -49,14 +49,14 @@ async function downloadDataFromBackend() {
         }
     } catch (error) { alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message); }
 }
-// 4. O'QITUVCHINI QO'SHISH (DIQNAN VAQT INPUTLARI ID NOMU TO'G'RILANDI)
+
+// 4. O'QITUVCHINI QO'SHISH (ADMIN PANEL)
 function addTeacher(event) {
     event.preventDefault();
     const name = document.getElementById('teacherName')?.value.trim() || document.getElementById('t-name')?.value.trim();
     const subject = document.getElementById('teacherSubject')?.value.trim() || document.getElementById('t-subject')?.value.trim();
     const group_name = document.getElementById('teacherGroup')?.value.trim() || document.getElementById('t-group')?.value.trim();
     
-    // Qat'iy vaqtni o'qish (Barcha mumkin bo'lgan ID nomlari tekshiriladi)
     const start_time = document.getElementById('startTime')?.value || document.getElementById('t-start')?.value || "14:00";
     const end_time = document.getElementById('endTime')?.value || document.getElementById('t-end')?.value || "16:00";
     
@@ -72,13 +72,12 @@ function addTeacher(event) {
     teachers.push(newTeacher);
     localStorage.setItem('teachers', JSON.stringify(teachers));
 
-    alert("✅ O'qituvchi muvaffaqiyatli qo'shildi! Soat: " + start_time + " dan " + end_time + " gacha etib sozlandi.");
+    alert("✅ O'qituvchi muvaffaqiyatli qo'shildi!");
     event.target.reset();
     renderTeachers();
     updateMoliyaGrid();
     uploadLocalDataToBackend();
 }
-
 // 5. O'QITUVCHILAR JADVALINI CHIZISH
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
@@ -125,7 +124,8 @@ function updateTeacherSelect() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     teachers.forEach(t => { select.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
 }
-// 6. O'QUVCHINI QO'SHISH
+
+// 6. O'QUVCHINI QO'SHISH (YANGI O'QUVCHI ARXIVI TARIXGA AVTOMATIK YOZILADI)
 function addStudent(event) {
     event.preventDefault();
     const name = document.getElementById('s-name')?.value.trim();
@@ -140,14 +140,29 @@ function addStudent(event) {
     students.push(newStudent);
     localStorage.setItem('students', JSON.stringify(students));
     
-    alert("✅ O'quvchi muvaffaqiyatli qo'shildi!");
+    // 📝 YANGI O'QUVCHI TARIXI LOGGA QO'SHILADI
+    const now = new Date();
+    let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
+    excelLog.push({
+        id: Date.now(),
+        studentId: newStudent.id,
+        name: name,
+        dars_time: "00:00",
+        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5),
+        status: "Yangi talaba",
+        sum: 0,
+        phone: phone
+    });
+    localStorage.setItem('excelLog', JSON.stringify(excelLog));
+
+    alert("✅ Yangi o'quvchi ro'yxatga olindi!");
     event.target.reset();
     renderStudents();
+    renderExcelLog();
     updateMoliyaGrid();
     uploadLocalDataToBackend();
 }
-
-// 7. O'QUVCHILAR JADVALINI CHIZISH
+// 7. O'QUVCHILARI JADVALINI CHIZISH
 function renderStudents() {
     const rows = document.getElementById('students-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -174,6 +189,7 @@ function renderStudents() {
     });
 }
 
+// ➕ O'QUVCHIGA PUL SOLINSA TARIXDA CHIQISH REJIMINI SOZLASH
 function addStudentBalance(studentId) {
     let amount = prompt("To'lov summasini kiriting (UZS):", "200000");
     if (amount === null || amount.trim() === "") return;
@@ -191,8 +207,24 @@ function addStudentBalance(studentId) {
         student.balance += parsedAmount;
         localStorage.setItem('students', JSON.stringify(students));
         
+        // 📝 TO'LOV TARIXI JURNALGA YOZILADI
+        const now = new Date();
+        let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
+        excelLog.push({
+            id: Date.now(),
+            studentId: student.id,
+            name: student.name,
+            dars_time: "00:00",
+            date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5),
+            status: "To'lov qilindi",
+            sum: parsedAmount,
+            phone: student.phone
+        });
+        localStorage.setItem('excelLog', JSON.stringify(excelLog));
+
         alert(`✅ To'lov qabul qilindi! +${parsedAmount.toLocaleString()} UZS qo'shildi.`);
         renderStudents();
+        renderExcelLog();
         updateMoliyaGrid();
         uploadLocalDataToBackend();
     }
@@ -208,39 +240,60 @@ function deleteStudent(id) {
     uploadLocalDataToBackend();
 }
 
-// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH (KATTA-KICHIK HARF XATOLARI BARTARAF ETILDI)
+// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH (TO'LOV VA YANGI O'QUVCHI MATNLARI QO'SHILDI)
 function renderExcelLog() {
     const rows = document.getElementById('excel-rows');
     if (!rows) return; rows.innerHTML = "";
     let logs = JSON.parse(localStorage.getItem('excelLog')) || [];
     
     logs.forEach((l, i) => {
-        let isKeldi = l.status === 'Keldi';
-        let statusBadge = isKeldi 
-            ? `<span style="background:#28a745; color:white; padding:4px 10px; border-radius:6px; font-weight:bold;">✔ Keldi</span>`
-            : `<span style="background:#ff4747; color:white; padding:4px 10px; border-radius:6px; font-weight:bold;">✖ Kelmadi</span>`;
-            
-        let currentSum = l.sum || 0;
-        let sumDisplay = isKeldi ? `- ${currentSum.toLocaleString()} UZS` : "0 UZS";
-        let sumColor = isKeldi ? "#ff4747" : "#cbd5e1";
+        let statusBadge = "";
+        let sumDisplay = "0 UZS";
+        let sumColor = "#cbd5e1";
+
+        if (l.status === 'Keldi') {
+            statusBadge = `<span style="background:#28a745; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">✔ Keldi</span>`;
+            sumDisplay = `- ${l.sum.toLocaleString()} UZS`;
+            sumColor = "#ff4747";
+        } else if (l.status === 'Kelmadi') {
+            statusBadge = `<span style="background:#ff4747; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">✖ Kelmadi</span>`;
+            sumDisplay = "0 UZS";
+        } else if (l.status === "To'lov qilindi") {
+            statusBadge = `<span style="background:#ffc107; color:black; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">💵 To'lov</span>`;
+            sumDisplay = `+ ${l.sum.toLocaleString()} UZS`;
+            sumColor = "#28a745";
+        } else if (l.status === "Yangi talaba") {
+            statusBadge = `<span style="background:#007bff; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">👤 Yangi</span>`;
+            sumDisplay = "Ro'yxatga olindi";
+            sumColor = "#007bff";
+        }
+
+        let displayName = l.status === "To'lov qilindi" ? `${l.name} / + To'lov qilindi` : (l.status === "Yangi talaba" ? `${l.name} / Yangi o'quvchi ro'yxatga olindi` : l.name);
 
         rows.innerHTML += `
             <tr>
                 <td>${i+1}</td>
-                <td><b>${l.name}</b></td>
-                <td>Davomat</td>
+                <td><b>${displayName}</b></td>
                 <td>${l.date || '-'}</td>
                 <td>${statusBadge}</td>
                 <td style="color:${sumColor}; font-weight:bold;">${sumDisplay}</td>
-                <td>-</td>
+                <td><button onclick="deleteLogItem(${i})" style="color:#ff4747; background:none; border:none; cursor:pointer;">❌</button></td>
             </tr>
         `;
     });
 }
-// 9. MOLIYA PANELINI YANGILASH (TAQSOMOT BITTA KALIT SO'ZGA BOG'LANDI)
+
+function deleteLogItem(index) {
+    let logs = JSON.parse(localStorage.getItem('excelLog')) || [];
+    logs.splice(index, 1);
+    localStorage.setItem('excelLog', JSON.stringify(logs));
+    renderExcelLog();
+    updateMoliyaGrid();
+    uploadLocalDataToBackend();
+}
+// 9. MOLIYA PANELINI YANGILASH
 function updateMoliyaGrid() {
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    
     let totalCollected = excelLog
         .filter(l => l.status === 'Keldi')
         .reduce((acc, curr) => acc + (curr.sum || 0), 0);
@@ -256,7 +309,7 @@ function updateMoliyaGrid() {
 }
 
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (TAYMER JONLI MATNI VA AVTO-QULFLASH)
 // =========================================================================
 let currentTeacher = null;
 
@@ -297,16 +350,27 @@ function checkTimeAndLockSystem() {
     const todayDateStr = now.toLocaleDateString();
     const isAlreadyDoneToday = localStorage.getItem(`davomat_done_${currentTeacher.id}_${todayDateStr}`) === "true";
 
-    const allButtons = document.querySelectorAll('button');
-    if (!isRightDay || !isRightTime || isAlreadyDoneToday) {
-        allButtons.forEach(btn => {
-            if (btn.innerText.includes('KELDI') || btn.innerText.includes('KELMADI')) {
-                const parentDiv = btn.parentElement;
-                if (parentDiv) {
-                    parentDiv.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:14px; background:#1c150a; padding:8px 16px; border-radius:10px; border:1px solid rgba(245,158,11,0.3); display:inline-block; width:100%; text-align:center;">🔒 Davomat Yakunlandi</span>`;
-                }
+    const davomatContainer = document.getElementById('davomat-table-container') || document.querySelector('.excel-wrapper');
+    const lockMessage = document.getElementById('lock-message');
+
+    // 🔒 TIZIM VAQTINI AYTIB TURISH VA TUGMALARNI 1 MARTADA BERKITISH SHARTI
+    if (isRightDay && isRightTime && !isAlreadyDoneToday) {
+        if (davomatContainer) davomatContainer.style.display = "block";
+        if (lockMessage) lockMessage.style.display = "none";
+    } else {
+        if (davomatContainer) davomatContainer.style.display = "none";
+        if (lockMessage) {
+            lockMessage.style.display = "block";
+            lockMessage.style.color = "#fbbf24";
+            lockMessage.style.fontWeight = "bold";
+            lockMessage.style.fontSize = "15px";
+            
+            if (isAlreadyDoneToday) {
+                lockMessage.innerHTML = `🔒 <b>Bugungi dars davomati muvaffaqiyatli yakunlandi va tizim qulflandi!</b>`;
+            } else {
+                lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Ushbu guruh dars kunlari soat <b>${currentTeacher.start_time}</b> da ochiladi va <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
             }
-        });
+        }
     }
 }
 
@@ -334,7 +398,7 @@ function renderTeacherStudents() {
     });
 }
 
-// DAVOMAT BOSILGANDA KOD BACKEND BILAN ZANJIRLANDI (TARIH GA ANIQ CHUSHADI)
+// 🔒 BITTA TUGMA BOSILISHI BILAN BUOYUNGI DARSNI SHU SEKUNDDA QULFLASH
 function doAttendance(studentId, status) {
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
@@ -348,8 +412,6 @@ function doAttendance(studentId, status) {
     }
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    
-    // Obyekt kalit so'zlari SQL so'roviga moslashtirildi (dars_time va sum)
     excelLog.push({
         id: Date.now(),
         studentId: student.id,
@@ -364,20 +426,18 @@ function doAttendance(studentId, status) {
 
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
+
+    // Bugungi kun uchun qulflash bayrog'ini qo'yish
     localStorage.setItem(`davomat_done_${currentTeacher.id}_${now.toLocaleDateString()}`, "true");
 
-    const allBoxes = document.querySelectorAll('.attendance-actions-box');
-    allBoxes.forEach(box => {
-        box.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:14px; background:#1c150a; padding:8px 16px; border-radius:10px; border:1px solid rgba(245,158,11,0.3); display:inline-block; width:100%; text-align:center;">🔒 Davomat Yakunlandi</span>`;
-    });
-
-    alert(`Davomat bajarildi!`);
-    initTeacherCabinet();
-    uploadLocalDataToBackend(); // Majburiy sinxronlash
+    alert(`Davomat tasdiqlandi: Tizim zunlik bilan qulflanadi.`);
+    
+    renderTeacherStudents();
+    checkTimeAndLockSystem(); // Ekrandagi barcha tugmalarni shubhasiz berkitadi
+    uploadLocalDataToBackend(); // Serverga nusxalash
 }
 
 function filterTeachers() {}
-// Keraksiz qoldiqlarni tozalash funksiyalari
 function filterStudents() {}
 function formatPhoneInput(el) {}
 function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }
