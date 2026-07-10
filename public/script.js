@@ -1,5 +1,5 @@
 // 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
-const RENDER_BACKEND_URL = "https://onrender.com";
+const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
 
 // Tizim yuklanganda JONLI SERVERDAN ma'lumotlarni majburiy tortib olish
 document.addEventListener("DOMContentLoaded", async () => {
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTeacherGroupDropdownSystem();
 });
 
-// BAZADAN TOZA NUSXANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH (MULTIPLE DEVICE REJIM)
+// BAZADAN TOZA NUSXANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH
 async function syncDataFromDatabaseSilently() {
     try {
         const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
@@ -32,22 +32,27 @@ async function syncDataFromDatabaseSilently() {
     } catch (e) { console.error("Jonli sinxronizatsiyada xato:", e.message); }
 }
 
-// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH
+// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH (QAT'IY VA XATOSIZ REJIM)
 async function uploadLocalDataToBackend() {
-    let dataToSend = {
-        teachers: JSON.parse(localStorage.getItem('teachers')) || [],
-        students: JSON.parse(localStorage.getItem('students')) || [],
-        excelLog: JSON.parse(localStorage.getItem('excelLog')) || []
-    };
+    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    let students = JSON.parse(localStorage.getItem('students')) || [];
+    let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
+
+    let dataToSend = { teachers, students, excelLog };
+    
     try {
-        await fetch(`${RENDER_BACKEND_URL}/api/save-all`, {
+        const response = await fetch(`${RENDER_BACKEND_URL}/api/save-all`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dataToSend)
         });
+        const res = await response.json();
+        if (res.success) {
+            console.log("🟢 Ma'lumotlar server bazasiga muhrlandi!");
+        }
     } catch (error) { console.error("Serverga avto-yuklashda xato:", error.message); }
 }
-// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH (VERGULSIZ TOZA PROBELLAR)
+// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH
 function initPhoneFormatters() {
     const phoneInputs = document.querySelectorAll('#s-phone, #ts-phone, [id*="phone"]');
     phoneInputs.forEach(input => {
@@ -112,9 +117,12 @@ function initTeacherGroupDropdownSystem() {
         if (!foundTeacher) return;
 
         let teacherGroups = new Set();
-        if (foundTeacher.group_name) teacherGroups.add(foundTeacher.group_name);
+        let gName = foundTeacher.group_name || foundTeacher.groupName;
+        if (gName) teacherGroups.add(gName);
+        
         students.forEach(s => {
-            if (Number(s.teacherId) === Number(selectedTeacherId) && s.groupName) teacherGroups.add(s.groupName);
+            let sGName = s.groupName || s.group_name;
+            if (Number(s.teacherId) === Number(selectedTeacherId) && sGName) teacherGroups.add(sGName);
         });
 
         groupSelect.innerHTML = '<option value="new_group" selected>➕ Yangi guruh yozish...</option>';
@@ -130,9 +138,11 @@ function initTeacherGroupDropdownSystem() {
         };
     });
 }
-// 4. O'QITUVCHINI QO'SHISH (ADMIN PANEL)
+// 4. O'QITUVCHINI QO'SHISH (YANGILASH ZANJIRI SRAZU BAZAGA ULASH BILAN TO'G'RILANDI)
 async function addTeacher(event) {
     event.preventDefault();
+    
+    // Qurilmalar chalkashmasligi uchun avval oxirgi nusxani tortamiz
     await syncDataFromDatabaseSilently(); 
 
     const name = document.getElementById('teacherName')?.value.trim() || document.getElementById('t-name')?.value.trim();
@@ -147,18 +157,22 @@ async function addTeacher(event) {
     document.querySelectorAll('input[name="t-days"]:checked, input[name="days"]:checked').forEach(cb => allowed_days.push(cb.value));
 
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-    const newTeacher = { id: Date.now(), name, subject, group_name, start_time, end_time, allowed_days, login, pass };
+    const newTeacher = { id: Date.now(), name, subject, group_name, groupName: group_name, start_time, startTime: start_time, end_time, endTime: end_time, allowed_days, allowedDays: allowed_days, login, pass };
+    
     teachers.push(newTeacher);
     localStorage.setItem('teachers', JSON.stringify(teachers));
 
-    alert("✅ O'qituvchi muvaffaqiyatli qo'shildi!");
-    event.target.reset();
+    // ⚡ QAT'IY QOIDA: Formani tozalashdan oldin serverga srazu yuboramiz va saqlanishini kutamiz!
     await uploadLocalDataToBackend(); 
+
+    alert("✅ O'qituvchi muvaffaqiyatli qo'shildi va serverga saqlandi!");
+    event.target.reset();
+    
     renderTeachers();
     updateMoliyaGrid();
 }
 
-// 5. O'QITUVCHILAR JADVALINI CHIZISH (PULLARNI INTEGRATSIYA QILISH TUZATILDI)
+// 5. O'QITUVCHILAR JADVALINI CHIZISH
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -166,9 +180,9 @@ function renderTeachers() {
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
 
     teachers.forEach((t, i) => {
-        let daysDisplay = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
+        let currentAllowedDays = t.allowed_days || t.allowedDays || [];
+        let daysDisplay = Array.isArray(currentAllowedDays) ? currentAllowedDays.join(', ') : String(currentAllowedDays || '');
         
-        // AQLLI QIDIRUV: Keldi ham Kelmadi ham darslardan tushgan pulni faqat shu ustoz ID siga qarab yig'ish!
         let teacherTotalEarned = excelLog
             .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (Number(l.teacherId) === Number(t.id) || Number(l.teacher_id) === Number(t.id)))
             .reduce((sum, current) => sum + (current.sum || 0), 0);
@@ -178,7 +192,7 @@ function renderTeachers() {
         rows.innerHTML += `
             <tr>
                 <td>${i+1}</td>
-                <td><b>${t.name}</b><br><span style="color:#fbbf24">${t.subject}</span><br><small>${t.start_time}-${t.end_time} (${daysDisplay})</small></td>
+                <td><b>${t.name}</b><br><span style="color:#fbbf24">${t.subject}</span><br><small>${t.start_time || t.startTime || '14:00'}-${t.end_time || t.endTime || '16:00'} (${daysDisplay})</small></td>
                 <td>Login: ${t.login}<br>Parol: ${t.pass}</td>
                 <td style="text-align: right; color:#28a745; font-weight:bold; font-size:15px;">${teacherSalary.toLocaleString()} UZS</td>
                 <td><button onclick="deleteTeacher(${t.id})" style="color:#ff4747; background:none; border:none; cursor:pointer; font-weight:bold;">❌ O'chirish</button></td>
@@ -217,7 +231,7 @@ async function addStudent(event) {
     const monthlyPrice = Number(document.getElementById('s-price')?.value) || 200000;
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
-    const newStudent = { id: Date.now(), name, phone, balance, teacherId: teacherId ? Number(teacherId) : null, groupName, monthlyPrice };
+    const newStudent = { id: Date.now(), name, phone, balance, teacherId: teacherId ? Number(teacherId) : null, groupName, group_name: groupName, monthlyPrice, monthly_price: monthlyPrice };
     students.push(newStudent);
     localStorage.setItem('students', JSON.stringify(students));
     
@@ -229,11 +243,12 @@ async function addStudent(event) {
     });
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
+    await uploadLocalDataToBackend(); // Srazu bazaga muhrlash
+
     alert("✅ Yangi o'quvchi ro'yxatga olindi!");
     event.target.reset();
     if (document.getElementById('s-group-select')) document.getElementById('s-group-select').style.display = 'none';
 
-    await uploadLocalDataToBackend();
     renderStudents(); renderExcelLog(); updateMoliyaGrid(); initPhoneFormatters();
 }
 
@@ -252,12 +267,14 @@ function renderStudents() {
         if (s.balance < -150000) rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`;
         else if (s.balance < -100000) textStyle = `style="color: #ff4747 !important;"`;
 
+        let currentGroupName = s.groupName || s.group_name || "Asosiy";
+
         rows.innerHTML += `
             <tr class="student-search-row" ${rowStyle} data-name="${s.name.toLowerCase()}" data-phone="${s.phone}">
                 <td ${textStyle}>${i+1}</td>
                 <td ${textStyle}><b>${s.name}</b><br><small>${s.phone}</small></td>
                 <td ${textStyle}>${teacherNameDisplay}</td>
-                <td ${textStyle}>${s.groupName}</td>
+                <td ${textStyle}>${currentGroupName}</td>
                 <td style="font-weight:bold; ${s.balance < 0 ? 'color:#ff4747;' : 'color:#fbbf24;'}">${s.balance.toLocaleString()} UZS</td>
                 <td>
                     <div style="display:flex; gap:10px;">
@@ -298,9 +315,9 @@ async function addStudentBalance(studentId) {
         });
         localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
-        alert(`✅ To'lov muvaffaqiyatli saqlandi!`);
         await uploadLocalDataToBackend();
         renderStudents(); renderExcelLog(); updateMoliyaGrid();
+        alert(`✅ To'lov muvaffaqiyatli saqlandi!`);
     }
 }
 
@@ -368,7 +385,6 @@ async function initTeacherCabinet() {
     const teacherTitle = document.getElementById('teacher-title-name');
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     
-    // QAT'IY JONLI ID REJIMDA USTOZ SHAXSIY ULUSHINI JONLI CHIZISH
     let myEarned = excelLog
         .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (Number(l.teacherId) === Number(currentTeacher.id) || Number(l.teacher_id) === Number(currentTeacher.id)))
         .reduce((sum, current) => sum + (current.sum || 0), 0);
@@ -385,17 +401,22 @@ function checkTimeAndLockSystem() {
     if (!currentTeacher) return;
     const now = new Date();
     const daysUz = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
-    const currentDayUz = daysUz[now.getDay()]; const currentDayNum = now.getDay() === 0 ? 7 : now.getDay(); 
+    const currentDayUz = daysUz[now.getDay()]; 
+    const currentDayNum = now.getDay() === 0 ? 7 : now.getDay(); 
+
+    let sTime = currentTeacher.start_time || currentTeacher.startTime || "14:00";
+    let eTime = currentTeacher.end_time || currentTeacher.endTime || "16:00";
 
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const [startH, startM] = currentTeacher.start_time.split(':').map(Number);
-    const [endH, endM] = currentTeacher.end_time.split(':').map(Number);
+    const [startH, startM] = sTime.split(':').map(Number);
+    const [endH, endM] = eTime.split(':').map(Number);
     
+    let currentAllowedDays = currentTeacher.allowed_days || currentTeacher.allowedDays || [];
     let isRightDay = false;
-    if (Array.isArray(currentTeacher.allowed_days)) {
-        isRightDay = currentTeacher.allowed_days.includes(currentDayUz) || currentTeacher.allowed_days.includes(currentDayNum) || currentTeacher.allowed_days.includes(String(currentDayNum));
+    if (Array.isArray(currentAllowedDays)) {
+        isRightDay = currentAllowedDays.includes(currentDayUz) || currentAllowedDays.includes(currentDayNum) || currentAllowedDays.includes(String(currentDayNum));
     } else {
-        isRightDay = String(currentTeacher.allowed_days || '').includes(currentDayUz) || String(currentTeacher.allowed_days || '').includes(String(currentDayNum));
+        isRightDay = String(currentAllowedDays).includes(currentDayUz) || String(currentAllowedDays).includes(String(currentDayNum));
     }
 
     const isRightTime = currentMinutes >= (startH * 60 + startM) && currentMinutes <= (endH * 60 + endM);
@@ -403,11 +424,11 @@ function checkTimeAndLockSystem() {
 
     if (lockMessage) {
         lockMessage.style.display = "block"; lockMessage.style.color = "#fbbf24"; lockMessage.style.fontWeight = "bold";
-        let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
+        let kunlarMatni = Array.isArray(currentAllowedDays) ? currentAllowedDays.join(', ') : currentAllowedDays;
         if (String(kunlarMatni).includes('1') || String(kunlarMatni).includes('3') || String(kunlarMatni).includes('5')) kunlarMatni = "Dushanba, Chorshanba, Juma";
         
-        if (isRightDay && isRightTime) lockMessage.innerHTML = `🟢 <b>Dars vaqti faol!</b> Davomat oynalari ochiq. Guruh dars tugashi bilan soat <b>${currentTeacher.end_time}</b> da avtomatik yopiladi.`;
-        else lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari: ${kunlarMatni} | Soat: <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
+        if (isRightDay && isRightTime) lockMessage.innerHTML = `🟢 <b>Dars vaqti faol!</b> Davomat oynalari ochiq. Guruh dars tugashi bilan soat <b>${eTime}</b> da avtomatik yopiladi.`;
+        else lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari: ${kunlarMatni} | Soat: <b>${sTime}-${eTime}</b> da ochiladi.`;
     }
 
     if (!isRightDay || !isRightTime) {
@@ -463,12 +484,13 @@ async function doAttendance(studentId, status) {
     if (!student || !currentTeacher) return;
 
     const now = new Date();
-    let pricePerLesson = Math.round(student.monthlyPrice / 12);
+    let currentMonthlyPrice = student.monthlyPrice || student.monthly_price || 200000;
+    let pricePerLesson = Math.round(currentMonthlyPrice / 12);
     student.balance = student.balance - pricePerLesson;
 
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     excelLog.push({
-        id: Date.now(), studentId: student.id, teacherId: currentTeacher.id, teacher_id: currentTeacher.id, name: student.name, dars_time: currentTeacher.start_time, darsTime: currentTeacher.start_time,
+        id: Date.now(), studentId: student.id, teacherId: currentTeacher.id, teacher_id: currentTeacher.id, name: student.name, dars_time: currentTeacher.start_time || currentTeacher.startTime, darsTime: currentTeacher.start_time || currentTeacher.startTime,
         date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5), status: status, sum: pricePerLesson, phone: student.phone
     });
 
@@ -478,9 +500,9 @@ async function doAttendance(studentId, status) {
     const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
     if (specificBox) specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
 
-    alert(`Davomat tasdiqlandi!`);
     await uploadLocalDataToBackend(); 
     initTeacherCabinet();
+    alert(`Davomat tasdiqlandi!`);
 }
 
 setTimeout(() => { if(typeof initPhoneFormatters === 'function') initPhoneFormatters(); }, 1000);
