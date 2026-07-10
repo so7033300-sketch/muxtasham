@@ -428,7 +428,7 @@ function updateMoliyaGrid() {
 }
 
 // =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (VAQTNI QAT'IY NAZORAT QILISH)
 // =========================================================================
 function initTeacherCabinet() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
@@ -448,9 +448,8 @@ function initTeacherCabinet() {
 
     renderTeacherStudents();
     checkTimeAndLockSystem();
-    setInterval(checkTimeAndLockSystem, 3000);
+    setInterval(checkTimeAndLockSystem, 2000); // Tezkor tekshirish uchun 2 soniya
 }
-
 function checkTimeAndLockSystem() {
     if (!currentTeacher) return;
     const now = new Date();
@@ -472,13 +471,16 @@ function checkTimeAndLockSystem() {
 
     const isRightTime = currentMinutes >= (startH * 60 + startM) && currentMinutes <= (endH * 60 + endM);
     const lockMessage = document.getElementById('lock-message');
-    const allLists = document.querySelectorAll('.guruh-premium-card-box');
+    
+    // HTML dagi barcha ortiqcha static (soxta) jadvallarni va premium bloklarni topish
+    const allLists = document.querySelectorAll('.guruh-premium-card-box, .excel-wrapper, table');
 
     if (isRightDay && isRightTime) {
         if (lockMessage) lockMessage.style.display = "none";
-        allLists.forEach(box => box.style.display = "block");
+        allLists.forEach(box => { if(box.id !== "excel-rows") box.style.display = "block"; });
     } else {
-        allLists.forEach(box => box.style.display = "none");
+        // Vaqt bo'lmasa Hamma jadvallarni va tugmalarni ko'rinmas qilish
+        allLists.forEach(box => { if(box.id !== "excel-rows" && box.parentElement.id !== "excel-rows") box.style.display = "none"; });
         if (lockMessage) {
             lockMessage.style.display = "block";
             lockMessage.style.color = "#fbbf24";
@@ -492,7 +494,6 @@ function checkTimeAndLockSystem() {
     }
 }
 
-// 👨‍🏫 USTRIZ PANELIDAGI RO'YXAT: MINUSGA CHЕKSIZ KЕTISH VA RANG BERISH TIZIMI MUKAMMAL QILINDI
 function renderTeacherStudents() {
     const mainBox = document.getElementById('teacher-students-rows') || document.getElementById('students-rows') || document.getElementById('davomat-table-container');
     if (!mainBox || !currentTeacher) return;
@@ -533,13 +534,12 @@ function renderTeacherStudents() {
                 `;
             }
 
-            // 🔴 SIZ AYTGAN QAT'IY QIZIL RANG TALABLARI SHARTLARI
             let rowStyle = "";
             let textStyle = "";
             if (s.balance < -150000) {
-                rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`; // Ponniy to'q qizil fon
+                rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`;
             } else if (s.balance < -100000) {
-                textStyle = `style="color: #ff4747 !important;"`; // Faqat harflar qizil
+                textStyle = `style="color: #ff4747 !important;"`;
             }
 
             studentRowsHtml += `
@@ -584,7 +584,6 @@ function doAttendance(studentId, status) {
     let pricePerLesson = Math.round(student.monthlyPrice / 12);
 
     if (status === 'Keldi') {
-        // Balans minusga qarab cheksiz ketaveradi (Math.max olib tashlandi)
         student.balance = student.balance - pricePerLesson;
     }
 
@@ -596,9 +595,15 @@ function doAttendance(studentId, status) {
 
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
+    localStorage.setItem(`davomat_done_${currentTeacher.id}_${now.toLocaleDateString()}`, "true");
+
+    const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
+    if (specificBox) {
+        specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
+    }
 
     alert(`Davomat tasdiqlandi!`);
-    renderTeacherStudents(); // Sahifani zumlikda qayta chizib, ranglarni real vaqtda o'zgartirish
+    renderTeacherStudents();
     uploadLocalDataToBackend();
 }
 
