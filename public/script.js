@@ -1,5 +1,5 @@
 // 1. BACKEND SERVER HAVOLASI (X HARFI BILAN MUTLOQ TO'G'RI VARIANT)
-const RENDER_BACKEND_URL = "https://onrender.com";
+const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
 
 // Tizim yuklanganda barcha sahifalar uchun dinamik funksiyalarni ishga tushirish
 document.addEventListener("DOMContentLoaded", () => {
