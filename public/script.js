@@ -1,5 +1,5 @@
 // 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
-const RENDER_BACKEND_URL = "https://onrender.com";
+const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
 
 // Tizim yuklanganda barcha sahifalar uchun dinamik funksiyalarni ishga tushirish
 document.addEventListener("DOMContentLoaded", () => {
@@ -13,10 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
         initTeacherCabinet();
     }
     
-    // Telefon raqami formatlagichni ishga tushirish
     initPhoneFormatters();
-    // Ustoz tanlanganda guruhni avto-to'ldirishni ulash
-    initTeacherGroupAutoFiller();
+    initTeacherGroupDropdownSystem();
 });
 
 // 2. MA'LUMOTLARNI BACKEND-GA SAQLASH
@@ -54,62 +52,91 @@ async function downloadDataFromBackend() {
         }
     } catch (error) { alert("❌ Serverdan yuklashda xatolik yuz berdi: " + error.message); }
 }
-// 📱 TELEFON RAQAMINI +998 90 123 45 67 FORMATIGA AVTOMATIK SOLISH TIZIMI
+// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH TIZIMI
 function initPhoneFormatters() {
     const phoneInputs = document.querySelectorAll('#s-phone, #ts-phone, [id*="phone"]');
-    
     phoneInputs.forEach(input => {
         if (!input) return;
-        
-        // Boshlang'ich qiymat doim +998 bo'lib tursin
-        if (input.value === "" || input.value === "+998 ") {
-            input.value = "+998 ";
-        }
+        if (input.value === "" || input.value === "+998 ") input.value = "+998 ";
 
         input.addEventListener('input', (e) => {
-            let x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.startsWith('998')) value = value.substring(3);
             
-            // Agar foydalanuvchi +998 ni o'chirib tashlamoqchi bo'lsa, qaytarib qo'yamiz
-            if (!x || x[1] !== "998" && e.target.value.length < 5) {
-                e.target.value = "+998 ";
-                return;
-            }
-
-            // Avtomatik probellar bilan chiroyli formatlash
-            let formatted = "+998";
-            if (x[2]) formatted += " " + x[2];
-            if (x[3]) formatted += " " + x[3];
-            if (x[4]) formatted += " " + x[4];
-            if (x[5]) formatted += " " + x[5];
+            let parts = value.match(/(\d{0,2})(\d{0,3})(\d{0,2})(\d{0,2})/);
+            let formatted = "+998 ";
+            if (parts[1]) formatted += parts[1];
+            if (parts[2]) formatted += " " + parts[2];
+            if (parts[3]) formatted += " " + parts[3];
+            if (parts[4]) formatted += " " + parts[4];
             
-            e.target.value = formatted;
+            e.target.value = formatted.trim();
         });
 
-        // O'chirayotganda majburiy qotirish
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && e.target.value.length <= 5) {
-                e.preventDefault();
-            }
+            if (e.key === 'Backspace' && e.target.value.length <= 5) e.preventDefault();
         });
     });
 }
 
-// ✍️ ADMIN PANELDA USTOZ TANLANGANDA UNING GURUH NOMINI AVTOMATIK INPUTGA YOZISH TIZIMI
-function initTeacherGroupAutoFiller() {
+// 📦 USTOZ TANLANGANDA UNING MAVJUD GURUHLARINI RO'YXAT QILISH YOKI YANGI GURUH YOZISH TIZIMI
+function initTeacherGroupDropdownSystem() {
     const teacherSelect = document.getElementById('s-teacher');
     const groupInput = document.getElementById('s-group');
+    if (!teacherSelect || !groupInput) return;
 
-    if (teacherSelect && groupInput) {
-        teacherSelect.addEventListener('change', () => {
-            const selectedTeacherId = teacherSelect.value;
-            let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-            const foundTeacher = teachers.find(t => Number(t.id) === Number(selectedTeacherId));
-            
-            if (foundTeacher && foundTeacher.group_name) {
-                groupInput.value = foundTeacher.group_name; // Guruh nomini avto-to'ldirish
+    let groupSelect = document.getElementById('s-group-select');
+    if (!groupSelect) {
+        groupSelect = document.createElement('select');
+        groupSelect.id = 's-group-select';
+        groupSelect.className = 'premium-input';
+        groupSelect.style.background = '#120e07';
+        groupSelect.style.color = 'white';
+        groupSelect.style.padding = '15px';
+        groupSelect.style.borderRadius = '12px';
+        groupSelect.style.border = '2px solid rgba(255,255,255,0.08)';
+        groupSelect.style.width = '100%';
+        groupSelect.style.marginTop = '8px';
+        groupSelect.style.display = 'none';
+        groupInput.parentElement.appendChild(groupSelect);
+    }
+
+    teacherSelect.addEventListener('change', () => {
+        const selectedTeacherId = teacherSelect.value;
+        let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        
+        const foundTeacher = teachers.find(t => Number(t.id) === Number(selectedTeacherId));
+        if (!foundTeacher) return;
+
+        let teacherGroups = new Set();
+        if (foundTeacher.group_name) teacherGroups.add(foundTeacher.group_name);
+        
+        students.forEach(s => {
+            if (Number(s.teacherId) === Number(selectedTeacherId) && s.groupName) {
+                teacherGroups.add(s.groupName);
             }
         });
-    }
+
+        groupSelect.innerHTML = '<option value="new_group" selected>➕ Yangi guruh yozish...</option>';
+        teacherGroups.forEach(g => {
+            groupSelect.innerHTML += `<option value="${g}">📦 Mavjud guruh: ${g}</option>`;
+        });
+
+        groupSelect.style.display = 'block';
+        groupInput.placeholder = "Yangi guruh nomini yozing";
+        groupInput.value = "";
+
+        groupSelect.onchange = () => {
+            if (groupSelect.value === 'new_group') {
+                groupInput.style.display = 'block';
+                groupInput.value = "";
+                groupInput.focus();
+            } else {
+                groupInput.value = groupSelect.value;
+            }
+        };
+    });
 }
 // 4. O'QITUVCHINI QO'SHISH (ADMIN PANEL)
 function addTeacher(event) {
@@ -150,7 +177,6 @@ function renderTeachers() {
 
     teachers.forEach((t, i) => {
         let daysDisplay = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : String(t.allowed_days || '');
-        
         let teacherTotalEarned = excelLog
             .filter(l => l.status === 'Keldi' && (l.dars_time === t.start_time || l.darsTime === t.start_time))
             .reduce((sum, current) => sum + (current.sum || 0), 0);
@@ -186,6 +212,7 @@ function updateTeacherSelect() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     teachers.forEach(t => { select.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
 }
+
 // 6. O'QUVCHINI QO'SHISH (ADMIN PANEL)
 function addStudent(event) {
     event.preventDefault();
@@ -195,6 +222,11 @@ function addStudent(event) {
     const teacherId = document.getElementById('s-teacher')?.value;
     const groupName = document.getElementById('s-group')?.value.trim();
     const monthlyPrice = Number(document.getElementById('s-price')?.value) || 200000;
+
+    if (!groupName || groupName === "") {
+        alert("⚠️ Iltimos guruh nomini tanlang yoki yangi guruh yozing!");
+        return;
+    }
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
     const newStudent = { id: Date.now(), name, phone, balance, teacherId: teacherId ? Number(teacherId) : null, groupName, monthlyPrice };
@@ -212,13 +244,16 @@ function addStudent(event) {
 
     alert("✅ Yangi o'quvchi muvaffaqiyatli ro'yxatga olindi!");
     event.target.reset();
+    
+    const gSelect = document.getElementById('s-group-select');
+    if (gSelect) gSelect.style.display = 'none';
+
     renderStudents();
     renderExcelLog();
     updateMoliyaGrid();
     uploadLocalDataToBackend();
-    initPhoneFormatters(); // Formatlagichni qayta yangilash
+    initPhoneFormatters();
 }
-
 // 7. O'QUVCHILAR JADVALINI CHIZISH
 function renderStudents() {
     const rows = document.getElementById('students-rows');
@@ -251,7 +286,6 @@ function renderStudents() {
 function filterStudents() {
     const searchInput = (document.getElementById('search-student-input') || document.querySelector('[placeholder*="qidirish"]'))?.value.toLowerCase().trim();
     const rows = document.querySelectorAll('.student-search-row');
-    
     rows.forEach(row => {
         const name = row.getAttribute('data-name') || '';
         const phone = row.getAttribute('data-phone') || '';
@@ -263,23 +297,14 @@ function filterStudents() {
     });
 }
 
-setTimeout(() => {
-    const inp = document.getElementById('search-student-input') || document.querySelector('[placeholder*="qidirish"]');
-    if (inp) inp.oninput = filterStudents;
-}, 1000);
 function addStudentBalance(studentId) {
     let amount = prompt("To'lov summasini kiriting (UZS):", "200000");
     if (amount === null || amount.trim() === "") return;
-    
     let parsedAmount = Math.abs(Number(amount));
-    if (isNaN(parsedAmount) || parsedAmount === 0) {
-        alert("Iltimos, to'g'ri summa kiriting!");
-        return;
-    }
+    if (isNaN(parsedAmount) || parsedAmount === 0) return;
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let student = students.find(s => s.id == studentId);
-    
     if (student) {
         student.balance += parsedAmount;
         localStorage.setItem('students', JSON.stringify(students));
@@ -311,7 +336,7 @@ function deleteStudent(id) {
     uploadLocalDataToBackend();
 }
 
-// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH (YUZ FOIZ MINUS BILAN TELEFON CHIQADI)
+// 8. EXCEL DAVOMAT LOG JURNALINI CHIZISH
 function renderExcelLog() {
     const rows = document.getElementById('excel-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -324,7 +349,7 @@ function renderExcelLog() {
 
         if (l.status === 'Keldi') {
             statusBadge = `<span style="background:#28a745; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">✔ Keldi</span>`;
-            sumDisplay = `- ${l.sum.toLocaleString()} UZS`; // MINUS BELGISI QAT'IY TURIBDI
+            sumDisplay = `- ${l.sum.toLocaleString()} UZS`;
             sumColor = "#ff4747";
         } else if (l.status === 'Kelmadi') {
             statusBadge = `<span style="background:#ff4747; color:white; padding:4px 10px; border-radius:6px; font-weight:bold; font-size:12px;">✖ Kelmadi</span>`;
@@ -363,7 +388,6 @@ function deleteLogItem(index) {
     updateMoliyaGrid();
     uploadLocalDataToBackend();
 }
-
 function updateMoliyaGrid() {
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     let totalCollected = excelLog
@@ -379,11 +403,10 @@ function updateMoliyaGrid() {
     if (profitEl) profitEl.innerText = centerProfit.toLocaleString() + " UZS";
     if (salaryEl) salaryEl.innerText = teachersSalaryPool.toLocaleString() + " UZS";
 }
-// =========================================================================
-// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI (GURUHLAR ALOHIDA BLOK BO'LADI)
-// =========================================================================
-let currentTeacher = null;
 
+// =========================================================================
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI
+// =========================================================================
 function initTeacherCabinet() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
     if (!loggedInUser) return;
@@ -425,75 +448,84 @@ function checkTimeAndLockSystem() {
     }
 
     const isRightTime = currentMinutes >= (startH * 60 + startM) && currentMinutes <= (endH * 60 + endM);
-    const todayDateStr = now.toLocaleDateString();
-    const isAlreadyDoneToday = localStorage.getItem(`davomat_done_${currentTeacher.id}_${todayDateStr}`) === "true";
-
-    const davomatContainer = document.getElementById('davomat-table-container') || document.querySelector('.excel-wrapper');
     const lockMessage = document.getElementById('lock-message');
+    const allLists = document.querySelectorAll('.guruh-premium-card-box');
 
-    if (isRightDay && isRightTime && !isAlreadyDoneToday) {
-        if (davomatContainer) davomatContainer.style.display = "block";
+    // 🔒 JONLI TAYMER: Dars vaqti bo'lmasa umumiy qulflash matnini aytib turish
+    if (isRightDay && isRightTime) {
         if (lockMessage) lockMessage.style.display = "none";
+        allLists.forEach(box => box.style.display = "block");
     } else {
-        if (davomatContainer) davomatContainer.style.display = "none";
+        allLists.forEach(box => box.style.display = "none");
         if (lockMessage) {
             lockMessage.style.display = "block";
             lockMessage.style.color = "#fbbf24";
             lockMessage.style.fontWeight = "bold";
-            
-            if (isAlreadyDoneToday) {
-                lockMessage.innerHTML = `🔒 <b>Bugungi dars davomati muvaffaqiyatli yakunlandi va guruh qulflandi!</b>`;
-            } else {
-                let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
-                if (kunlarMatni.includes('1') || kunlarMatni.includes('3') || kunlarMatni.includes('5')) {
-                    kunlarMatni = "Dushanba, Chorshanba, Juma";
-                }
-                lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari soat <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
+            let kunlarMatni = Array.isArray(currentTeacher.allowed_days) ? currentTeacher.allowed_days.join(', ') : currentTeacher.allowed_days;
+            if (kunlarMatni.includes('1') || kunlarMatni.includes('3') || kunlarMatni.includes('5')) {
+                kunlarMatni = "Dushanba, Chorshanba, Juma";
             }
+            lockMessage.innerHTML = `🔒 <b>Tizim qulflangan!</b> Guruh dars kunlari soat <b>${currentTeacher.start_time}-${currentTeacher.end_time}</b> da ochiladi.`;
         }
     }
 }
 
-// 👨‍🏫 GURUHLARNI ALOHIDA BLOKLARGA BO'LIB PREMIUM CHIZISH
+// 👨‍🏫 O'QUVCHILAR RO'YXATINI DOIMO CHIZISH VA INDIVIDUAL TUGMALARNI QULFLASH
 function renderTeacherStudents() {
     const mainBox = document.getElementById('teacher-students-rows') || document.getElementById('students-rows') || document.getElementById('davomat-table-container');
     if (!mainBox || !currentTeacher) return;
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let myStudents = students.filter(s => s.teacherId == currentTeacher.id);
+    let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
+    const todayDateStr = new Date().toLocaleDateString();
 
-    // O'quvchilarni guruh nomlari bo'yicha guruhlash (Grouping)
     let groups = {};
     myStudents.forEach(s => {
-        let gName = s.groupName || "Asosiy Guruh";
+        let gName = s.groupName || s.group_name || "Asosiy Guruh";
         if (!groups[gName]) groups[gName] = [];
         groups[gName].push(s);
     });
 
-    // Agar ustoz sahifasida jadval konteyneri topilsa ichini butunlay yangilaymiz
     mainBox.innerHTML = "";
 
-    // Har bir guruh uchun alohida jadval bloki chiziladi
     Object.keys(groups).forEach(gName => {
         let studentRowsHtml = "";
         groups[gName].forEach((s, idx) => {
+            
+            // QAT'IY QOIDA: Shu o'quvchiga bugun allaqachon davomat urilganmi yoki yo'qligini qidirish
+            const isStudentDoneToday = excelLog.some(l => 
+                Number(l.studentId) === Number(s.id) && 
+                l.date.startsWith(todayDateStr) && 
+                (l.status === 'Keldi' || l.status === 'Kelmadi')
+            );
+
+            let actionCellHtml = "";
+            if (isStudentDoneToday) {
+                // Agar o'quvchiga bosilgan bo'lsa faqat uni o'zi "🔒 Yakunlandi" bo'ladi
+                actionCellHtml = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
+            } else {
+                // Bosilmagan bo'lsa tugmalar doimo ochiq turadi
+                actionCellHtml = `
+                    <div class="individual-btn-box-${s.id}" style="display:flex; gap:10px; align-items:center; width:100%;">
+                        <button onclick="doAttendance(${s.id}, 'Keldi')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELDI</button>
+                        <button onclick="doAttendance(${s.id}, 'Kelmadi')" style="background:#ff4747; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELMADI</button>
+                    </div>
+                `;
+            }
+
             studentRowsHtml += `
                 <tr>
                     <td>${idx + 1}</td>
                     <td><b>${s.name}</b><br><small>${s.phone}</small></td>
                     <td><span style="color:#fbbf24; font-weight:bold;">${s.balance.toLocaleString()} UZS</span></td>
-                    <td>
-                        <div class="attendance-actions-box" style="display:flex; gap:10px; align-items:center; width:100%;">
-                            <button onclick="doAttendance(${s.id}, 'Keldi')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELDI</button>
-                            <button onclick="doAttendance(${s.id}, 'Kelmadi')" style="background:#ff4747; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELMADI</button>
-                        </div>
-                    </td>
+                    <td>${actionCellHtml}</td>
                 </tr>
             `;
         });
 
         mainBox.innerHTML += `
-            <div class="moliya-card" style="margin-bottom:30px; border-color:rgba(245,158,11,0.2); padding:20px; background:rgba(20,16,10,0.4);">
+            <div class="guruh-premium-card-box moliya-card" style="margin-bottom:30px; border-color:rgba(245,158,11,0.2); padding:20px; background:rgba(20,16,10,0.4);">
                 <h4 style="color:#fbbf24; font-size:16px; font-weight:800; text-transform:uppercase; margin-bottom:15px; letter-spacing:0.5px;">📦 Guruh Nomi: ${gName}</h4>
                 <div class="excel-wrapper">
                     <table class="excel-table">
@@ -535,19 +567,19 @@ function doAttendance(studentId, status) {
 
     localStorage.setItem('students', JSON.stringify(students));
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
-    localStorage.setItem(`davomat_done_${currentTeacher.id}_${now.toLocaleDateString()}`, "true");
 
-    const allBoxes = document.querySelectorAll('.attendance-actions-box');
-    allBoxes.forEach(box => {
-        box.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:14px; background:#1c150a; padding:8px 16px; border-radius:10px; border:1px solid rgba(245,158,11,0.3); display:inline-block; width:100%; text-align:center;">🔒 Davomat Yakunlandi</span>`;
-    });
+    // O'quvchi tugmalar qutisini o'sha zahoti o'zgartirish
+    const specificBox = document.querySelector(`.individual-btn-box-${studentId}`);
+    if (specificBox) {
+        specificBox.parentElement.innerHTML = `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`;
+    }
 
-    alert(`Davomat bajarildi!`);
-    initTeacherCabinet();
+    alert(`Davomat tasdiqlandi: ${student.name} -> ${status}.`);
+    renderTeacherStudents();
     uploadLocalDataToBackend();
 }
 
+setTimeout(() => { if(typeof initPhoneFormatters === 'function') initPhoneFormatters(); }, 1000);
 function formatPhoneInput(el) {}
 function scrolltoExcelLog() { document.getElementById('excel-rows')?.scrollIntoView({ behavior: 'smooth' }); }
 function resetCurrentMonthMoliya() { if(confirm("Tozalash?")) { localStorage.setItem('students', '[]'); window.location.reload(); } }
-function clearAllLogs() { if(confirm("O'chirish?")) { localStorage.setItem('excelLog', '[]'); window.location.reload(); } }
