@@ -1,10 +1,15 @@
 const API_URL = '/api';
 
+// Tizimga xavfsiz va sahifa yangilanmasdan kirish funksiyasi
 window.executeLogin = async function() {
     const login = document.getElementById('loginInput').value;
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
-    if(!login || !password) return alert("Iltimos, login va parolni to'liq kiriting!");
+    
+    if(!login || !password) {
+        alert("Iltimos, login va parolni to'liq kiriting!");
+        return;
+    }
     
     try {
         const response = await fetch(`${API_URL}/login`, {
@@ -13,9 +18,11 @@ window.executeLogin = async function() {
             body: JSON.stringify({ login, password })
         });
         const data = await response.json();
+        
         if (data.success) {
-            if (data.role === 'admin') window.location.href = '/admin.html';
-            else if (data.role === 'teacher') {
+            if (data.role === 'admin') {
+                window.location.href = '/admin.html';
+            } else if (data.role === 'teacher') {
                 localStorage.setItem('teacherId', data.teacherId);
                 window.location.href = '/ustoz.html';
             }
@@ -23,21 +30,29 @@ window.executeLogin = async function() {
             errorDiv.style.display = 'block';
             errorDiv.innerText = data.message;
         }
-    } catch (err) { errorDiv.style.display = 'block'; errorDiv.innerText = "Server bilan aloqa uzildi!"; }
+    } catch (err) {
+        errorDiv.style.display = 'block';
+        errorDiv.innerText = "Server bilan aloqa uzildi!";
+    }
 }
 
-window.logout = function() { localStorage.clear(); window.location.href = '/index.html'; }
-
+window.logout = function() {
+    localStorage.clear();
+    window.location.href = '/index.html';
+}
 let allStudents = [];
 let allTeachers = [];
 
+// Admin panelidagi barcha ma'lumotlarni serverdan yuklash
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
         const data = await response.json();
+        
         allStudents = data.students || [];
         allTeachers = data.teachers || [];
         
+        // Dinamik ravishda o'quvchi qo'shish joyiga ustozlarni joylash
         const teacherSelect = document.getElementById('studTeacher');
         if (teacherSelect) {
             teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga qo\'shish...</option>';
@@ -45,14 +60,23 @@ async function loadDashboardData() {
                 teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`;
             });
         }
+
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
         renderTeachers(allTeachers);
-        if (document.getElementById('centerProfitDisplay')) document.getElementById('centerProfitDisplay').innerText = `${(data.center_profit || 0).toLocaleString()} so'm`;
-    } catch (err) { console.error(err); }
+
+        // Serverdan kelayotgan markaz foydasini ekranga chiqarish
+        const centerProfit = data.center_profit || 0;
+        const profitDisplay = document.getElementById('centerProfitDisplay');
+        if (profitDisplay) {
+            profitDisplay.innerText = `${centerProfit.toLocaleString()} so'm`;
+        }
+    } catch (err) {
+        console.error("Ma'lumotlarni yuklashda xatolik yuz berdi!");
+    }
 }
 
-// USTOZ TANLANGANDA MA'LUMOTLARNI UNIKAL FILTRLASH
+// USTOZ TANLANGANDA GURUH OPTIONLARINI JAVASCRIPTDA SILLIQ FILTRLASH
 window.onTeacherSelected = function() {
     const teacherId = document.getElementById('studTeacher').value;
     const container = document.getElementById('groupSelectionContainer');
@@ -63,7 +87,7 @@ window.onTeacherSelected = function() {
 
     const teacherGroups = [];
     allStudents.forEach(s => {
-        if (s.teacherId === teacherId && s.groupName && !teacherGroups.includes(s.groupName)) {
+        if (s.teacherId === teacherId && s.groupName && s.groupName !== "undefined" && !teacherGroups.includes(s.groupName)) {
             teacherGroups.push(s.groupName);
         }
     });
@@ -93,15 +117,16 @@ window.toggleGroupMode = function() {
         document.getElementById('newGroupWrapper').style.display = 'block';
     }
 }
+
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
 }
-
 function renderStudents(students) {
     const tbody = document.getElementById('studentsTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
+    
     students.forEach(s => {
         const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
         const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
@@ -127,23 +152,27 @@ function renderStudents(students) {
 
 function renderAttendance(attendance) {
     const tbody = document.getElementById('attendanceTableBody');
-    if (!tbody) return; tbody.innerHTML = '';
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
     attendance.slice().reverse().forEach(a => {
-        const badge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
-        tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.studentName}</td><td>${a.teacherName}</td><td>${badge}</td></tr>`;
+        const statusBadge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
+        tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.studentName}</td><td>${a.teacherName}</td><td>${statusBadge}</td></tr>`;
     });
 }
 
-// Ustozlar ro'yxatida amallar qismi to'liq tiklandi
 function renderTeachers(teachers) {
     const tbody = document.getElementById('teachersTableBody');
-    if (!tbody) return; tbody.innerHTML = '';
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
     teachers.forEach(t => {
+        const daysText = Array.isArray(t.days) ? t.days.join(', ') : t.days;
         tbody.innerHTML += `
             <tr>
                 <td><strong>${t.name}</strong></td>
                 <td>${t.subject}</td>
-                <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td>
+                <td>${daysText} (${t.timeStart}-${t.timeEnd})</td>
                 <td><span class="status-badge status-paid">${t.salary.toLocaleString()} so'm</span></td>
                 <td><code>${t.login} / ${t.password}</code></td>
                 <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteTeacher('${t.id}')">O'chirish</button></td>
@@ -175,7 +204,11 @@ async function saveStudent(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
     });
-    if (response.ok) { document.getElementById('studentForm').reset(); document.getElementById('groupSelectionContainer').style.display='none'; loadDashboardData(); }
+    if (response.ok) { 
+        document.getElementById('studentForm').reset(); 
+        document.getElementById('groupSelectionContainer').style.display='none'; 
+        loadDashboardData(); 
+    }
 }
 
 async function saveTeacher(e) {
@@ -186,8 +219,10 @@ async function saveTeacher(e) {
     const timeEnd = document.getElementById('teachTimeEnd').value;
     const login = document.getElementById('teachLogin').value;
     const password = document.getElementById('teachPass').value;
+    
     const checked = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
-    const days = []; checked.forEach(b => days.push(b.value));
+    const days = []; 
+    checked.forEach(b => days.push(b.value));
     if (days.length === 0) return alert("Iltimos, dars kunini tanlang!");
 
     const response = await fetch(`${API_URL}/teachers`, {
@@ -195,25 +230,37 @@ async function saveTeacher(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
     });
-    if (response.ok) { document.getElementById('teacherForm').reset(); loadDashboardData(); }
+    if (response.ok) { 
+        document.getElementById('teacherForm').reset(); 
+        loadDashboardData(); 
+    }
 }
 
 async function makePayment(studentId) {
     const amt = document.getElementById(`pay_${studentId}`).value;
     if (!amt || amt <= 0) return alert("To'g'ri summa kiriting!");
-    const response = await fetch(`${API_URL}/students/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentId, amount: amt }) });
+    
+    const response = await fetch(`${API_URL}/students/pay`, { 
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' }, 
+        body: JSON.stringify({ studentId, amount: amt }) 
+    });
     if (response.ok) loadDashboardData();
 }
 
 window.deleteTeacher = async function(id) {
-    if (confirm("O'qituvchini o'chirmoqchimisiz?")) { await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); loadDashboardData(); }
+    if (confirm("O'qituvchini tizimdan butunlay o'chirmoqchimisiz?")) { 
+        await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); 
+        loadDashboardData(); 
+    }
 }
 
 async function clearData(type) {
-    if (confirm("Tozalansinmi?")) { await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); loadDashboardData(); }
+    if (confirm("Haqiqatdan ham ushbu ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) { 
+        await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); 
+        loadDashboardData(); 
+    }
 }
-
-// --- O'QITUVCHI PANEL LOGIKASI ---
 const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
 
 async function loadTeacherDashboard() {
@@ -234,7 +281,7 @@ async function loadTeacherDashboard() {
 
         const isLessonTime = checkLessonTime(teacher);
         
-        // FAQAT USHBU USTOZNING SHAXSIY GURUHIDAGI BOLALARNI FILTRLASH
+        // FAQAT USHBU USTOZNING SHAXSIY GURUHIDAGI BOLALARNL FILTRLASH
         const filteredStudents = (data.students || []).filter(s => s.teacherId === currentTeacherId);
         renderTeacherStudents(filteredStudents, isLessonTime, currentTeacherId);
     } catch (err) { console.error(err); }
@@ -305,7 +352,10 @@ async function submitAttendance(studentId, status, teacherId) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ teacherId, studentId, status })
         });
-        if (response.ok) { alert("Davomat saqlandi, tugmalar muzlatildi!"); loadTeacherDashboard(); }
+        if (response.ok) { 
+            alert("Davomat saqlandi, tugmalar muzlatildi!"); 
+            loadTeacherDashboard(); 
+        }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
