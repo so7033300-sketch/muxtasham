@@ -139,7 +139,25 @@ app.delete('/api/clear/:type', (req, res) => {
     res.json({ success: true });
 });
 
-app.get('/api/data', (req, res) => res.json(readDB()));
+app.get('/api/data', (req, res) => {
+    const db = readDB();
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    // Har bir o'quvchi bugun darsda belgilanganmi yoki yo'qligini aniqlash
+    const updatedStudents = db.students.map(student => {
+        const hasAttendedToday = db.attendance.some(att => 
+            att.date === todayStr && 
+            att.studentName === student.name
+        );
+        return { ...student, attendedToday: hasAttendedToday };
+    });
+
+    res.json({
+        students: updatedStudents,
+        teachers: db.teachers,
+        attendance: db.attendance
+    });
+});
 
 // --- HTML SAHIFALARNI TO'G'RI YONALISHI (ROUTING) ---
 app.get('/', (req, res) => {
@@ -165,6 +183,7 @@ schedule.scheduleJob('0 0 1 * *', function(){
     if (db.history.center_profit.length > 3) db.history.center_profit.shift();
     writeDB(db);
 });
+
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server ${PORT}-portda yonib turibdi!`));
