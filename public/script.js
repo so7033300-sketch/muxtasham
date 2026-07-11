@@ -1,8 +1,6 @@
 // Render serveringizning mutlaq to'liq manzili
 const API_URL = 'https://muxtasham-jgqv.onrender.com';
 
-// Render serveringizning mutlaq to'liq manzili
-const API_URL = 'https://onrender.com';
 
 // Funksiyani global window obyektiga bog'laymiz (Tugma 100% ishlashi uchun)
 window.executeLogin = async function() {
