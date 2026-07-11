@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - EduManage CRM</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
     <style>
         body { align-items: flex-start; }
         .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
@@ -20,7 +20,7 @@
 
     <div class="dashboard-container">
         
-        <!-- Yuqori boshqaruv paneli -->
+        <!-- Yuqori Boshqaruv Qismi (Header) -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div class="input-group search-box">
@@ -28,7 +28,8 @@
             </div>
             <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
         </div>
-        <!-- Ma'lumotlarni kiritish oynalari (Grid layout) -->
+
+        <!-- Ma'lumot Kiritish Formallari (Grid layout) -->
         <div class="grid-2">
             
             <!-- Yangi O'quvchi Qo'shish Oynasi -->
@@ -98,6 +99,7 @@
             </div>
 
         </div>
+
         <!-- Barcha O'quvchilar Jadvali -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
@@ -122,6 +124,7 @@
                 </table>
             </div>
         </div>
+
         <!-- Kunlik Davomat Tarixi Jadvali -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
@@ -145,7 +148,7 @@
             </div>
         </div>
 
-        <!-- O'qituvchilar Balansi Jadvali -->
+        <!-- O'qituvchilar Ro'yxati Jadvali -->
         <div class="card glass-container" style="max-width: 100%;">
             <h3>O'qituvchilar Ro'yxati va Ularning Balansi</h3>
             <div class="table-responsive">
@@ -167,7 +170,8 @@
         </div>
 
     </div>
-    <!-- Script faylini ulash qismi -->
-    <script src="script.js"></script>
+
+    <!-- Tashqi dinamik boshqaruv skript fayli -->
+    <script src="/script.js"></script>
 </body>
 </html>
