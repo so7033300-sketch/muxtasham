@@ -113,6 +113,7 @@ function renderAttendance(attendance) {
     });
 }
 
+// O'qituvchilar ro'yxatini jadvalga o'chirish tugmasi bilan chiqarish
 function renderTeachers(teachers) {
     const tbody = document.getElementById('teachersTableBody');
     if (!tbody) return;
@@ -127,10 +128,14 @@ function renderTeachers(teachers) {
                 <td>${daysText} (${t.timeStart}-${t.timeEnd})</td>
                 <td><span class="status-badge status-paid" style="background:rgba(56, 189, 248, 0.2); color:#38bdf8;">${t.salary.toLocaleString()} so'm</span></td>
                 <td><code>${t.login} / ${t.password}</code></td>
+                <td>
+                    <button class="btn danger-btn" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="deleteTeacher('${t.id}')">O'chirish</button>
+                </td>
             </tr>
         `;
     });
 }
+
 async function saveStudent(e) {
     e.preventDefault();
     const name = document.getElementById('studName').value;
