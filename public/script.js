@@ -1,5 +1,5 @@
 // Render server manzili (Mahalliy yo'nalish xatosiz ishlashi uchun)
-const API_URL = 'https://onrender.com';
+const API_URL = 'https://muxtasham-jgqv.onrender.com';
 
 // Tizimga kirish (Login) funksiyasi
 async function handleLogin(e) {
