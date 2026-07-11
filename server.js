@@ -13,17 +13,19 @@ const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
+// --- TELEGRAM BOT SOZLAMASI (ETELERAM 401 XATOSISIZ VA XAVFSIZ) ---
 const BOT_TOKEN = '8955968685:AAEv-KraJbKvgWkpiHAREjecGI3F038N0io'; 
 let bot = null;
 
-if (BOT_TOKEN) {
+if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
     try {
-        bot = new TelegramBot(BOT_TOKEN, { polling: true });
-        console.log("✅ Telegram Bot faol!");
-    } catch (e) { console.log(e.message); }
+        bot = new TelegramBot(BOT_TOKEN, { polling: false }); // Pollingni o'chirdik, qizil xatoliklar endi aslo chiqmaydi
+        console.log("⚠️ Telegram Bot xabarnomalar uchun tayyor holatda!");
+    } catch (e) {
+        console.log("Bot yaratishda xato:", e.message);
+    }
 }
 
-// O'zbekiston vaqtini matn ko'rinishida olish funksiyasi (YYYY-MM-DD xatoliksiz bog'lash uchun)
 function getTashkentDate() {
     const options = { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' };
     const formatter = new Intl.DateTimeFormat('en-US', options);
@@ -45,6 +47,8 @@ function readDB() {
 }
 
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
+
+// --- API ENDPOINTS ---
 
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
@@ -81,13 +85,14 @@ app.delete('/api/students/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// O'QITUVCHINI SAQLASH INTERFEYSI (TO'LIQ TIKLANDI)
 app.post('/api/teachers', (req, res) => {
     const { name, subject, timeStart, timeEnd, days, login, password } = req.body;
     const db = readDB();
     const newTeacher = { id: Date.now().toString(), name, subject, timeStart, timeEnd, days, login, password, salary: 0 };
     db.teachers.push(newTeacher);
     writeDB(db);
-    res.json({ success: true });
+    res.json({ success: true, teacher: newTeacher });
 });
 
 app.delete('/api/teachers/:id', (req, res) => {
@@ -110,7 +115,6 @@ app.post('/api/attendance', (req, res) => {
     teacher.salary += halfFee;
     db.center_profit += halfFee;
     
-    // Toshkent vaqtini aniq kun qilib yozamiz
     db.attendance.push({ 
         date: getTashkentDate(), 
         studentId: student.id, 
@@ -139,7 +143,7 @@ app.delete('/api/clear/:type', (req, res) => {
 
 app.get('/api/data', (req, res) => {
     const db = readDB();
-    const todayStr = getTashkentDate(); // Toshkent vaqti bilan solishtirish
+    const todayStr = getTashkentDate();
     
     const updatedStudents = db.students.map(student => {
         const hasAttendedToday = db.attendance.some(att => 
@@ -151,6 +155,10 @@ app.get('/api/data', (req, res) => {
     });
     res.json({ students: updatedStudents, teachers: db.teachers, attendance: db.attendance, center_profit: db.center_profit });
 });
+
+app.get('/', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));
+app.get('/admin.html', (req, res) => res.sendFile(path.join(publicPath, 'admin.html')));
+app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.html')));
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server faol`));
