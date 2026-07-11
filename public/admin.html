@@ -6,7 +6,6 @@
     <title>Admin Panel - EduManage CRM</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Admin uchun qo'shimcha kichik stillar */
         body { align-items: flex-start; }
         .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
         .search-box { width: 300px; margin-bottom: 0; }
@@ -21,7 +20,7 @@
 
     <div class="dashboard-container">
         
-        <!-- Header qismi -->
+        <!-- Yuqori boshqaruv paneli -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div class="input-group search-box">
@@ -29,11 +28,10 @@
             </div>
             <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
         </div>
-
-        <!-- Asosiy ishchi maydon (Grid) -->
+        <!-- Ma'lumotlarni kiritish oynalari (Grid layout) -->
         <div class="grid-2">
             
-            <!-- 1. Yangi O'quvchi Qo'shish Oynasi -->
+            <!-- Yangi O'quvchi Qo'shish Oynasi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3>Yangi O'quvchi Qo'shish</h3>
                 <form id="studentForm">
@@ -66,7 +64,7 @@
                 </form>
             </div>
 
-            <!-- 2. Yangi O'qituvchi Qo'shish Oynasi -->
+            <!-- Yangi O'qituvchi Qo'shish Oynasi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3>Yangi O'qituvchi Qo'shish</h3>
                 <form id="teacherForm">
@@ -100,8 +98,7 @@
             </div>
 
         </div>
-
-        <!-- Jadvallar qismi -->
+        <!-- Barcha O'quvchilar Jadvali -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
                 <h3 style="margin-bottom: 0;">Barcha O'quvchilar Ro'yxati</h3>
@@ -120,12 +117,12 @@
                         </tr>
                     </thead>
                     <tbody id="studentsTableBody">
-                        <!-- Dinamik o'quvchilar ro'yxati -->
+                        <!-- Ma'lumotlar script.js orqali dinamik yuklanadi -->
                     </tbody>
                 </table>
             </div>
         </div>
-
+        <!-- Kunlik Davomat Tarixi Jadvali -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
                 <h3 style="margin-bottom: 0;">Kunlik Davomat Tarixi</h3>
@@ -142,12 +139,13 @@
                         </tr>
                     </thead>
                     <tbody id="attendanceTableBody">
-                        <!-- Dinamik davomat tarixi -->
+                        <!-- Ma'lumotlar script.js orqali dinamik yuklanadi -->
                     </tbody>
                 </table>
             </div>
         </div>
 
+        <!-- O'qituvchilar Balansi Jadvali -->
         <div class="card glass-container" style="max-width: 100%;">
             <h3>O'qituvchilar Ro'yxati va Ularning Balansi</h3>
             <div class="table-responsive">
@@ -162,48 +160,14 @@
                         </tr>
                     </thead>
                     <tbody id="teachersTableBody">
-                        <!-- Dinamik o'qituvchilar ro'yxati -->
+                        <!-- Ma'lumotlar script.js orqali dinamik yuklanadi -->
                     </tbody>
                 </table>
             </div>
         </div>
 
     </div>
-
-    <!-- API bilan ishlash mantiqiy skripti -->
-    <script>
-        const API_URL = 'https://muxtasham-jgqv.onrender.com';
-        let allStudents = [];
-
-        // Sahifa yuklanganda ma'lumotlarni yuklash
-        async function loadDashboardData() {
-            try {
-                const response = await fetch(`${API_URL}/data`);
-                const data = await response.json();
-                
-                allStudents = data.students;
-                renderStudents(allStudents);
-                renderAttendance(data.attendance);
-                renderTeachers(data.teachers);
-            } catch (err) {
-                alert("Ma'lumotlarni yuklashda xatolik yuz berdi!");
-            }
-        }
-
-        // O'quvchilarni jadvalga chiqarish
-        function renderStudents(students) {
-            const tbody = document.getElementById('studentsTableBody');
-            tbody.innerHTML = '';
-            
-            students.forEach(s => {
-                // -150 000 so'mdan ko'p qarzi bo'lsa butunlay qizil qilish logikasi
-                const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
-                const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-
-                tbody.innerHTML += `
-                    <tr class="${isDebtor}">
-                        <td><strong>${s.name}</strong></td>
-                        <td>${s.phone}</td>
-                        <td>${s.birthYear}-yil</td>
-                        <td>${s.fee.toLocaleString()} so'm</td>
-${s.balance.toLocaleString()} so'mTo'lash`;});}// Davomat tarixini chiqarishfunction renderAttendance(attendance) {const tbody = document.getElementById('attendanceTableBody');tbody.innerHTML = '';attendance.reverse().forEach(a => {const statusBadge = a.status === 'keldi' ? 'Keldi' : 'Kelmadi';tbody.innerHTML += <tr> <td>${a.date}</td> <td>${a.studentName}</td> <td>${a.teacherName}</td> <td>${statusBadge}</td> </tr>;});}// O'qituvchilarni chiqarishfunction renderTeachers(teachers) {const tbody = document.getElementById('teachersTableBody');tbody.innerHTML = '';teachers.forEach(t => {tbody.innerHTML += <tr> <td><strong>${t.name}</strong></td> <td>${t.subject}</td> <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td> <td><span class="status-badge status-paid" style="background:rgba(56, 189, 248, 0.2); color:#38bdf8;">${t.salary.toLocaleString()} so'm</span></td> <td><code>${t.login} / ${t.password}</code></td> </tr>;});}// Qidiruv tizimi (Ism bo'yicha filter)function filterStudents() {const query = document.getElementById('searchStudent').value.toLowerCase();const filtered = allStudents.filter(s => s.name.toLowerCase().includes(query));renderStudents(filtered);}// O'quvchi qo'shish formasi submit bo'lgandadocument.getElementById('studentForm').addEventListener('submit', async (e) => {e.preventDefault();const name = document.getElementById('studName').value;const phone = document.getElementById('studPhone').value;const birthYear = document.getElementById('studBirth').value;const fee = document.getElementById('studFee').value;const parentChatId = document.getElementById('parentChatId').value;const response = await fetch(${API_URL}/students, {method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ name, phone, birthYear, fee, parentChatId })});if (response.ok) {document.getElementById('studentForm').reset();loadDashboardData();}});// O'qituvchi qo'shish formasi submit bo'lgandadocument.getElementById('teacherForm').addEventListener('submit', async (e) => {e.preventDefault();const name = document.getElementById('teachName').value;const subject = document.getElementById('teachSubject').value;const timeStart = document.getElementById('teachTimeStart').value;const timeEnd = document.getElementById('teachTimeEnd').value;const daysStr = document.getElementById('teachDays').value;const login = document.getElementById('teachLogin').value;const password = document.getElementById('teachPass').value;const days = daysStr.split(',').map(d => d.trim());const response = await fetch(${API_URL}/teachers, {method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })});if (response.ok) {document.getElementById('teacherForm').reset();loadDashboardData();}});// To'lovni amalga oshirish funksiyasiasync function makePayment(studentId) {const amountInput = document.getElementById(pay_${studentId});const amount = amountInput.value;if (!amount || amount <= 0) return alert("To'g'ri summa kiriting!");const response = await fetch(${API_URL}/students/pay, {method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ studentId, amount })});if (response.ok) {amountInput.value = '';loadDashboardData();}}// Ma'lumotlarni tozalash funksiyasi (Tizimni tozalash uchun)async function clearData(type) {if (confirm("Haqiqatdan ham ushbu ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) {const response = await fetch(${API_URL}/clear/${type}, { method: 'DELETE' });if (response.ok) loadDashboardData();}}function logout() {window.location.href = 'index.html';}// Sahifa yuklanishi bilan ishga tushadiwindow.onload = loadDashboardData;
+    <!-- Script faylini ulash qismi -->
+    <script src="script.js"></script>
+</body>
+</html>
