@@ -1,16 +1,19 @@
-
 // Render serveringizning mutlaq to'liq manzili
 const API_URL = 'https://muxtasham-jgqv.onrender.com';
 
 // Render serveringizning mutlaq to'liq manzili
 const API_URL = 'https://onrender.com';
 
-// Tizimga kirish (Login) funksiyasi
-async function handleLogin(e) {
-    e.preventDefault();
+// Tizimga xavfsiz va sahifa yangilanmasdan kirish funksiyasi
+async function executeLogin() {
     const login = document.getElementById('loginInput').value;
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
+    
+    if(!login || !password) {
+        alert("Iltimos, login va parolni to'liq kiriting!");
+        return;
+    }
     
     try {
         const response = await fetch(`${API_URL}/login`, {
@@ -41,7 +44,6 @@ function logout() {
     localStorage.clear();
     window.location.href = '/index.html';
 }
-
 let allStudents = [];
 
 // Admin panelidagi barcha ma'lumotlarni serverdan yuklash
@@ -284,17 +286,14 @@ async function submitAttendance(studentId, status, teacherId) {
             body: JSON.stringify({ teacherId, studentId, status })
         });
         if (response.ok) {
-            alert("Davomat saqlandi va balanslar yangilandi!");
+            alert("Davomat saqlandi va balanslar muvaffaqiyatli taqsimlandi!");
             loadTeacherDashboard();
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
-// Sahifaga mos qismlarni avtomatik yuklash (Routing Boshqaruvchisi)
+// Sahifaga mos qismlarni avtomatik yuklash (Global Routing Boshqaruvchisi)
 window.onload = function() {
-    if (document.getElementById('loginForm')) {
-        document.getElementById('loginForm').addEventListener('submit', handleLogin);
-    }
     if (document.getElementById('studentsTableBody')) {
         loadDashboardData();
         document.getElementById('studentForm').addEventListener('submit', saveStudent);
