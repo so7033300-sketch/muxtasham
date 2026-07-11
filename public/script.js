@@ -1,11 +1,11 @@
 const API_URL = '/api';
+let allStudents = [], allTeachers = [];
 
 window.executeLogin = async function() {
     const login = document.getElementById('loginInput').value;
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
-    if(!login || !password) return alert("Iltimos, login va parolni to'liq kiriting!");
-    
+    if(!login || !password) return alert("Iltimos, login va parolni kiriting!");
     try {
         const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
@@ -19,17 +19,11 @@ window.executeLogin = async function() {
                 localStorage.setItem('teacherId', data.teacherId);
                 window.location.href = '/ustoz.html';
             }
-        } else {
-            errorDiv.style.display = 'block';
-            errorDiv.innerText = data.message;
-        }
-    } catch (err) { errorDiv.style.display = 'block'; errorDiv.innerText = "Server bilan aloqa uzildi!"; }
+        } else { errorDiv.style.display = 'block'; errorDiv.innerText = data.message; }
+    } catch (err) { errorDiv.style.display = 'block'; errorDiv.innerText = "Server xatosi!"; }
 }
 
 window.logout = function() { localStorage.clear(); window.location.href = '/index.html'; }
-
-let allStudents = [];
-let allTeachers = [];
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
@@ -40,9 +34,7 @@ async function loadDashboardData() {
         const teacherSelect = document.getElementById('studTeacher');
         if (teacherSelect) {
             teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga qo\'shish...</option>';
-            allTeachers.forEach(t => {
-                teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`;
-            });
+            allTeachers.forEach(t => { teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
         }
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
@@ -72,9 +64,7 @@ window.onTeacherSelected = function() {
         toggleGroupMode();
     } else {
         groupSelect.innerHTML = '<option value="" disabled selected>Guruhni tanlang...</option>';
-        teacherGroups.forEach(g => {
-            groupSelect.innerHTML += `<option value="${g}">${g}</option>`;
-        });
+        teacherGroups.forEach(g => { groupSelect.innerHTML += `<option value="${g}">${g}</option>`; });
         document.getElementById('groupModeSelect').value = 'select';
         toggleGroupMode();
     }
@@ -82,70 +72,40 @@ window.onTeacherSelected = function() {
 
 window.toggleGroupMode = function() {
     const mode = document.getElementById('groupModeSelect').value;
-    if (mode === 'select') {
-        document.getElementById('existingGroupWrapper').style.display = 'block';
-        document.getElementById('newGroupWrapper').style.display = 'none';
-    } else {
-        document.getElementById('existingGroupWrapper').style.display = 'none';
-        document.getElementById('newGroupWrapper').style.display = 'block';
-    }
+    document.getElementById('existingGroupWrapper').style.display = mode === 'select' ? 'block' : 'none';
+    document.getElementById('newGroupWrapper').style.display = mode === 'create' ? 'block' : 'none';
 }
 
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
 }
-// O'quvchini global xotira orqali sahifa yangilanmasdan xatosiz saqlash
-window.executeSaveStudent = async function() {
-    const name = document.getElementById('studName').value;
-    const phone = document.getElementById('studPhone').value;
-    const birthYear = document.getElementById('studBirth').value;
-    const fee = document.getElementById('studFee').value;
-    const teacherId = document.getElementById('studTeacher').value;
-    const parentChatId = document.getElementById('parentChatId').value;
-    
-    const mode = document.getElementById('groupModeSelect').value;
-    let groupName = "";
-    
-    if(!name || !phone || !birthYear || !fee || !teacherId) {
-        alert("Iltimos, o'quvchi ma'lumotlarini va guruhini to'liq to'ldiring!");
-        return;
-    }
-    
-    if (mode === 'select') {
-        groupName = document.getElementById('studGroupSelect').value;
-        if (!groupName) {
-            alert("Iltimos, mavjud guruhlardan birini tanlang!");
-            return;
-        }
-    } else {
-        groupName = document.getElementById('studNewGroupInput').value.trim();
-        if (!groupName) {
-            alert("Iltimos, yangi guruh nomini kiriting!");
-            return;
-        }
-    }
+function renderStudents(students) {
+    const tbody = document.getElementById('studentsTableBody');
+    if (!tbody) return; tbody.innerHTML = '';
+    students.forEach(s => {
+        const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
+        const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
+        const tObj = allTeachers.find(t => t.id === s.teacherId);
+        const displayName = tObj ? `${tObj.name} - ${s.groupName}` : 'Guruhsiz';
 
-    try {
-        const response = await fetch(`${API_URL}/students`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
-        });
-        
-        if (response.ok) {
-            alert("O'quvchi muvaffaqiyatli saqlandi!");
-            document.getElementById('studentForm').reset(); 
-            document.getElementById('groupSelectionContainer').style.display = 'none'; 
-            loadDashboardData(); // Jadvallarni sahifani yangilamasdan zumda qayta chizish
-        } else {
-            alert("O'quvchini saqlashda server xatosi yuz berdi.");
-        }
-    } catch (err) {
-        alert("Server bilan aloqa uzildi!");
-    }
+        tbody.innerHTML += `
+            <tr class="${isDebtor}">
+                <td><strong>${s.name}</strong></td>
+                <td>${s.phone}</td>
+                <td><span class="status-badge" style="background:rgba(129,140,248,0.15); color:#818cf8;">${displayName}</span></td>
+                <td>${s.fee.toLocaleString()} so'm</td>
+                <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
+                <td>
+                    <div class="inline-form">
+                        <input type="number" id="pay_${s.id}" placeholder="Summa" style="width:110px;">
+                        <button class="btn" onclick="makePayment('${s.id}')">To'lash</button>
+                    </div>
+                </td>
+                <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteStudent('${s.id}')">O'chirish</button></td>
+            </tr>`;
+    });
 }
-
 
 function renderAttendance(attendance) {
     const tbody = document.getElementById('attendanceTableBody');
@@ -171,46 +131,46 @@ function renderTeachers(teachers) {
             </tr>`;
     });
 }
-// O'qituvchini global xotira orqali sahifa yangilanmasdan xatosiz saqlash
-window.executeSaveTeacher = async function() {
+async function saveStudent(e) {
+    if(e) e.preventDefault();
+    const name = document.getElementById('studName').value;
+    const phone = document.getElementById('studPhone').value;
+    const birthYear = document.getElementById('studBirth').value;
+    const fee = document.getElementById('studFee').value;
+    const teacherId = document.getElementById('studTeacher').value;
+    const parentChatId = document.getElementById('parentChatId').value;
+    const mode = document.getElementById('groupModeSelect').value;
+    let groupName = mode === 'select' ? document.getElementById('studGroupSelect').value : document.getElementById('studNewGroupInput').value.trim();
+
+    if (!name || !phone || !birthYear || !fee || !teacherId || !groupName) return alert("Ma'lumotlarni to'liq kiriting!");
+
+    const response = await fetch(`${API_URL}/students`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
+    });
+    if (response.ok) { alert("O'quvchi saqlandi!"); document.getElementById('studentForm').reset(); document.getElementById('groupSelectionContainer').style.display='none'; loadDashboardData(); }
+}
+
+async function saveTeacher(e) {
+    if(e) e.preventDefault();
     const name = document.getElementById('teachName').value;
     const subject = document.getElementById('teachSubject').value;
     const timeStart = document.getElementById('teachTimeStart').value;
     const timeEnd = document.getElementById('teachTimeEnd').value;
     const login = document.getElementById('teachLogin').value;
     const password = document.getElementById('teachPass').value;
-    
     const checked = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
-    const days = []; 
-    checked.forEach(b => days.push(b.value));
-    
-    if(!name || !subject || !timeStart || !timeEnd || !login || !password) {
-        alert("Iltimos, o'qituvchi ma'lumotlarini to'liq to'ldiring!");
-        return;
-    }
-    
-    if (days.length === 0) {
-        alert("Iltimos, kamida bitta dars kunini tanlang!");
-        return;
-    }
+    const days = []; checked.forEach(b => days.push(b.value));
 
-    try {
-        const response = await fetch(`${API_URL}/teachers`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
-        });
-        
-        if (response.ok) {
-            alert("O'qituvchi muvaffaqiyatli saqlandi!");
-            document.getElementById('teacherForm').reset(); 
-            loadDashboardData(); // Jadvallarni sahifani yangilamasdan zumda qayta chizish
-        } else {
-            alert("O'qituvchini saqlashda server xatosi yuz berdi.");
-        }
-    } catch (err) {
-        alert("Server bilan aloqa uzildi!");
-    }
+    if (!name || !subject || !timeStart || !timeEnd || !login || !password || days.length === 0) return alert("Ma'lumotlarni to'liq kiriting!");
+
+    const response = await fetch(`${API_URL}/teachers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
+    });
+    if (response.ok) { alert("O'qituvchi saqlandi!"); document.getElementById('teacherForm').reset(); loadDashboardData(); }
 }
 
 async function makePayment(studentId) {
@@ -220,27 +180,13 @@ async function makePayment(studentId) {
     if (response.ok) loadDashboardData();
 }
 
-window.deleteStudent = async function(id) {
-    if (confirm("Ushbu o'quvchini tizimdan butunlay o'chirib tashlamoqchimisiz?")) {
-        await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' });
-        loadDashboardData();
-    }
-}
-
-window.deleteTeacher = async function(id) {
-    if (confirm("O'qituvchini o'chirmoqchimisiz?")) { await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); loadDashboardData(); }
-}
-
-async function clearData(type) {
-    if (confirm("Tozalansinmi?")) { await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); loadDashboardData(); }
-}
-
-const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
+window.deleteStudent = async function(id) { if (confirm("O'quvchi o'chirilsinmi?")) { await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' }); loadDashboardData(); } }
+window.deleteTeacher = async function(id) { if (confirm("O'qituvchi o'chirilsinmi?")) { await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); loadDashboardData(); } }
+async function clearData(type) { if (confirm("Tozalansinmi?")) { await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); loadDashboardData(); } }
 
 async function loadTeacherDashboard() {
     const currentTeacherId = localStorage.getItem('teacherId');
     if (!currentTeacherId) return;
-
     try {
         const response = await fetch(`${API_URL}/data`);
         const data = await response.json();
@@ -249,7 +195,7 @@ async function loadTeacherDashboard() {
 
         document.getElementById('teacherNameHeader').innerText = teacher.name;
         document.getElementById('teacherSubject').innerText = teacher.subject;
-        document.getElementById('teacherDays').innerText = Array.isArray(teacher.days) ? teacher.days.join(', ') : teacher.days;
+        document.getElementById('teacherDays').innerText = teacher.days.join(', ');
         document.getElementById('teacherTime').innerText = `${teacher.timeStart} - ${teacher.timeEnd}`;
         document.getElementById('teacherSalary').innerText = `${teacher.salary.toLocaleString()} so'm`;
 
@@ -260,11 +206,10 @@ async function loadTeacherDashboard() {
 }
 
 function checkLessonTime(teacher) {
-    // Brauzer soatini Toshkent vaqt zonasiga majburiy o'tkazamiz
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
     const currentDayIndex = now.getDay();
     const currentTimeStr = now.toTimeString().substring(0, 5);
-    const teacherDaysString = Array.isArray(teacher.days) ? teacher.days.join(' ').toLowerCase() : String(teacher.days).toLowerCase();
+    const teacherDaysString = teacher.days.join(' ').toLowerCase();
     
     const daysUz = { 0: "yakshanba", 1: "dushanba", 2: "seshanba", 3: "chorshanba", 4: "payshanba", 5: "juma", 6: "shanba" };
     const todayName = daysUz[currentDayIndex];
@@ -272,35 +217,19 @@ function checkLessonTime(teacher) {
     const noticeDiv = document.getElementById('timeStatusNotice');
     if (!noticeDiv) return false;
 
-    if (!hasLessonToday) {
-        noticeDiv.innerHTML = `⚠️ Bugun dars kuningiz emas. Davomat tizimi yopiq.`;
-        noticeDiv.style.color = '#f87171';
-        return false;
-    }
+    if (!hasLessonToday) { noticeDiv.innerHTML = `⚠️ Bugun dars kuningiz emas.`; noticeDiv.style.color = '#f87171'; return false; }
     if (currentTimeStr >= teacher.timeStart && currentTimeStr <= teacher.timeEnd) {
-        noticeDiv.innerHTML = `✅ Dars vaqti faol (${teacher.timeStart} - ${teacher.timeEnd}). Davomat qilishingiz mumkin.`;
-        noticeDiv.style.color = '#4ade80';
-        return true;
-    } else {
-        noticeDiv.innerHTML = `🔒 Dars vaqti emas (Hozirgi vaqt: ${currentTimeStr}). Davomat tizimi yopilgan.`;
-        noticeDiv.style.color = '#eab308';
-        return false;
-    }
+        noticeDiv.innerHTML = `✅ Dars vaqti faol. Davomat qilishingiz mumkin.`; noticeDiv.style.color = '#4ade80'; return true;
+    } else { noticeDiv.innerHTML = `🔒 Dars vaqti emas.`; noticeDiv.style.color = '#eab308'; return false; }
 }
 
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const container = document.getElementById('teacherGroupsContainer');
     if (!container) return; container.innerHTML = '';
-    if (students.length === 0) {
-        container.innerHTML = `<div class="card glass-container" style="max-width: 100%; text-align: center; color: #64748b;">Hozircha guruhlaringizda o'quvchilar mavjud emas.</div>`;
-        return;
-    }
+    if (students.length === 0) { container.innerHTML = `<div class="card glass-container" style="text-align:center;color:#64748b;">O'quvchilar yo'q.</div>`; return; }
+    
     const groups = {};
-    students.forEach(s => {
-        const gName = s.groupName || "Asosiy Guruh";
-        if (!groups[gName]) { groups[gName] = []; }
-        groups[gName].push(s);
-    });
+    students.forEach(s => { const gName = s.groupName || "Asosiy Guruh"; if (!groups[gName]) groups[gName] = []; groups[gName].push(s); });
 
     for (const groupName in groups) {
         const groupStudents = groups[groupName];
@@ -309,7 +238,7 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
         groupCard.innerHTML = `<h3 class="group-title">📦 Guruh: ${groupName} (${groupStudents.length} ta o'quvchi)</h3>`;
         const tableResponsive = document.createElement('div'); tableResponsive.className = 'table-responsive';
         const table = document.createElement('table');
-        table.innerHTML = `<thead><tr><th>Ism Familya</th><th>Telefon raqam</th><th>Tug'ilgan yili</th><th>O'quvchi Balansi</th><th>Davomat (Faqat dars vaqtida)</th></tr></thead>`;
+        table.innerHTML = `<thead><tr><th>Ism Familya</th><th>Telefon raqam</th><th>Tug'ilgan yili</th><th>O'quvchi Balansi</th><th>Davomat</th></tr></thead>`;
         const tbody = document.createElement('tbody');
 
         groupStudents.forEach(s => {
@@ -326,31 +255,17 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
                         <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi', '${teacherId}')">Kelmadi</button>
                    </div>`;
 
-            tbody.innerHTML += `
-                <tr class="${isDebtor}">
-                    <td><strong>${s.name}</strong></td>
-                    <td>${s.phone}</td>
-                    <td>${s.birthYear}-yil</td>
-                    <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
-                    <td>${attendanceCellContent}</td>
-                </tr>`;
+            tbody.innerHTML += `<tr class="${isDebtor}"><td><strong>${s.name}</strong></td><td>${s.phone}</td><td>${s.birthYear}-yil</td><td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td><td>${attendanceCellContent}</td></tr>`;
         });
         table.appendChild(tbody); tableResponsive.appendChild(table); groupCard.appendChild(tableResponsive); container.appendChild(groupCard);
     }
 }
 
 async function submitAttendance(studentId, status, teacherId) {
-    if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz? (Bu dars uchun amalni qaytarib bo'lmaydi)`)) return;
+    if (!confirm("Davomat saqlansinmi?")) return;
     try {
-        const response = await fetch(`${API_URL}/attendance`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ teacherId, studentId, status })
-        });
-        if (response.ok) {
-            alert("Davomat saqlandi va ushbu guruh o'quvchisi bloklandi!");
-            await loadTeacherDashboard();
-        }
+        const response = await fetch(`${API_URL}/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teacherId, studentId, status }) });
+        if (response.ok) { alert("Davomat saqlandi va qulflandi!"); await loadTeacherDashboard(); }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
@@ -360,7 +275,5 @@ window.onload = function() {
         document.getElementById('studentForm').addEventListener('submit', saveStudent);
         document.getElementById('teacherForm').addEventListener('submit', saveTeacher);
     }
-    if (document.getElementById('teacherGroupsContainer')) {
-        loadTeacherDashboard();
-    }
+    if (document.getElementById('teacherGroupsContainer')) { loadTeacherDashboard(); }
 };
