@@ -14,14 +14,40 @@
         .inline-form { display: flex; gap: 10px; align-items: center; }
         .inline-form input { padding: 8px 12px; font-size: 13px; }
         .inline-form .btn { padding: 8px 15px; font-size: 13px; width: auto; }
-        select option { background-color: #1e1b4b !important; color: #ffffff !important; }
+        
+        /* Oq oynani yo'qotib, premium qorong'u va silliq dizayn berish */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            color: #ffffff !important;
+            cursor: pointer;
+        }
+        select option { 
+            background-color: #111026 !important; 
+            color: #ffffff !important; 
+            padding: 12px !important;
+        }
+        select:focus {
+            border-color: #38bdf8 !important;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2) !important;
+        }
+        .dynamic-group-box {
+            animation: fadeIn 0.4s ease-out;
+            background: rgba(255, 255, 255, 0.02);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
 
     <div class="dashboard-container">
         
-        <!-- Yuqori boshqaruv va Markaz balansi -->
+        <!-- Header va Markaz Foydasi -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div style="font-size: 16px; font-weight: 500;">
@@ -30,7 +56,7 @@
             <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
         </div>
         <div class="grid-2">
-            <!-- Yangi O'quvchi Qo'shish Oynasi -->
+            <!-- 1. Yangi O'quvchi Qo'shish Oynasi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3>Yangi O'quvchi Qo'shish</h3>
                 <form id="studentForm">
@@ -57,11 +83,30 @@
                         </select>
                     </div>
                     
-                    <!-- Dinamik ravishda o'qituvchilar (guruhlar) yuklanadigan qism -->
                     <div class="input-group">
-                        <select id="studTeacher" required>
-                            <option value="" disabled selected>Qaysi o'qituvchiga (Guruhga) qo'shish...</option>
+                        <select id="studTeacher" onchange="onTeacherSelected()" required>
+                            <option value="" disabled selected>Qaysi o'qituvchiga qo'shish...</option>
                         </select>
+                    </div>
+
+                    <!-- DINAMIK GURUH OYNA VA MATN INPUTI -->
+                    <div id="groupSelectionContainer" class="dynamic-group-box" style="display: none;">
+                        <div class="input-group" style="margin-bottom: 10px;">
+                            <select id="groupModeSelect" onchange="toggleGroupMode()">
+                                <option value="select">Mavjud guruhlardan tanlash</option>
+                                <option value="create">Yangi guruh nomi yozish</option>
+                            </select>
+                        </div>
+                        
+                        <div id="existingGroupWrapper" class="input-group" style="margin-bottom: 0;">
+                            <select id="studGroupSelect">
+                                <option value="" disabled selected>Guruhni tanlang...</option>
+                            </select>
+                        </div>
+
+                        <div id="newGroupWrapper" class="input-group" style="margin-bottom: 0; display: none;">
+                            <input type="text" id="studNewGroupInput" placeholder="Yangi guruh nomini kiriting (Masalan: Group-1)">
+                        </div>
                     </div>
 
                     <div class="input-group">
@@ -70,7 +115,8 @@
                     <button type="submit" class="btn">O'quvchini Saqlash</button>
                 </form>
             </div>
-            <!-- Yangi O'qituvchi Qo'shish Oynasi -->
+
+            <!-- 2. Yangi O'qituvchi Qo'shish Oynasi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3>Yangi O'qituvchi Qo'shish</h3>
                 <form id="teacherForm">
@@ -140,7 +186,7 @@
                         <tr>
                             <th>Ism Familya</th>
                             <th>Telefon raqam</th>
-                            <th>Guruh (Ustoz)</th>
+                            <th>Ustoz (Guruh)</th>
                             <th>Oylik To'lov</th>
                             <th>Balans</th>
                             <th>To'lov Qabul Qilish</th>
@@ -150,6 +196,7 @@
                 </table>
             </div>
         </div>
+
         <!-- Davomat Tarixi -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
@@ -171,7 +218,7 @@
             </div>
         </div>
 
-        <!-- O'qituvchilar Ro'yxati Jadvali (Amallar qismi qaytarildi) -->
+        <!-- O'qituvchilar Ro'yxati -->
         <div class="card glass-container" style="max-width: 100%;">
             <h3>O'qituvchilar Ro'yxati va Ularning Balansi</h3>
             <div class="table-responsive">
