@@ -3,54 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muhtasham - Ustoz Paneli</title>
+    <title>O'qituvchi Paneli - EduManage CRM</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background-color: #060508; color: #ffffff; padding: 20px; font-family: 'Plus Jakarta Sans', sans-serif; }
-        .attendance-actions-box { display: flex; gap: 10px; align-items: center; width: 100%; margin-top: 10px; }
-        .btn-attendance { padding: 10px 20px; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; font-size: 14px; text-transform: uppercase; transition: all 0.3s ease; }
-        .btn-keldi { background: #28a745; color: white; }
-        .btn-keldi:hover { background: #218838; transform: translateY(-1px); }
-        .btn-kelmadi { background: #ff4747; color: white; }
-        .btn-kelmadi:hover { background: #c82333; transform: translateY(-1px); }
-        .lock-badge { color: #fbbf24; font-weight: bold; font-size: 14px; background: #1c150a; padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(245,158,11,0.3); display: inline-block; width: 100%; text-align: center; text-transform: uppercase; }
-        .teacher-info-header { margin-bottom: 30px; border-bottom: 2px solid rgba(245,158,11,0.15); padding-bottom: 15px; }
-        .teacher-info-header h1 { color: #fbbf24; font-size: 26px; font-weight: 800; }
-        .select-custom { cursor: pointer; appearance: none; background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://w3.org' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23fbbf24' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; background-size: 18px; }
+        body { align-items: flex-start; }
+        .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .teacher-info { display: flex; gap: 20px; font-size: 15px; color: #94a3b8; }
+        .teacher-info strong { color: #38bdf8; }
+        .btn-success { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); box-shadow: 0 4px 15px rgba(34, 197, 94, 0.2); width: auto; padding: 8px 15px; font-size: 13px; }
+        .btn-success:hover { background: linear-gradient(135deg, #16a34a 0%, #166534 100%); box-shadow: 0 8px 25px rgba(34, 197, 94, 0.4); }
+        .btn-danger-action { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); width: auto; padding: 8px 15px; font-size: 13px; }
+        .btn-danger-action:hover { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4); }
+        .btn-disabled { background: #334155 !important; color: #64748b !important; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; }
+        .time-badge { background: rgba(234, 179, 8, 0.15); color: #eab308; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 500; }
     </style>
 </head>
 <body>
 
-    <div class="admin-wrapper fade-in-up" style="max-width: 800px; margin: 0 auto;">
+    <div class="dashboard-container">
         
-        <!-- USTOZ HAQIDA MA'LUMOT PANEL TEPASI -->
-        <div class="teacher-info-header">
-            <p style="color: #fbbf24; font-weight: 700; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Ustoz Shaxsiy Kabineti</p>
-            <h1 id="teacher-title-name">Yuklanmoqda...</h1>
+        <!-- Yuqori qism (Header) -->
+        <div class="flex-header glass-container" style="max-width: 100%; padding: 25px 40px; border-radius: 16px;">
+            <div>
+                <h2 id="teacherNameHeader" style="margin-bottom: 5px; text-align: left;">Ustoz Paneli</h2>
+                <div class="teacher-info">
+                    <span>Fan: <strong id="teacherSubject">-</strong></span>
+                    <span>Dars kunlari: <strong id="teacherDays">-</strong></span>
+                    <span>Dars vaqti: <strong id="teacherTime">-</strong></span>
+                </div>
+            </div>
+            
+            <div style="text-align: right; display: flex; flex-direction: column; gap: 10px;">
+                <div>Shaxsiy balans (Oylik): <span class="status-badge status-paid" id="teacherSalary" style="font-size: 16px;">0 so'm</span></div>
+                <button class="btn" style="width: auto; padding: 8px 20px; background: linear-gradient(135deg, #ef4444 0%, #991b1b 100%);" onclick="logout()">Tizimdan Chiqish</button>
+            </div>
         </div>
 
-       
-        <!-- JADVAL: KUNLIK DAVOMAT VA RO'YXAT -->
-        <div class="moliya-card" style="border-color: rgba(255,255,255,0.05); padding: 35px;">
-            <h3 style="font-size: 20px; font-weight: 800; color: #fbbf24; text-transform: uppercase; margin-bottom: 8px;">Jadval: Kunlik Davomat va Ro'yxat</h3>
-            <p style="font-size: 13px; color: #8a8a8a; margin-bottom: 25px;">Davomat tugmalari dars soatida bir marta yoqiladi va bir marta bosilgach avtomatik qulflanadi.</p>
-            
-            <!-- AVTO-QULFLASH XABARI CHIQADIGAN JOY -->
-            <div id="lock-message" style="display: none; margin-bottom: 20px;"></div>
+        <!-- Dars Holati haqida bildirishnoma -->
+        <div id="timeStatusNotice" class="card glass-container" style="max-width: 100%; margin-bottom: 25px; text-align: center; font-weight: 500;">
+            Tekshirilmoqda...
+        </div>
 
-            <!-- EXCEL WRAPPER JADVALI -->
-            <div id="davomat-table-container" class="excel-wrapper">
-                <table class="excel-table">
+        <!-- O'quvchilar Ro'yxati va Davomat Jadvali -->
+        <div class="card glass-container" style="max-width: 100%;">
+            <h3>Darsingizdagi O'quvchilar Ro'yxati</h3>
+            <div class="table-responsive">
+                <table>
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>O'quvchi Ismi / Telefoni</th>
-                            <th>Mavjud Balansi</th>
-                            <th style="text-align: center;">Kunlik Davomat Amali</th>
+                            <th>Ism Familya</th>
+                            <th>Telefon raqam</th>
+                            <th>Tug'ilgan yili</th>
+                            <th>O'quvchi Balansi</th>
+                            <th>Davomat (Faqat dars vaqtida faollashadi)</th>
                         </tr>
                     </thead>
-                    <tbody id="teacher-students-rows">
-                        <!-- O'quvchilar ro'yxati JavaScript orqali shu yerga dinamik chiziladi -->
+                    <tbody id="teacherStudentsTable">
+                        <!-- Dinamik o'quvchilar ro'yxati -->
                     </tbody>
                 </table>
             </div>
@@ -58,45 +67,151 @@
 
     </div>
 
-    <!-- O'QITUVCHI SAHIFASI UCHUN MAXSUS ATROF-MUHIT FUNKSIYALARI -->
-    <script>
-        function addStudentFromTeacher(event) {
-            event.preventDefault();
-            const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
-            if (!loggedInUser) {
-                alert("Xatolik! Tizimga qayta kiring.");
+    <!-- 2-BO'LAK (Mantiq qismi) pastda alohida berilgan, uni shu yerga joylaysiz -->
+</body>
+</html>
+<script>
+    const API_URL = 'http://localhost:3000/api';
+    const currentTeacherId = localStorage.getItem('teacherId');
+
+    if (!currentTeacherId) {
+        window.location.href = 'index.html';
+    }
+
+    // Haftaning kunlarini o'zbekcha nomlariga moslash
+    const weekDaysUz = {
+        0: "Yashanba",
+        1: "Dushanba",
+        2: "Chorshanba",
+        3: "Chorshanba", // Jurnal xatolarini oldini olish uchun
+        4: "Payshanba",
+        5: "Juma",
+        6: "Shanba"
+    };
+    
+    // Aniq dars kunlarini tekshirish uchun o'zbekcha nomlar lug'ati
+    const dayIndexMap = {
+        "dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0
+    };
+
+    async function loadTeacherDashboard() {
+        try {
+            const response = await fetch(`${API_URL}/data`);
+            const data = await response.json();
+
+            const teacher = data.teachers.find(t => t.id === currentTeacherId);
+            if (!teacher) {
+                alert("O'qituvchi ma'lumotlari topilmadi!");
+                logout();
                 return;
             }
 
-            const name = document.getElementById('ts-name').value.trim();
-            const phone = document.getElementById('ts-phone').value.trim();
-            const balance = Math.abs(Number(document.getElementById('ts-balance').value)) || 0;
-            const monthlyPrice = Number(document.getElementById('ts-price').value) || 200000;
+            // Ustoz ma'lumotlarini ekranga chiqarish
+            document.getElementById('teacherNameHeader').innerText = teacher.name;
+            document.getElementById('teacherSubject').innerText = teacher.subject;
+            document.getElementById('teacherDays').innerText = teacher.days.join(', ');
+            document.getElementById('teacherTime').innerText = `${teacher.timeStart} - ${teacher.timeEnd}`;
+            document.getElementById('teacherSalary').innerText = `${teacher.salary.toLocaleString()} so'm`;
 
-            let students = JSON.parse(localStorage.getItem('students')) || [];
-            
-            const newStudent = {
-                id: Date.now(),
-                name: name,
-                phone: phone,
-                balance: balance,
-                teacherId: loggedInUser.id,
-                groupName: loggedInUser.group_name || "Asosiy Guruh",
-                monthlyPrice: monthlyPrice
-            };
+            // Dars vaqti kelgan yoki kelmaganini tekshirish
+            const isLessonTime = checkLessonTime(teacher);
+            renderStudents(data.students, isLessonTime);
 
-            students.push(newStudent);
-            localStorage.setItem('students', JSON.stringify(students));
-
-            alert(`✅ ${name} muvaffaqiyatli ro'yxatga olindi va guruhga biriktirildi!`);
-            event.target.reset();
-            
-            if (typeof renderTeacherStudents === 'function') renderTeacherStudents();
-            if (typeof uploadLocalDataToBackend === 'function') uploadLocalDataToBackend();
+        } catch (err) {
+            console.error("Xatolik:", err);
         }
-    </script>
+    }
 
-    <!-- ASOSIY SCRIPT SISTEMASI (BLOKLOVCHI KODLARSIZ TOZA ULASH) -->
-    <script src="script.js"></script>
-</body>
-</html>
+    // Dars kuni va vaqtini aniqlash algoritmi
+    function checkLessonTime(teacher) {
+        const now = new Date();
+        const currentDayIndex = now.getDay(); // 0-6 gacha raqam
+        const currentTimeStr = now.toTimeString().split(' ')[0].substring(0, 5); // "14:30" formatda
+
+        // Bugun dars kuni borligini tekshirish
+        const hasLessonToday = teacher.days.some(day => {
+            return dayIndexMap[day.toLowerCase().trim()] === currentDayIndex;
+        });
+
+        if (!hasLessonToday) {
+            document.getElementById('timeStatusNotice').innerHTML = `⚠️ Bugun dars kuningiz emas. Davomat tizimi yopiq.`;
+            document.getElementById('timeStatusNotice').style.color = '#f87171';
+            return false;
+        }
+
+        // Soatni tekshirish (Dars boshlanishi va tugashi oralig'i)
+        if (currentTimeStr >= teacher.timeStart && currentTimeStr <= teacher.timeEnd) {
+            document.getElementById('timeStatusNotice').innerHTML = `✅ Dars vaqti faol (${teacher.timeStart} - ${teacher.timeEnd}). Davomat qilishingiz mumkin.`;
+            document.getElementById('timeStatusNotice').style.color = '#4ade80';
+            return true;
+        } else {
+            document.getElementById('timeStatusNotice').innerHTML = `🔒 Dars vaqti emas (Hozirgi vaqt: ${currentTimeStr}). Davomat tizimi yopilgan.`;
+            document.getElementById('timeStatusNotice').style.color = '#eab308';
+            return false;
+        }
+    }
+
+    // O'quvchilarni chiqarish va tugmalarni boshqarish
+    function renderStudents(students, isLessonTime) {
+        const tbody = document.getElementById('teacherStudentsTable');
+        tbody.innerHTML = '';
+
+        students.forEach(s => {
+            const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
+            const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
+            
+            // Agar dars vaqti bo'lmasa tugmalarni bloklash klassi qo'shiladi
+            const disabledAttr = isLessonTime ? '' : 'disabled';
+            const btnClassExtension = isLessonTime ? '' : 'btn-disabled';
+
+            tbody.innerHTML += `
+                <tr class="${isDebtor}">
+                    <td><strong>${s.name}</strong></td>
+                    <td>${s.phone}</td>
+                    <td>${s.birthYear}-yil</td>
+                    <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
+                    <td>
+                        <div style="display: flex; gap: 10px;">
+                            <button ${disabledAttr} class="btn btn-success ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'keldi')">Keldi</button>
+                            <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi')">Kelmadi</button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // Davomatni serverga yuborish logikasi
+    async function submitAttendance(studentId, status) {
+        if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz? (Balansdan pul yechiladi)`)) return;
+
+        try {
+            const response = await fetch(`${API_URL}/attendance`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    teacherId: currentTeacherId,
+                    studentId: studentId,
+                    status: status
+                })
+            });
+
+            if (response.ok) {
+                alert("Davomat saqlandi, ota-onaga bildirishnoma yuborildi va mablag' muvaffaqiyatli taqsimlandi!");
+                loadTeacherDashboard(); // Ma'lumotlarni yangilash
+            } else {
+                alert("Xatolik yuz berdi.");
+            }
+        } catch (err) {
+            alert("Server bilan aloqa uzildi!");
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('teacherId');
+        window.location.href = 'index.html';
+    }
+
+    // Sahifa ochilishi bilan ma'lumotlarni yuklash
+    window.onload = loadTeacherDashboard;
+</script>

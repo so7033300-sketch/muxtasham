@@ -3,132 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muhtasham CRM - Avtorizatsiya</title>
+    <title>EduManage CRM - Tizimga Kirish</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        body { background-color: #060508; color: #ffffff; min-height: 100vh; display: flex; align-items: center; justify-content: center; font-family: 'Plus Jakarta Sans', sans-serif; padding: 20px; }
-        .login-layout { width: 100%; max-width: 420px; }
-        .login-header { text-align: center; margin-bottom: 30px; }
-        .login-header h1 { color: #fbbf24; font-size: 28px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
-        .login-header p { color: #8a8a8a; font-size: 14px; margin-top: 5px; }
-        .form-group-margin { margin-bottom: 22px; }
-        .form-group-margin label { display: block; margin-bottom: 8px; color: #fbbf24; font-weight: 700; font-size: 13px; text-transform: uppercase; }
-        .role-selector { display: flex; gap: 12px; margin-bottom: 25px; background: #120e07; padding: 6px; border-radius: 14px; border: 2px solid rgba(255,255,255,0.05); }
-        .role-btn { flex: 1; padding: 12px; border: none; border-radius: 10px; background: transparent; color: #8a8a8a; font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.3s ease; }
-        .role-btn.active { background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%); color: #060508; }
-        .loading-text { color: #fbbf24; text-align: center; margin-top: 10px; font-weight: bold; display: none; }
-    </style>
 </head>
 <body>
 
-    <div class="login-layout">
+    <div class="glass-container">
+        <h2>EduManage CRM</h2>
+        <h3 style="font-size: 14px; margin-top: -15px; color: #94a3b8; -webkit-text-fill-color: initial;">O'quv Markazi Boshqaruv Tizimi</h3>
         
-        <div class="login-header">
-            <h1>Muhtasham CRM</h1>
-            <p>Tizimga kirish uchun login va parolingizni kiriting</p>
-        </div>
-
-        <div class="premium-card" style="border-color: rgba(245, 158, 11, 0.2);">
-            
-            <div class="role-selector">
-                <button type="button" id="btn-role-teacher" onclick="changeLoginRole('teacher')" class="role-btn active">Ustoz Kirishi</button>
-                <button type="button" id="btn-role-admin" onclick="changeLoginRole('admin')" class="role-btn">Admin Kirishi</button>
+        <form id="loginForm">
+            <div class="input-group">
+                <input type="text" id="loginInput" placeholder="Loginni kiriting" required>
             </div>
-
-            <form onsubmit="executeLoginSystem(event)">
-                
-                <div class="form-group-margin">
-                    <label>Tizim Login:</label>
-                    <input type="text" id="loginUser" class="premium-input" placeholder="Loginni yozing" required>
-                </div>
-
-                <div class="form-group-margin">
-                    <label>Tizim Parol:</label>
-                    <input type="password" id="passUser" class="premium-input" placeholder="••••••••" required>
-                </div>
-
-                <button type="submit" id="submit-btn" class="btn-premium-gold" style="margin-top: 10px; padding: 16px; font-weight: 800; font-size: 16px;">
-                    TIZIMGA KIRISH →
-                </button>
-                <div id="loading-msg" class="loading-text">Serverdan tekshirilmoqda, iltimos kuting... ⏳</div>
-            </form>
-        </div>
-
+            
+            <div class="input-group">
+                <input type="password" id="passwordInput" placeholder="Parolni kiriting" required>
+            </div>
+            
+            <button type="submit" class="btn">Tizimga Kirish</button>
+        </form>
+        
+        <div id="errorMessage" style="color: #f87171; text-align: center; margin-top: 15px; font-size: 14px; display: none;"></div>
     </div>
 
+    <!-- Tizim logikasi ulangan skript -->
     <script>
-        let currentSelectedRole = 'teacher';
-        const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
-
-        function changeLoginRole(role) {
-            currentSelectedRole = role;
-            const tBtn = document.getElementById('btn-role-teacher');
-            const aBtn = document.getElementById('btn-role-admin');
-            if (!tBtn || !aBtn) return;
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            if (role === 'admin') {
-                aBtn.classList.add('active');
-                tBtn.classList.remove('active');
-            } else {
-                tBtn.classList.add('active');
-                aBtn.classList.remove('active');
-            }
-        }
-
-        async function executeLoginSystem(event) {
-            event.preventDefault();
-            const logVal = document.getElementById('loginUser').value.trim();
-            const passVal = document.getElementById('passUser').value.trim();
-            const submitBtn = document.getElementById('submit-btn');
-            const loadingMsg = document.getElementById('loading-msg');
-
-            if (currentSelectedRole === 'admin') {
-                if (logVal === 'admin' && passVal === '123') {
-                    localStorage.setItem('adminIsactive', 'true');
-                    alert("Welcome! Administrator tizimga kirdi. 🎉");
-                    window.location.replace("admin.html");
-                } else {
-                    alert("❌ Admin login yoki paroli noto'g'ri!");
-                }
-                return;
-            }
-
-            // O'QITUVCHINI KIRISHINI JONLI SERVERDAN TEKSHIRISH
+            const login = document.getElementById('loginInput').value;
+            const password = document.getElementById('passwordInput').value;
+            const errorDiv = document.getElementById('errorMessage');
+            
             try {
-                submitBtn.disabled = true;
-                if (loadingMsg) loadingMsg.style.display = "block";
-
-                // Serverdan eng oxirgi bazadagi ma'lumotlarni so'rash
-                const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
-                const result = await response.json();
-
-                if (result.success && result.teachers) {
-                    // Ma'lumotlarni lokal xotiraga ham yangilab qo'yamiz xavfsizlik uchun
-                    localStorage.setItem('teachers', JSON.stringify(result.teachers || []));
-                    localStorage.setItem('students', JSON.stringify(result.students || []));
-                    localStorage.setItem('excelLog', JSON.stringify(result.excelLog || []));
-
-                    // Kiritilgan login parolga mos ustozni jonli ro'yxatdan qidirish
-                    const found = result.teachers.find(t => t.login.toLowerCase() === logVal.toLowerCase() && t.pass === passVal);
-
-                    if (found) {
-                        localStorage.setItem('loggedInTeacher', JSON.stringify(found));
-                        alert(`✅ Xush kelibsiz, ${found.name}! Tizim muvaffaqiyatli ochildi.`);
-                        window.location.replace("ustoz.html");
-                    } else {
-                        alert("❌ Ustoz login yoki paroli noto'g'ri!");
+                const response = await fetch('http://localhost:3000/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ login, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    if (data.role === 'admin') {
+                        window.location.href = 'admin.html';
+                    } else if (data.role === 'teacher') {
+                        localStorage.setItem('teacherId', data.teacherId);
+                        window.location.href = 'ustoz.html';
                     }
                 } else {
-                    alert("❌ Serverdan ma'lumot olishda xato bo'ldi!");
+                    errorDiv.style.display = 'block';
+                    errorDiv.innerText = data.message;
                 }
-            } catch (error) {
-                alert("❌ Internet yoki Server ulanishida xatolik: " + error.message);
-            } finally {
-                submitBtn.disabled = false;
-                if (loadingMsg) loadingMsg.style.display = "none";
+            } catch (err) {
+                errorDiv.style.display = 'block';
+                errorDiv.innerText = "Server bilan aloqa uzildi!";
             }
-        }
+        });
     </script>
-
 </body>
 </html>

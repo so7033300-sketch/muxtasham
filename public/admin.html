@@ -3,103 +3,207 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Muxtasham — Admin Paneli</title>
+    <title>Admin Panel - EduManage CRM</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        /* STRUKTURANI EKRAN BO'YLAB TO'G'RI YOYISH UCHUN PREMIUM ARXITEKTURA */
-        .admin-wrapper { max-width: 1200px !important; margin: 30px auto !important; width: 100%; padding: 0 20px; box-sizing: border-box; }
-        .select-custom { background-color: #0d0a04 !important; color: #ffffff !important; }
-        .search-input { background: #1c160a; border: 1px solid #f59e0b; color: #ffffff; border-radius: 12px; padding: 12px 18px; font-size: 16px; width: 100%; margin-bottom: 15px; outline: none; box-sizing: border-box; }
-        
-        /* ENIGA YOYILADIGAN 3 TA KATTA KARTA TIZIMI */
-        .moliya-top-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important; gap: 20px !important; width: 100% !important; margin-bottom: 30px !important; box-sizing: border-box; }
-        
-        /* MIXED FORMALAR ARXITEKTURASI */
-        .admin-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .form-group { display: flex; flex-direction: column; gap: 6px; text-align: left; }
-        .form-label { font-size: 13px; font-weight: 700; color: #fbbf24; text-transform: uppercase; }
-        
-        .days-checkboxes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; background: #0d0a04; padding: 15px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.2); }
-        .day-item { display: flex; align-items: center; gap: 8px; font-size: 14px; color: #ffffff; cursor: pointer; }
-        .day-item input { width: 15px; height: 14px; cursor: pointer; }
-        
-        .cards-container-grid { display: grid; grid-template-columns: 1fr; gap: 30px; margin-top: 20px; width: 100%; box-sizing: border-box; }
-        @media (max-width: 768px) { .admin-form-grid { grid-template-columns: 1fr; } .days-checkboxes { grid-template-columns: 1fr 1fr; } }
+        /* Admin uchun qo'shimcha kichik stillar */
+        body { align-items: flex-start; }
+        .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        .search-box { width: 300px; margin-bottom: 0; }
+        .danger-btn { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
+        .danger-btn:hover { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4); }
+        .inline-form { display: flex; gap: 10px; align-items: center; }
+        .inline-form input { padding: 8px 12px; font-size: 13px; }
+        .inline-form .btn { padding: 8px 15px; font-size: 13px; width: auto; }
     </style>
 </head>
 <body>
-    <div class="admin-wrapper fade-in-up">
+
+    <div class="dashboard-container">
         
-        <!-- PANEL TEPASI -->
-        <div class="moliya-card" style="margin-bottom: 25px; border-color: #f59e0b; display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 20px 25px; box-sizing: border-box;">
-            <div>
-                <span style="font-size: 13px; font-weight: 800; color: #fbbf24; text-transform: uppercase; letter-spacing: 1px; display: block;">Muxtasham CRM</span>
-                <h1 style="font-size: 26px; font-weight: 900; margin-top: 4px; color: #ffffff;">Bosh Administrator Paneli</h1>
-                <p style="font-size: 14px; color: #a1a1aa; margin-top: 4px;">Tizim sozlamalari va server nazorati</p>
+        <!-- Header qismi -->
+        <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
+            <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
+            <div class="input-group search-box">
+                <input type="text" id="searchStudent" placeholder="O'quvchini ism bo'yicha qidirish..." oninput="filterStudents()">
             </div>
-            <button onclick="localStorage.removeItem('adminSessionActive'); location.href='index.html'" class="btn-premium-dark" style="width: auto; padding: 12px 24px; font-size: 15px; border-radius: 14px; font-weight: 800;">Tizimdan Chiqish 🚪</button>
+            <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
         </div>
 
-        <!-- MOLIYA VA SERVER AVTOMATIK SINXRON KARTALARI -->
-        <div class="moliya-top-grid">
-            <div class="moliya-card" style="border-left: 6px solid #f59e0b; background: rgba(28, 22, 14, 0.9); margin-bottom: 0; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div><p style="font-size: 13px; font-weight: 800; color: #a1a1aa; text-transform: uppercase; margin:0;">Markaz Sof Foydasi (50%)</p><h2 id="center-profit" style="font-size: 26px; font-weight: 900; color: #fbbf24; margin-top: 6px; margin-bottom:0;">0 UZS</h2></div><div style="font-size: 30px;">🏛️</div>
-            </div>
-            <div class="moliya-card" style="border-left: 6px solid #ffffff; background: rgba(28, 22, 14, 0.9); margin-bottom: 0; padding: 20px; display: flex; justify-content: space-between; align-items: center;">
-                <div><p style="font-size: 13px; font-weight: 800; color: #a1a1aa; text-transform: uppercase; margin:0;">Ustozlar jami oylik haqi</p><h2 id="admin-teacher-salary" style="font-size: 26px; font-weight: 900; color: #ffffff; margin-top: 6px; margin-bottom:0;">0 UZS</h2></div><div style="font-size: 30px;">👨‍🏫</div>
-            </div>
-            <div class="moliya-card" style="border-left: 6px solid #fbbf24; background: rgba(35, 28, 18, 0.95); margin-bottom: 0; display: flex; flex-direction: column; gap: 8px; justify-content: center; padding: 20px;">
-                <p style="font-size: 13px; font-weight: 800; color: #fbbf24; text-transform: uppercase; text-align: center; margin: 0;">🤖 AVTOMATIK SINXRONLASH</p>
-                <p style="font-size: 11px; color: #a1a1aa; text-align: center; margin: 0;">Ma'lumotlar pullik Render bazasiga lahzada avtomat saqlanmoqda</p>
-                <button onclick="resetCurrentMonthMoliya()" class="btn-premium-dark" style="padding: 6px; font-size: 11px; border-radius: 8px; font-weight: 800; width: 100%; border-color: #f87171; color: #f87171; margin-top: 4px;">Balansni Tozalash 🗑️</button>
-            </div>
-        </div>
-
-        <!-- UZUN JADVAL VA FORMALAR TIZIMI CONTAINER BOSHLANISHI -->
-        <div class="cards-container-grid">
-            <!-- USTOLAR FORMASI -->
-            <div class="moliya-card" style="display: block; padding: 30px; background: rgba(28, 22, 14, 0.85); margin-bottom: 0; box-sizing: border-box; width:100%;">
-                <h3 style="font-size: 18px; font-weight: 900; color: #fbbf24; margin-bottom: 20px; text-transform: uppercase;">👨‍🏫 O'qituvchilarni Ro'yxatga Olish va Soat Sozlash</h3>
-                <form id="teacherForm" onsubmit="addTeacher(event)">
-                    <div class="admin-form-grid">
-                        <div class="form-group"><label class="form-label">Ustoz Ism Familiyasi</label><input type="text" id="t-name" required class="premium-input" style="padding:10px 15px; font-size:15px;"></div>
-                        <div class="form-group"><label class="form-label">O'tadigan Fani</label><input type="text" id="t-subject" required class="premium-input" style="padding:10px 15px; font-size:15px;"></div>
-                        <div class="form-group"><label class="form-label">Guruh Nomi</label><input type="text" id="t-group" required class="premium-input" style="padding:10px 15px; font-size:15px;"></div>
-                        <div class="form-group"><label class="form-label">Dars Soati (2 soatlik interval)</label><div style="display: flex; gap: 8px;"><input type="time" id="t-start" value="14:00" required class="premium-input" style="padding:10px; font-size:14px;"><input type="time" id="t-end" value="16:00" required class="premium-input" style="padding:10px; font-size:14px;"></div></div>
-                        <div class="form-group" style="grid-column: span 2;"><label class="form-label">Haftalik Dars Kunlarini Tanlang</label><div class="days-checkboxes"><label class="day-item"><input type="checkbox" name="t-days" value="1"> Dushanba</label><label class="day-item"><input type="checkbox" name="t-days" value="2"> Seshanba</label><label class="day-item"><input type="checkbox" name="t-days" value="3"> Chorshanba</label><label class="day-item"><input type="checkbox" name="t-days" value="4"> Payshanba</label><label class="day-item"><input type="checkbox" name="t-days" value="5"> Juma</label><label class="day-item"><input type="checkbox" name="t-days" value="6"> Shanba</label><label class="day-item"><input type="checkbox" name="t-days" value="0"> Yaksh</label></div></div>
-                        <div class="form-group"><label class="form-label">Tizim Login</label><input type="text" id="t-login" required class="premium-input" style="padding:10px 15px; font-size:15px;"></div>
-                        <div class="form-group"><label class="form-label">Tizim Parol</label><input type="text" id="t-pass" required class="premium-input" style="padding:10px 15px; font-size:15px;"></div>
-                    </div><button type="submit" class="btn-premium-gold" style="padding:12px; font-size:15px; border-radius:12px;">USTOZNI SAQLASH +</button>
-                </form>
-                <input type="text" id="search-teacher-input" oninput="filterTeachers()" class="search-input" placeholder="🔍 Ustoz qidirish..." style="margin-top:25px;">
-                <div class="excel-wrapper"><table class="excel-table"><thead><tr><th>№</th><th>Ustoz / Fani / Jadvali</th><th>Kirish Ma'lumotlari</th><th>Ajratilgan Pul</th><th style="text-align: right;">Amallar</th></tr></thead><tbody id="teachers-rows"></tbody></table></div>
-            </div>
-
-            <!-- O'QUVCHILAR FORMASI -->
-            <div class="moliya-card" style="display: block; padding: 30px; background: rgba(28, 22, 14, 0.85); margin-bottom: 0; box-sizing: border-box; width:100%;">
-                <h3 style="font-size: 18px; font-weight: 900; color: #fbbf24; margin-bottom: 20px; text-transform: uppercase;">🆕 Yangi O'quvchini Guruhga Biriktirish</h3>
-                <form id="studentForm" onsubmit="addStudent(event)">
-                    <div class="admin-form-grid">
-                        <div class="form-group"><label class="form-label">O'quvchi Ism Familiyasi</label><input type="text" id="s-name" required class="premium-input" style="padding:10px 15px; font-size:15px;"></div>
-                        <div class="form-group"><label class="form-label">Telefon Raqami</label><input type="text" id="s-phone" value="+998 " required class="premium-input" style="padding:10px 15px; font-size:15px;" oninput="formatPhoneInput(this)"></div>
-                        <div class="form-group"><label class="form-label">Boshlang'ich Balans</label><input type="number" id="s-balance" required class="premium-input" style="padding:10px 15px; font-size:15px;"></div>
-                        <div class="form-group"><label class="form-label">Mas'ul O'qituvchi</label><select id="s-teacher" required class="premium-input select-custom" style="padding:10px 15px; font-size:15px; height:43px;"></select></div>
-                        <div class="form-group"><label class="form-label">Guruh Nomi</label><input type="text" id="s-group" required class="premium-input" style="padding:10px 15px; font-size:15px;"></div>
-                        <div class="form-group"><label class="form-label">Oylik Kurs Narxi</label><select id="s-group-price" required class="premium-input select-custom" style="padding:10px 15px; font-size:15px; height:43px;"><option value="200000">200,000 UZS</option><option value="250000">250,000 UZS</option><option value="400000">400,000 UZS</option></select></div>
-                    </div><button type="submit" class="btn-premium-gold" style="padding:12px; font-size:15px; border-radius:12px;">O'QUVCHINI QO'SHISH +</button>
-                </form>
-                <input type="text" id="search-student-input" oninput="filterStudents()" class="search-input" placeholder="🔍 O'quvchi qidirish..." style="margin-top: 25px;">
-                <div class="excel-wrapper"><table class="excel-table"><thead><tr><th>№</th><th>O'quvchi Ismi / Telefoni</th><th>Biriktirilgan Ustoz</th><th>Guruh</th><th>Mavjud Balansi</th><th style="text-align: right;">Amallar</th></tr></thead><tbody id="students-rows"></tbody></table></div>
-            </div>
-
-            <!-- ANALITIKA JADVALI -->
-            <div class="moliya-card" style="display: block; padding: 30px; background: rgba(28, 22, 14, 0.85); box-sizing: border-box; width:100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;"><h3 style="font-size: 18px; font-weight: 900; color: #ffffff; text-transform: uppercase; margin:0;">📊 Excel Analitika</h3><button onclick="clearAllLogs()" class="btn-premium-dark" style="width: auto; padding: 10px 20px; font-size:13px; border-color: #f87171; color: #f87171; border-radius:10px;">⚠️ Tarixni Tozalash</button></div>
-                <div class="excel-wrapper"><table class="excel-table"><thead><tr><th>№</th><th>O'quvchi / Harakat</th><th>Sana</th><th>Xolat</th><th>Yechilgan Pul</th><th style="text-align: right;">Amallar</th></tr></thead><tbody id="excel-rows"></tbody></table></div>
-            </div>
+        <!-- Asosiy ishchi maydon (Grid) -->
+        <div class="grid-2">
             
-        </div> <!-- CARDS CONTAINER GRID END -->
+            <!-- 1. Yangi O'quvchi Qo'shish Oynasi -->
+            <div class="card glass-container" style="max-width: 100%;">
+                <h3>Yangi O'quvchi Qo'shish</h3>
+                <form id="studentForm">
+                    <div class="input-group">
+                        <input type="text" id="studName" placeholder="F.I.Sh (Ism Familya)" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="studPhone" placeholder="Telefon raqami (998901234567)" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="number" id="studBirth" placeholder="Tug'ilgan yili (Yil)" required>
+                    </div>
+                    <div class="input-group">
+                        <select id="studFee" required>
+                            <option value="" disabled selected>Oylik to'lov miqdorini tanlang</option>
+                            <option value="250000">250 000 so'm</option>
+                            <option value="300000">300 000 so'm</option>
+                            <option value="350000">350 000 so'm</option>
+                            <option value="400000">400 000 so'm</option>
+                            <option value="450000">450 000 so'm</option>
+                            <option value="500000">500 000 so'm</option>
+                            <option value="550000">550 000 so'm</option>
+                            <option value="600000">600 000 so'm</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="parentChatId" placeholder="Ota-ona Telegram Chat ID (ixtiyoriy)">
+                    </div>
+                    <button type="submit" class="btn">O'quvchini Saqlash</button>
+                </form>
+            </div>
+
+            <!-- 2. Yangi O'qituvchi Qo'shish Oynasi -->
+            <div class="card glass-container" style="max-width: 100%;">
+                <h3>Yangi O'qituvchi Qo'shish</h3>
+                <form id="teacherForm">
+                    <div class="input-group">
+                        <input type="text" id="teachName" placeholder="O'qituvchi F.I.Sh" required>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="teachSubject" placeholder="Qaysi fandan dars berishi" required>
+                    </div>
+                    <div class="grid-2" style="margin-bottom: 0; gap: 10px;">
+                        <div class="input-group">
+                            <input type="time" id="teachTimeStart" title="Dars boshlanish vaqti" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="time" id="teachTimeEnd" title="Dars tugash vaqti" required>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <input type="text" id="teachDays" placeholder="Kunlar (Masalan: Dushanba, Chorshanba, Juma)" required>
+                    </div>
+                    <div class="grid-2" style="margin-bottom: 0; gap: 10px;">
+                        <div class="input-group">
+                            <input type="text" id="teachLogin" placeholder="Login" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="teachPass" placeholder="Parol" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">O'qituvchini Saqlash</button>
+                </form>
+            </div>
+
+        </div>
+
+        <!-- Jadvallar qismi -->
+        <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
+            <div class="flex-header">
+                <h3 style="margin-bottom: 0;">Barcha O'quvchilar Ro'yxati</h3>
+                <button class="btn danger-btn" style="width: auto; padding: 8px 15px; font-size: 13px;" onclick="clearData('all')">Hamma Ma'lumotlarni Tozalash</button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ism Familya</th>
+                            <th>Telefon raqam</th>
+                            <th>Tug'ilgan yili</th>
+                            <th>Oylik To'lov</th>
+                            <th>Balans</th>
+                            <th>To'lov Qabul Qilish</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody">
+                        <!-- Dinamik o'quvchilar ro'yxati -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
+            <div class="flex-header">
+                <h3 style="margin-bottom: 0;">Kunlik Davomat Tarixi</h3>
+                <button class="btn danger-btn" style="width: auto; padding: 8px 15px; font-size: 13px;" onclick="clearData('attendance')">Davomatni Tozalash</button>
+            </div>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Sana</th>
+                            <th>O'quvchi F.I.Sh</th>
+                            <th>O'qituvchi</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendanceTableBody">
+                        <!-- Dinamik davomat tarixi -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card glass-container" style="max-width: 100%;">
+            <h3>O'qituvchilar Ro'yxati va Ularning Balansi</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>O'qituvchi F.I.Sh</th>
+                            <th>Fan</th>
+                            <th>Kunlar / Vaqt</th>
+                            <th>Ishlagan Puli (Balans)</th>
+                            <th>Login / Parol</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teachersTableBody">
+                        <!-- Dinamik o'qituvchilar ro'yxati -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
-    <script src="script.js"></script>
-</body>
-</html>
+
+    <!-- API bilan ishlash mantiqiy skripti -->
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+        let allStudents = [];
+
+        // Sahifa yuklanganda ma'lumotlarni yuklash
+        async function loadDashboardData() {
+            try {
+                const response = await fetch(`${API_URL}/data`);
+                const data = await response.json();
+                
+                allStudents = data.students;
+                renderStudents(allStudents);
+                renderAttendance(data.attendance);
+                renderTeachers(data.teachers);
+            } catch (err) {
+                alert("Ma'lumotlarni yuklashda xatolik yuz berdi!");
+            }
+        }
+
+        // O'quvchilarni jadvalga chiqarish
+        function renderStudents(students) {
+            const tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = '';
+            
+            students.forEach(s => {
+                // -150 000 so'mdan ko'p qarzi bo'lsa butunlay qizil qilish logikasi
+                const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
+                const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
+
+                tbody.innerHTML += `
+                    <tr class="${isDebtor}">
+                        <td><strong>${s.name}</strong></td>
+                        <td>${s.phone}</td>
+                        <td>${s.birthYear}-yil</td>
+                        <td>${s.fee.toLocaleString()} so'm</td>
+${s.balance.toLocaleString()} so'mTo'lash`;});}// Davomat tarixini chiqarishfunction renderAttendance(attendance) {const tbody = document.getElementById('attendanceTableBody');tbody.innerHTML = '';attendance.reverse().forEach(a => {const statusBadge = a.status === 'keldi' ? 'Keldi' : 'Kelmadi';tbody.innerHTML += <tr> <td>${a.date}</td> <td>${a.studentName}</td> <td>${a.teacherName}</td> <td>${statusBadge}</td> </tr>;});}// O'qituvchilarni chiqarishfunction renderTeachers(teachers) {const tbody = document.getElementById('teachersTableBody');tbody.innerHTML = '';teachers.forEach(t => {tbody.innerHTML += <tr> <td><strong>${t.name}</strong></td> <td>${t.subject}</td> <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td> <td><span class="status-badge status-paid" style="background:rgba(56, 189, 248, 0.2); color:#38bdf8;">${t.salary.toLocaleString()} so'm</span></td> <td><code>${t.login} / ${t.password}</code></td> </tr>;});}// Qidiruv tizimi (Ism bo'yicha filter)function filterStudents() {const query = document.getElementById('searchStudent').value.toLowerCase();const filtered = allStudents.filter(s => s.name.toLowerCase().includes(query));renderStudents(filtered);}// O'quvchi qo'shish formasi submit bo'lgandadocument.getElementById('studentForm').addEventListener('submit', async (e) => {e.preventDefault();const name = document.getElementById('studName').value;const phone = document.getElementById('studPhone').value;const birthYear = document.getElementById('studBirth').value;const fee = document.getElementById('studFee').value;const parentChatId = document.getElementById('parentChatId').value;const response = await fetch(${API_URL}/students, {method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ name, phone, birthYear, fee, parentChatId })});if (response.ok) {document.getElementById('studentForm').reset();loadDashboardData();}});// O'qituvchi qo'shish formasi submit bo'lgandadocument.getElementById('teacherForm').addEventListener('submit', async (e) => {e.preventDefault();const name = document.getElementById('teachName').value;const subject = document.getElementById('teachSubject').value;const timeStart = document.getElementById('teachTimeStart').value;const timeEnd = document.getElementById('teachTimeEnd').value;const daysStr = document.getElementById('teachDays').value;const login = document.getElementById('teachLogin').value;const password = document.getElementById('teachPass').value;const days = daysStr.split(',').map(d => d.trim());const response = await fetch(${API_URL}/teachers, {method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })});if (response.ok) {document.getElementById('teacherForm').reset();loadDashboardData();}});// To'lovni amalga oshirish funksiyasiasync function makePayment(studentId) {const amountInput = document.getElementById(pay_${studentId});const amount = amountInput.value;if (!amount || amount <= 0) return alert("To'g'ri summa kiriting!");const response = await fetch(${API_URL}/students/pay, {method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ studentId, amount })});if (response.ok) {amountInput.value = '';loadDashboardData();}}// Ma'lumotlarni tozalash funksiyasi (Tizimni tozalash uchun)async function clearData(type) {if (confirm("Haqiqatdan ham ushbu ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) {const response = await fetch(${API_URL}/clear/${type}, { method: 'DELETE' });if (response.ok) loadDashboardData();}}function logout() {window.location.href = 'index.html';}// Sahifa yuklanishi bilan ishga tushadiwindow.onload = loadDashboardData;
