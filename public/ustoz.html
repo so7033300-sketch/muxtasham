@@ -16,6 +16,7 @@
         .btn-danger-action:hover { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4); }
         .btn-disabled { background: #334155 !important; color: #64748b !important; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; }
         .time-badge { background: rgba(234, 179, 8, 0.15); color: #eab308; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 500; }
+        .group-title { text-align: left; margin-top: 20px; margin-bottom: 15px; font-size: 20px; font-weight: 600; color: #38bdf8; border-left: 4px solid #818cf8; padding-left: 15px; }
     </style>
 </head>
 <body>
@@ -44,30 +45,13 @@
             Tekshirilmoqda...
         </div>
 
-        <!-- O'quvchilar Ro'yxati va Davomat Jadvali -->
-        <div class="card glass-container" style="max-width: 100%;">
-            <h3>Darsingizdagi O'quvchilar Ro'yxati</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Ism Familya</th>
-                            <th>Telefon raqam</th>
-                            <th>Tug'ilgan yili</th>
-                            <th>O'quvchi Balansi</th>
-                            <th>Davomat (Faqat dars vaqtida faollashadi)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="teacherStudentsTable">
-                        <!-- Dinamik o'quvchilar ro'yxati -->
-                    </tbody>
-                </table>
-            </div>
+        <!-- GURUHLAR DINAMIK AJRALIB CHIQADIGAN ASOSIY KONTEYNER -->
+        <div id="teacherGroupsContainer">
+            <!-- JavaScript orqali har bir guruh alohida-alohida joylashadi -->
         </div>
 
     </div>
 
-    <!-- Barcha sahifalar uchun umumiy bo'lgan tashqi mantiqiy fayl -->
     <script src="/script.js"></script>
 </body>
 </html>
