@@ -105,29 +105,31 @@ app.post('/api/attendance', (req, res) => {
     const teacher = db.teachers.find(t => t.id === teacherId);
     if (!student || !teacher) return res.status(404).json({ success: false, message: "Ma'lumot topilmadi" });
 
+    // 1 darslik oylik to'lovni hisoblash (12 ta darsga bo'lamiz)
     const perLessonFee = Math.round(student.fee / 12);
-    student.balance -= perLessonFee;
+    student.balance -= perLessonFee; // O'quvchidan dars pulini to'liq yechish
+    
+    // 50/50 bo'lish algoritmi
     const halfFee = Math.round(perLessonFee / 2);
-    teacher.salary += halfFee;
+    teacher.salary += halfFee; // 50% ustozning shaxsiy balansiga (oyligiga)
     
-    if(!db.center_profit) db.center_profit = 0;
-    db.center_profit += halfFee;
-    // O'qituvchini ID raqami bo'yicha bazadan o'chirish API xizmati
-app.delete('/api/teachers/:id', (req, res) => {
-    const teacherId = req.params.id;
-    const db = readDB();
+    // 50% Markaz sof foydasiga tushishi (NaN bo'lib qolmasligi uchun himoya bilan)
+    if (typeof db.center_profit !== 'number') {
+        db.center_profit = 0;
+    }
+    db.center_profit += halfFee; // 50% markaz hisobiga tushdi!
     
-    // O'qituvchini ro'yxatdan qidirib o'chirish
-    db.teachers = db.teachers.filter(t => t.id !== teacherId);
+    // Davomat tarixini yozish
+    db.attendance.push({ 
+        date: new Date().toISOString().split('T')[0], 
+        studentName: student.name, 
+        teacherName: teacher.name, 
+        status: status 
+    });
     
     writeDB(db);
-    res.json({ success: true, message: "O'qituvchi muvaffaqiyatli o'chirildi" });
-});
 
-    
-    db.attendance.push({ date: new Date().toISOString().split('T')[0], studentName: student.name, teacherName: teacher.name, status: status });
-    writeDB(db);
-
+    // Telegram Bot orqali xabar yuborish qismi
     if (bot && student.parentChatId) {
         try {
             const statusText = status === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
@@ -139,25 +141,17 @@ app.delete('/api/teachers/:id', (req, res) => {
             console.log("Bot yuborish xatosi:", botErr.message);
         }
     }
-    res.json({ success: true, studentBalance: student.balance, teacherSalary: teacher.salary });
+    res.json({ success: true, studentBalance: student.balance, teacherSalary: teacher.salary, centerProfit: db.center_profit });
 });
 
-app.delete('/api/clear/:type', (req, res) => {
-    const type = req.params.type;
-    const db = readDB();
-    if (type === 'all') { db.students = []; db.teachers = []; db.attendance = []; }
-    else if (type === 'attendance') { db.attendance = []; }
-    writeDB(db);
-    res.json({ success: true });
-});
-
+// Barcha ma'lumotlarni frontendga uzatish API havolasi
 app.get('/api/data', (req, res) => {
     const db = readDB();
     const todayStr = new Date().toISOString().split('T')[0];
 
     // Har bir o'quvchi bugun darsda belgilanganmi yoki yo'qligini aniqlash
-    const updatedStudents = db.students.map(student => {
-        const hasAttendedToday = db.attendance.some(att => 
+    const updatedStudents = (db.students || []).map(student => {
+        const hasAttendedToday = (db.attendance || []).some(att => 
             att.date === todayStr && 
             att.studentName === student.name
         );
@@ -166,8 +160,9 @@ app.get('/api/data', (req, res) => {
 
     res.json({
         students: updatedStudents,
-        teachers: db.teachers,
-        attendance: db.attendance
+        teachers: db.teachers || [],
+        attendance: db.attendance || [],
+        center_profit: db.center_profit || 0 // Frontend aniq o'qib olishi uchun markaz foydasini ham qo'shdik!
     });
 });
 
