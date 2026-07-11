@@ -363,10 +363,13 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
         groupStudents.forEach(s => {
             const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
             const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-            const isButtonActive = isLessonTime && !s.attendedToday;
+            
+            // Muzlatish qoidasini kuchaytirdik: dars vaqti bo'lishi shart VA bugun hali davomat qilinmagan bo'lishi kerak
+            const isButtonActive = isLessonTime && (s.attendedToday === false || s.attendedToday === undefined || s.attendedToday === null);
             const disabledAttr = isButtonActive ? '' : 'disabled';
             const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
 
+            // Agar bola bugun belgilab bo'lingan bo'lsa, tugmalar zudlik bilan qulflanadi
             const attendanceCellContent = s.attendedToday 
                 ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
                 : `<div style="display: flex; gap: 10px;">
@@ -400,14 +403,13 @@ async function submitAttendance(studentId, status, teacherId) {
             body: JSON.stringify({ teacherId, studentId, status })
         });
         if (response.ok) {
-            alert("Davomat muvaffaqiyatli saqlandi va ushbu o'quvchi uchun qulflandi!");
-            // Ma'lumotlarni qayta yuklab, tugmalarni zudlik bilan muzlatish
-            await loadTeacherDashboard();
+            alert("Davomat saqlandi va ushbu o'quvchi uchun tugmalar qulflandi!");
+            // MUHIM: Serverdan yangi 'attendedToday' ma'lumotlarini qayta o'qib, ekranni zumda muzlatish
+            loadTeacherDashboard();
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
-// MUTLAQ TO'G'RILANGAN JONLI QULFLASH TIZIMI INITIALIZATIONI
 window.onload = function() {
     if (document.getElementById('studentsTableBody')) {
         loadDashboardData();
@@ -418,3 +420,4 @@ window.onload = function() {
         loadTeacherDashboard();
     }
 };
+
