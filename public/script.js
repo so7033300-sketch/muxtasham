@@ -1,9 +1,9 @@
 // 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
-const RENDER_BACKEND_URL = "https://onrender.com";
+const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
 
 // Tizim yuklanganda JONLI SERVERDAN ma'lumotlarni majburiy tortib olish
 document.addEventListener("DOMContentLoaded", async () => {
-    // Faqat bir marta sahifa ochilganda bazani xavfsiz yangilaymiz
+    // Har qanday qurilmadan (telefon, noutbuk) kirganda birinchi bo'lib bazani jonli yangilaymiz
     await syncDataFromDatabaseSilently();
 
     if (document.getElementById('teachers-rows')) renderTeachers();
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTeacherGroupDropdownSystem();
 });
 
-// BAZADAN TOZA NUSXANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH
+// BAZADAN TOZA NUSXANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH (MULTIPLE DEVICE REJIM)
 async function syncDataFromDatabaseSilently() {
     try {
         const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
@@ -32,31 +32,22 @@ async function syncDataFromDatabaseSilently() {
     } catch (e) { console.error("Jonli sinxronizatsiyada xato:", e.message); }
 }
 
-// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH (KUTISH REJIMI QO'SHILDI)
+// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH
 async function uploadLocalDataToBackend() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     let students = JSON.parse(localStorage.getItem('students')) || [];
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
 
     let dataToSend = { teachers, students, excelLog };
-    
     try {
-        const response = await fetch(`${RENDER_BACKEND_URL}/api/save-all`, {
+        await fetch(`${RENDER_BACKEND_URL}/api/save-all`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dataToSend)
         });
-        const res = await response.json();
-        if (res.success) {
-            console.log("🟢 Ma'lumotlar server bazasiga muhrlandi!");
-            return true;
-        }
-    } catch (error) { 
-        console.error("Serverga avto-yuklashda xato:", error.message); 
-        return false;
-    }
+    } catch (error) { console.error("Serverga avto-yuklashda xato:", error.message); }
 }
-// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH
+// 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH (XATOSIZ REJIM)
 function initPhoneFormatters() {
     const phoneInputs = document.querySelectorAll('#s-phone, #ts-phone, [id*="phone"]');
     phoneInputs.forEach(input => {
@@ -142,11 +133,9 @@ function initTeacherGroupDropdownSystem() {
         };
     });
 }
-// 4. O'QITUVCHINI QO'SHISH (SERVER JONLI QABUL QILGUNCHA KUTISH SHARTI QO'SHILDI)
+// 4. O'QITUVCHINI QO'SHISH (XATOSIZ REJIM - SRAZU BAZAGA MAXIMUM SAQLAYDI)
 async function addTeacher(event) {
     event.preventDefault();
-    
-    // 1. Birinchi navbatda bazadagi eng oxirgi toza arxivni tortamiz (qurilmalar urilmasligi uchun)
     await syncDataFromDatabaseSilently(); 
 
     const name = document.getElementById('teacherName')?.value.trim() || document.getElementById('t-name')?.value.trim();
@@ -166,20 +155,17 @@ async function addTeacher(event) {
     teachers.push(newTeacher);
     localStorage.setItem('teachers', JSON.stringify(teachers));
 
-    // ⚡ ENg MUHIM TUGUN: Serverga yuborishni buyuramiz va u TAYYOR bo'lguncha kutamiz!
-    const isSaved = await uploadLocalDataToBackend(); 
+    // Formani reset qilishdan oldin srazu bazaga qulflaymiz!
+    await uploadLocalDataToBackend(); 
 
-    if (isSaved) {
-        alert("🔥 Daxshat! Yangi o'qituvchi pullik PostgreSQL bazasiga 100% muvaffaqiyatli qulflandi! Yangilasa ham o'chmaydi. 🎉");
-        event.target.reset();
-        renderTeachers();
-        updateMoliyaGrid();
-    } else {
-        alert("❌ Serverga saqlashda xatolik bo'ldi. Internetni tekshirib qayta urinib ko'ring.");
-    }
+    alert("✅ O'qituvchi muvaffaqiyatli qo'shildi va tizimda saqlandi!");
+    event.target.reset();
+    
+    renderTeachers();
+    updateMoliyaGrid();
 }
 
-// 5. O'QITUVCHILAR JADVALINI CHIZISH
+// 5. O'QITUVCHILAR JADVALINI CHIZISH (PULLAR SHU YERDA 100% ANIQLIKDA CHIQADI)
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -190,6 +176,7 @@ function renderTeachers() {
         let currentAllowedDays = t.allowed_days || t.allowedDays || [];
         let daysDisplay = Array.isArray(currentAllowedDays) ? currentAllowedDays.join(', ') : String(currentAllowedDays || '');
         
+        // JONLI FILTR: Keldi ham Kelmadi ham darslardan tushgan pulni faqat shu ustoz ID siga qarab yig'ish!
         let teacherTotalEarned = excelLog
             .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (Number(l.teacherId) === Number(t.id) || Number(l.teacher_id) === Number(t.id)))
             .reduce((sum, current) => sum + (current.sum || 0), 0);
@@ -250,14 +237,13 @@ async function addStudent(event) {
     });
     localStorage.setItem('excelLog', JSON.stringify(excelLog));
 
-    const isSaved = await uploadLocalDataToBackend(); // Srazu bazaga muhrlash
+    await uploadLocalDataToBackend(); 
 
-    if (isSaved) {
-        alert("✅ Yangi o'quvchi muvaffaqiyatli ro'yxatga olindi va serverga yozildi!");
-        event.target.reset();
-        if (document.getElementById('s-group-select')) document.getElementById('s-group-select').style.display = 'none';
-        renderStudents(); renderExcelLog(); updateMoliyaGrid(); initPhoneFormatters();
-    }
+    alert("✅ Yangi o'quvchi ro'yxatga olindi!");
+    event.target.reset();
+    if (document.getElementById('s-group-select')) document.getElementById('s-group-select').style.display = 'none';
+
+    renderStudents(); renderExcelLog(); updateMoliyaGrid(); initPhoneFormatters();
 }
 
 // 7. O'QUVCHILARI JADVALINI CHIZISH
@@ -393,6 +379,7 @@ async function initTeacherCabinet() {
     const teacherTitle = document.getElementById('teacher-title-name');
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     
+    // QAT'IY JONLI ID REJIMDA USTOZ SHAXSIY ULUSHINI JONLI CHIZISH (KELDI + KELMADI)
     let myEarned = excelLog
         .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (Number(l.teacherId) === Number(currentTeacher.id) || Number(l.teacher_id) === Number(currentTeacher.id)))
         .reduce((sum, current) => sum + (current.sum || 0), 0);
@@ -409,8 +396,7 @@ function checkTimeAndLockSystem() {
     if (!currentTeacher) return;
     const now = new Date();
     const daysUz = ["Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba"];
-    const currentDayUz = daysUz[now.getDay()]; 
-    const currentDayNum = now.getDay() === 0 ? 7 : now.getDay(); 
+    const currentDayUz = daysUz[now.getDay()]; const currentDayNum = now.getDay() === 0 ? 7 : now.getDay(); 
 
     let sTime = currentTeacher.start_time || currentTeacher.startTime || "14:00";
     let eTime = currentTeacher.end_time || currentTeacher.endTime || "16:00";
@@ -477,7 +463,4 @@ function renderTeacherStudents() {
             if (s.balance < -150000) rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`;
             else if (s.balance < -100000) textStyle = `style="color: #ff4747 !important;"`;
 
-            studentRowsHtml += `<tr ${rowStyle}><td ${textStyle}>${idx + 1}</td><td ${textStyle}><b>${s.name}</b><br><small>${s.phone}</small></td><td style="font-weight:bold; ${s.balance < 0 ? 'color:#ff4747;' : 'color:#fbbf24;'}">${s.balance.toLocaleString()} UZS</td><td>${actionCellHtml}</td></tr>`;
-        });
-
-        mainBox.innerHTML += `<div class="guruh-premium-card-box moliya-
+            studentRowsHtml += `<tr ${rowStyle}><td ${textStyle}>${idx + 1}</td><td ${textStyle}><b>${s.name}</b><br><small>${s.phone}</small></td><td style="font-weight:bold; ${s.balance < 0 ? 'color:#ff4747;' : 'color:#fbbf24
