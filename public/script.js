@@ -4,8 +4,8 @@ const API_URL = 'https://muxtasham-jgqv.onrender.com';
 // Render serveringizning mutlaq to'liq manzili
 const API_URL = 'https://onrender.com';
 
-// Tizimga xavfsiz va sahifa yangilanmasdan kirish funksiyasi
-async function executeLogin() {
+// Funksiyani global window obyektiga bog'laymiz (Tugma 100% ishlashi uchun)
+window.executeLogin = async function() {
     const login = document.getElementById('loginInput').value;
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
@@ -40,10 +40,11 @@ async function executeLogin() {
     }
 }
 
-function logout() {
+window.logout = function() {
     localStorage.clear();
     window.location.href = '/index.html';
 }
+
 let allStudents = [];
 
 // Admin panelidagi barcha ma'lumotlarni serverdan yuklash
