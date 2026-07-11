@@ -46,10 +46,18 @@ async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
         const data = await response.json();
+        
         allStudents = data.students || [];
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
         renderTeachers(data.teachers || []);
+
+        // Serverdan kelayotgan markaz foydasini ekranga chiqarish
+        const centerProfit = data.center_profit || 0;
+        const profitDisplay = document.getElementById('centerProfitDisplay');
+        if (profitDisplay) {
+            profitDisplay.innerText = `${centerProfit.toLocaleString()} so'm`;
+        }
     } catch (err) {
         console.error("Ma'lumotlarni yuklashda xatolik yuz berdi!");
     }
@@ -250,7 +258,6 @@ function checkLessonTime(teacher) {
     }
 }
 
-// Ustoz panelida bolalar ro'yxatini chiqarish va 1 marta bosilganda bloklash
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const tbody = document.getElementById('teacherStudentsTable') || document.getElementById('teacherTeacherStudentsTable');
     if (!tbody) return;
@@ -259,13 +266,9 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
     students.forEach(s => {
         const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
         const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-        
-        // Dars vaqti bo'lsa va bola bugun hali davomat qilinmagan bo'lsa tugmalar faol bo'ladi
-        const isButtonActive = isLessonTime && !s.attendedToday;
-        const disabledAttr = isButtonActive ? '' : 'disabled';
-        const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
+        const disabledAttr = isLessonTime && !s.attendedToday ? '' : 'disabled';
+        const btnClassExtension = isLessonTime && !s.attendedToday ? '' : 'btn-disabled';
 
-        // Agar bola bugun belgilab bo'lingan bo'lsa, tugmalar o'rniga status chiqarish
         const attendanceCellContent = s.attendedToday 
             ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
             : `<div style="display: flex; gap: 10px;">
@@ -294,8 +297,8 @@ async function submitAttendance(studentId, status, teacherId) {
             body: JSON.stringify({ teacherId, studentId, status })
         });
         if (response.ok) {
-            alert("Davomat saqlandi, ota-onaga Telegram xabar ketdi va tugmalar qulflandi!");
-            loadTeacherDashboard(); // Sahifani yangilab, tugmalarni darhol muzlatish
+            alert("Davomat saqlandi va balanslar yangilandi!");
+            loadTeacherDashboard();
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
