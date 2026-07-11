@@ -250,6 +250,7 @@ function checkLessonTime(teacher) {
     }
 }
 
+// Ustoz panelida bolalar ro'yxatini chiqarish va 1 marta bosilganda bloklash
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const tbody = document.getElementById('teacherStudentsTable') || document.getElementById('teacherTeacherStudentsTable');
     if (!tbody) return;
@@ -258,8 +259,19 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
     students.forEach(s => {
         const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
         const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-        const disabledAttr = isLessonTime ? '' : 'disabled';
-        const btnClassExtension = isLessonTime ? '' : 'btn-disabled';
+        
+        // Dars vaqti bo'lsa va bola bugun hali davomat qilinmagan bo'lsa tugmalar faol bo'ladi
+        const isButtonActive = isLessonTime && !s.attendedToday;
+        const disabledAttr = isButtonActive ? '' : 'disabled';
+        const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
+
+        // Agar bola bugun belgilab bo'lingan bo'lsa, tugmalar o'rniga status chiqarish
+        const attendanceCellContent = s.attendedToday 
+            ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
+            : `<div style="display: flex; gap: 10px;">
+                    <button ${disabledAttr} class="btn btn-success ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'keldi', '${teacherId}')">Keldi</button>
+                    <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi', '${teacherId}')">Kelmadi</button>
+               </div>`;
 
         tbody.innerHTML += `
             <tr class="${isDebtor}">
@@ -267,19 +279,14 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
                 <td>${s.phone}</td>
                 <td>${s.birthYear}-yil</td>
                 <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
-                <td>
-                    <div style="display: flex; gap: 10px;">
-                        <button ${disabledAttr} class="btn btn-success ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'keldi', '${teacherId}')">Keldi</button>
-                        <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi', '${teacherId}')">Kelmadi</button>
-                    </div>
-                </td>
+                <td>${attendanceCellContent}</td>
             </tr>
         `;
     });
 }
 
 async function submitAttendance(studentId, status, teacherId) {
-    if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz?`)) return;
+    if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz? (Bu amalni qaytarib bo'lmaydi)`)) return;
     try {
         const response = await fetch(`${API_URL}/attendance`, {
             method: 'POST',
@@ -287,8 +294,8 @@ async function submitAttendance(studentId, status, teacherId) {
             body: JSON.stringify({ teacherId, studentId, status })
         });
         if (response.ok) {
-            alert("Davomat saqlandi va balanslar yangilandi!");
-            loadTeacherDashboard();
+            alert("Davomat saqlandi, ota-onaga Telegram xabar ketdi va tugmalar qulflandi!");
+            loadTeacherDashboard(); // Sahifani yangilab, tugmalarni darhol muzlatish
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
