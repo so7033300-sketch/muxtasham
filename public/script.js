@@ -1,10 +1,9 @@
-// Server API manzili (Mahalliy joylashuv uchun)
+// Sizning shaxsiy Render serveringiz manzili
 const API_URL = 'https://muxtasham-jgqv.onrender.com';
 
 // Tizimga kirish (Login) funksiyasi
 async function handleLogin(e) {
     e.preventDefault();
-    
     const login = document.getElementById('loginInput').value;
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
@@ -15,7 +14,6 @@ async function handleLogin(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ login, password })
         });
-        
         const data = await response.json();
         
         if (data.success) {
@@ -34,14 +32,17 @@ async function handleLogin(e) {
         errorDiv.innerText = "Server bilan aloqa uzildi!";
     }
 }
+
+function logout() {
+    localStorage.clear();
+    window.location.href = 'index.html';
+}
 let allStudents = [];
 
-// Admin panelidagi barcha ma'lumotlarni serverdan yuklash funksiyasi
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
         const data = await response.json();
-        
         allStudents = data.students;
         renderStudents(allStudents);
         renderAttendance(data.attendance);
@@ -50,14 +51,74 @@ async function loadDashboardData() {
         console.error("Ma'lumotlarni yuklashda xatolik yuz berdi!");
     }
 }
-// Ism bo'yicha o'quvchilarni tezkor qidirish (Filter)
+
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     const filtered = allStudents.filter(s => s.name.toLowerCase().includes(query));
     renderStudents(filtered);
 }
+function renderStudents(students) {
+    const tbody = document.getElementById('studentsTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    students.forEach(s => {
+        const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
+        const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
 
-// Yangi o'quvchini bazaga qo'shish funksiyasi
+        tbody.innerHTML += `
+            <tr class="${isDebtor}">
+                <td><strong>${s.name}</strong></td>
+                <td>${s.phone}</td>
+                <td>${s.birthYear}-yil</td>
+                <td>${s.fee.toLocaleString()} so'm</td>
+                <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
+                <td>
+                    <div class="inline-form">
+                        <input type="number" id="pay_${s.id}" placeholder="Summa" style="width:110px;">
+                        <button class="btn" onclick="makePayment('${s.id}')">To'lash</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function renderAttendance(attendance) {
+    const tbody = document.getElementById('attendanceTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    attendance.slice().reverse().forEach(a => {
+        const statusBadge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
+        tbody.innerHTML += `
+            <tr>
+                <td>${a.date}</td>
+                <td>${a.studentName}</td>
+                <td>${a.teacherName}</td>
+                <td>${statusBadge}</td>
+            </tr>
+        `;
+    });
+}
+
+function renderTeachers(teachers) {
+    const tbody = document.getElementById('teachersTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    teachers.forEach(t => {
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${t.name}</strong></td>
+                <td>${t.subject}</td>
+                <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td>
+                <td><span class="status-badge status-paid" style="background:rgba(56, 189, 248, 0.2); color:#38bdf8;">${t.salary.toLocaleString()} so'm</span></td>
+                <td><code>${t.login} / ${t.password}</code></td>
+            </tr>
+        `;
+    });
+}
 async function saveStudent(e) {
     e.preventDefault();
     const name = document.getElementById('studName').value;
@@ -71,14 +132,12 @@ async function saveStudent(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, birthYear, fee, parentChatId })
     });
-
     if (response.ok) {
         document.getElementById('studentForm').reset();
         loadDashboardData();
     }
 }
 
-// Yangi o'qituvchini bazaga qo'shish funksiyasi
 async function saveTeacher(e) {
     e.preventDefault();
     const name = document.getElementById('teachName').value;
@@ -88,7 +147,6 @@ async function saveTeacher(e) {
     const daysStr = document.getElementById('teachDays').value;
     const login = document.getElementById('teachLogin').value;
     const password = document.getElementById('teachPass').value;
-
     const days = daysStr.split(',').map(d => d.trim());
 
     const response = await fetch(`${API_URL}/teachers`, {
@@ -96,13 +154,12 @@ async function saveTeacher(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
     });
-
     if (response.ok) {
         document.getElementById('teacherForm').reset();
         loadDashboardData();
     }
 }
-// O'quvchi to'lovini qabul qilish va balansini oshirish funksiyasi
+
 async function makePayment(studentId) {
     const amountInput = document.getElementById(`pay_${studentId}`);
     const amount = amountInput.value;
@@ -113,26 +170,20 @@ async function makePayment(studentId) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ studentId, amount })
     });
-
     if (response.ok) {
         amountInput.value = '';
         loadDashboardData();
     }
 }
 
-// Jadvallarni o'chirish va tozalash funksiyasi
 async function clearData(type) {
     if (confirm("Haqiqatdan ham ushbu ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) {
         const response = await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' });
         if (response.ok) loadDashboardData();
     }
 }
-// Kunlarni indekslarga moslash lug'ati
-const dayIndexMap = {
-    "dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0
-};
+const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
 
-// O'qituvchining shaxsiy ma'lumotlarini yuklash va ekranga chiqarish
 async function loadTeacherDashboard() {
     const currentTeacherId = localStorage.getItem('teacherId');
     if (!currentTeacherId) return;
@@ -140,13 +191,8 @@ async function loadTeacherDashboard() {
     try {
         const response = await fetch(`${API_URL}/data`);
         const data = await response.json();
-
         const teacher = data.teachers.find(t => t.id === currentTeacherId);
-        if (!teacher) {
-            alert("O'qituvchi topilmadi!");
-            logout();
-            return;
-        }
+        if (!teacher) { logout(); return; }
 
         document.getElementById('teacherNameHeader').innerText = teacher.name;
         document.getElementById('teacherSubject').innerText = teacher.subject;
@@ -156,20 +202,14 @@ async function loadTeacherDashboard() {
 
         const isLessonTime = checkLessonTime(teacher);
         renderTeacherStudents(data.students, isLessonTime, currentTeacherId);
-
-    } catch (err) {
-        console.error("Xatolik:", err);
-    }
+    } catch (err) { console.error(err); }
 }
 
-// Dars kunlari va soatini tekshirib tugmalarni bloklash yoki ochish funksiyasi
 function checkLessonTime(teacher) {
     const now = new Date();
     const currentDayIndex = now.getDay();
     const currentTimeStr = now.toTimeString().substring(0, 5);
-
     const hasLessonToday = teacher.days.some(day => dayIndexMap[day.toLowerCase().trim()] === currentDayIndex);
-
     const noticeDiv = document.getElementById('timeStatusNotice');
     if (!noticeDiv) return false;
 
@@ -178,7 +218,6 @@ function checkLessonTime(teacher) {
         noticeDiv.style.color = '#f87171';
         return false;
     }
-
     if (currentTimeStr >= teacher.timeStart && currentTimeStr <= teacher.timeEnd) {
         noticeDiv.innerHTML = `✅ Dars vaqti faol (${teacher.timeStart} - ${teacher.timeEnd}). Davomat qilishingiz mumkin.`;
         noticeDiv.style.color = '#4ade80';
@@ -189,7 +228,7 @@ function checkLessonTime(teacher) {
         return false;
     }
 }
-// Ustoz darsidagi o'quvchilarni jadvalga chiqarish funksiyasi
+
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const tbody = document.getElementById('teacherStudentsTable');
     if (!tbody) return;
@@ -198,7 +237,6 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
     students.forEach(s => {
         const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
         const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-        
         const disabledAttr = isLessonTime ? '' : 'disabled';
         const btnClassExtension = isLessonTime ? '' : 'btn-disabled';
 
@@ -219,32 +257,21 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
     });
 }
 
-// Davomat belgilash va serverga yuborish (50/50 hisoblash va Telegram xabar shu yerda ishlaydi)
 async function submitAttendance(studentId, status, teacherId) {
     if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz?`)) return;
-
     try {
         const response = await fetch(`${API_URL}/attendance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ teacherId, studentId, status })
         });
-
         if (response.ok) {
             alert("Davomat saqlandi va ota-onaga Telegram bot orqali xabar yuborildi!");
             loadTeacherDashboard();
         }
-    } catch (err) {
-        alert("Server bilan aloqa uzildi!");
-    }
+    } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
-// Tizimdan mutlaqo chiqish (Logout)
-function logout() {
-    localStorage.clear();
-    window.location.href = 'index.html';
-}
-// Sahifa turiga qarab kerakli funksiyalarni ishga tushirish (Global boshqaruvchi)
 window.onload = function() {
     if (document.getElementById('loginForm')) {
         document.getElementById('loginForm').addEventListener('submit', handleLogin);
