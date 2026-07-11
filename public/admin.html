@@ -15,6 +15,7 @@
         .inline-form input { padding: 8px 12px; font-size: 13px; }
         .inline-form .btn { padding: 8px 15px; font-size: 13px; width: auto; }
         
+        /* Oq oynani butunlay yo'qotib, premium quyuq va silliq ko'rinishga keltirish */
         select {
             appearance: none;
             -webkit-appearance: none;
@@ -51,7 +52,7 @@
 
     <div class="dashboard-container">
         
-        <!-- Header va Markaz Foydasi -->
+        <!-- Yuqori boshqaruv paneli -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div style="font-size: 16px; font-weight: 500;">
@@ -93,6 +94,7 @@
                         </select>
                     </div>
 
+                    <!-- DINAMIK GURUH TANLASH BO'LIMI -->
                     <div id="groupSelectionContainer" class="dynamic-group-box" style="display: none;">
                         <div class="input-group" style="margin-bottom: 10px;">
                             <select id="groupModeSelect" onchange="toggleGroupMode()">
@@ -115,7 +117,7 @@
                     <div class="input-group">
                         <input type="text" id="parentChatId" placeholder="Ota-ona Telegram Chat ID (ixtiyoriy)">
                     </div>
-                    <button type="button" class="btn" onclick="executeSaveStudent()">O'quvchini Saqlash</button>
+                    <button type="submit" class="btn">O'quvchini Saqlash</button>
                 </form>
             </div>
 
@@ -144,11 +146,11 @@
                         <div class="input-group"> <input type="text" id="teachLogin" placeholder="Login" required> </div>
                         <div class="input-group"> <input type="password" id="teachPass" placeholder="Parol" required> </div>
                     </div>
-                    <button type="button" class="btn" onclick="executeSaveTeacher()">O'qituvchini Saqlash</button>
+                    <button type="submit" class="btn">O'qituvchini Saqlash</button>
                 </form>
             </div>
         </div>
-        <!-- O'quvchilar Jadvali (O'chirish amali qo'shilgan versiyasi) -->
+        <!-- O'quvchilar Jadvali (O'chirish tugmasi bor) -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
                 <h3 style="margin-bottom: 0;">Barcha O'quvchilar Ro'yxati</h3>
