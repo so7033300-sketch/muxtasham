@@ -1,12 +1,10 @@
 const API_URL = '/api';
 
-// Funksiyani global window obyektiga bog'laymiz (Tugma 100% ishlashi uchun)
 window.executeLogin = async function() {
     const login = document.getElementById('loginInput').value;
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
-    
-    if(!login || !password) { return alert("Iltimos, login va parolni to'liq kiriting!"); }
+    if(!login || !password) return alert("Iltimos, login va parolni to'liq kiriting!");
     
     try {
         const response = await fetch(`${API_URL}/login`, {
@@ -15,9 +13,8 @@ window.executeLogin = async function() {
             body: JSON.stringify({ login, password })
         });
         const data = await response.json();
-        
         if (data.success) {
-            if (data.role === 'admin') { window.location.href = '/admin.html'; } 
+            if (data.role === 'admin') window.location.href = '/admin.html';
             else if (data.role === 'teacher') {
                 localStorage.setItem('teacherId', data.teacherId);
                 window.location.href = '/ustoz.html';
@@ -26,16 +23,11 @@ window.executeLogin = async function() {
             errorDiv.style.display = 'block';
             errorDiv.innerText = data.message;
         }
-    } catch (err) {
-        errorDiv.style.display = 'block';
-        errorDiv.innerText = "Server bilan aloqa uzildi!";
-    }
+    } catch (err) { errorDiv.style.display = 'block'; errorDiv.innerText = "Server bilan aloqa uzildi!"; }
 }
 
-window.logout = function() {
-    localStorage.clear();
-    window.location.href = '/index.html';
-}
+window.logout = function() { localStorage.clear(); window.location.href = '/index.html'; }
+
 let allStudents = [];
 let allTeachers = [];
 
@@ -43,53 +35,84 @@ async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
         const data = await response.json();
-        
         allStudents = data.students || [];
         allTeachers = data.teachers || [];
         
-        // Dinamik ravishda o'quvchi qo'shish formisiga guruhlarni tanlash ro'yxatini joylash
         const teacherSelect = document.getElementById('studTeacher');
         if (teacherSelect) {
-            teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga (Guruhga) qo\'shish...</option>';
+            teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga qo\'shish...</option>';
             allTeachers.forEach(t => {
                 teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`;
             });
         }
-
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
         renderTeachers(allTeachers);
-
-        // Markaz sof foydasini chiqarish
-        const centerProfit = data.center_profit || 0;
-        const profitDisplay = document.getElementById('centerProfitDisplay');
-        if (profitDisplay) profitDisplay.innerText = `${centerProfit.toLocaleString()} so'm`;
+        if (document.getElementById('centerProfitDisplay')) document.getElementById('centerProfitDisplay').innerText = `${(data.center_profit || 0).toLocaleString()} so'm`;
     } catch (err) { console.error(err); }
 }
 
+// USTOZ TANLANGANDA MA'LUMOTLARNI UNIKAL FILTRLASH
+window.onTeacherSelected = function() {
+    const teacherId = document.getElementById('studTeacher').value;
+    const container = document.getElementById('groupSelectionContainer');
+    const groupSelect = document.getElementById('studGroupSelect');
+    
+    if (!teacherId) return;
+    container.style.display = 'block';
+
+    const teacherGroups = [];
+    allStudents.forEach(s => {
+        if (s.teacherId === teacherId && s.groupName && !teacherGroups.includes(s.groupName)) {
+            teacherGroups.push(s.groupName);
+        }
+    });
+
+    groupSelect.innerHTML = '';
+    if (teacherGroups.length === 0) {
+        groupSelect.innerHTML = '<option value="" disabled selected>Mavjud guruh yo\'q, yangi oching</option>';
+        document.getElementById('groupModeSelect').value = 'create';
+        toggleGroupMode();
+    } else {
+        groupSelect.innerHTML = '<option value="" disabled selected>Guruhni tanlang...</option>';
+        teacherGroups.forEach(g => {
+            groupSelect.innerHTML += `<option value="${g}">${g}</option>`;
+        });
+        document.getElementById('groupModeSelect').value = 'select';
+        toggleGroupMode();
+    }
+}
+
+window.toggleGroupMode = function() {
+    const mode = document.getElementById('groupModeSelect').value;
+    if (mode === 'select') {
+        document.getElementById('existingGroupWrapper').style.display = 'block';
+        document.getElementById('newGroupWrapper').style.display = 'none';
+    } else {
+        document.getElementById('existingGroupWrapper').style.display = 'none';
+        document.getElementById('newGroupWrapper').style.display = 'block';
+    }
+}
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
-    const filtered = allStudents.filter(s => s.name.toLowerCase().includes(query));
-    renderStudents(filtered);
+    renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
 }
+
 function renderStudents(students) {
     const tbody = document.getElementById('studentsTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
-    
     students.forEach(s => {
         const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
         const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-        
-        // O'quvchi o'qiydigan guruh/ustoz nomini massivdan aniqlash
         const tObj = allTeachers.find(t => t.id === s.teacherId);
-        const groupName = tObj ? `${tObj.name} (${tObj.subject})` : 'Guruhsiz';
+        const displayName = tObj ? `${tObj.name} - ${s.groupName}` : 'Guruhsiz';
 
         tbody.innerHTML += `
             <tr class="${isDebtor}">
                 <td><strong>${s.name}</strong></td>
                 <td>${s.phone}</td>
-                <td><span class="time-badge" style="background: rgba(129, 140, 248, 0.15); color: #818cf8; padding: 4px 10px; border-radius: 10px; font-size: 13px;">${groupName}</span></td>
+                <td><span class="status-badge" style="background:rgba(129,140,248,0.15); color:#818cf8;">${displayName}</span></td>
                 <td>${s.fee.toLocaleString()} so'm</td>
                 <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
                 <td>
@@ -98,37 +121,33 @@ function renderStudents(students) {
                         <button class="btn" onclick="makePayment('${s.id}')">To'lash</button>
                     </div>
                 </td>
-            </tr>
-        `;
+            </tr>`;
     });
 }
 
 function renderAttendance(attendance) {
     const tbody = document.getElementById('attendanceTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    if (!tbody) return; tbody.innerHTML = '';
     attendance.slice().reverse().forEach(a => {
-        const statusBadge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
-        tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.studentName}</td><td>${a.teacherName}</td><td>${statusBadge}</td></tr>`;
+        const badge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
+        tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.studentName}</td><td>${a.teacherName}</td><td>${badge}</td></tr>`;
     });
 }
 
+// Ustozlar ro'yxatida amallar qismi to'liq tiklandi
 function renderTeachers(teachers) {
     const tbody = document.getElementById('teachersTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    if (!tbody) return; tbody.innerHTML = '';
     teachers.forEach(t => {
-        const daysText = Array.isArray(t.days) ? t.days.join(', ') : t.days;
         tbody.innerHTML += `
             <tr>
                 <td><strong>${t.name}</strong></td>
                 <td>${t.subject}</td>
-                <td>${daysText} (${t.timeStart}-${t.timeEnd})</td>
-                <td><span class="status-badge status-paid" style="background:rgba(56, 189, 248, 0.2); color:#38bdf8;">${t.salary.toLocaleString()} so'm</span></td>
+                <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td>
+                <td><span class="status-badge status-paid">${t.salary.toLocaleString()} so'm</span></td>
                 <td><code>${t.login} / ${t.password}</code></td>
-                <td><button class="btn danger-btn" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="deleteTeacher('${t.id}')">O'chirish</button></td>
-            </tr>
-        `;
+                <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteTeacher('${t.id}')">O'chirish</button></td>
+            </tr>`;
     });
 }
 async function saveStudent(e) {
@@ -139,18 +158,24 @@ async function saveStudent(e) {
     const fee = document.getElementById('studFee').value;
     const teacherId = document.getElementById('studTeacher').value;
     const parentChatId = document.getElementById('parentChatId').value;
-
-    if (!teacherId) return alert("Iltimos, o'quvchi uchun guruh (ustoz)ni tanlang!");
+    
+    const mode = document.getElementById('groupModeSelect').value;
+    let groupName = "";
+    
+    if (mode === 'select') {
+        groupName = document.getElementById('studGroupSelect').value;
+        if (!groupName) return alert("Iltimos, guruhni tanlang!");
+    } else {
+        groupName = document.getElementById('studNewGroupInput').value.trim();
+        if (!groupName) return alert("Iltimos, yangi guruh nomini yozing!");
+    }
 
     const response = await fetch(`${API_URL}/students`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId })
+        body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
     });
-    if (response.ok) {
-        document.getElementById('studentForm').reset();
-        loadDashboardData();
-    }
+    if (response.ok) { document.getElementById('studentForm').reset(); document.getElementById('groupSelectionContainer').style.display='none'; loadDashboardData(); }
 }
 
 async function saveTeacher(e) {
@@ -161,52 +186,34 @@ async function saveTeacher(e) {
     const timeEnd = document.getElementById('teachTimeEnd').value;
     const login = document.getElementById('teachLogin').value;
     const password = document.getElementById('teachPass').value;
-
-    const checkedBoxes = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
-    const days = [];
-    checkedBoxes.forEach(box => days.push(box.value));
-
-    if (days.length === 0) return alert("Iltimos, kamida bitta dars kunini tanlang!");
+    const checked = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
+    const days = []; checked.forEach(b => days.push(b.value));
+    if (days.length === 0) return alert("Iltimos, dars kunini tanlang!");
 
     const response = await fetch(`${API_URL}/teachers`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
     });
-    if (response.ok) {
-        document.getElementById('teacherForm').reset();
-        loadDashboardData();
-    }
+    if (response.ok) { document.getElementById('teacherForm').reset(); loadDashboardData(); }
 }
 
 async function makePayment(studentId) {
-    const amountInput = document.getElementById(`pay_${studentId}`);
-    const amount = amountInput.value;
-    if (!amount || amount <= 0) return alert("To'g'ri summa kiriting!");
-
-    const response = await fetch(`${API_URL}/students/pay`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ studentId, amount })
-    });
-    if (response.ok) {
-        amountInput.value = '';
-        loadDashboardData();
-    }
-}
-
-window.deleteTeacher = async function(teacherId) {
-    if (!confirm("Ushbu o'qituvchini o'chirmoqchimisiz?")) return;
-    const response = await fetch(`${API_URL}/teachers/${teacherId}`, { method: 'DELETE' });
+    const amt = document.getElementById(`pay_${studentId}`).value;
+    if (!amt || amt <= 0) return alert("To'g'ri summa kiriting!");
+    const response = await fetch(`${API_URL}/students/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentId, amount: amt }) });
     if (response.ok) loadDashboardData();
 }
 
-async function clearData(type) {
-    if (confirm("Ma'lumotlarni o'chirishni xohlaysizmi?")) {
-        const response = await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' });
-        if (response.ok) loadDashboardData();
-    }
+window.deleteTeacher = async function(id) {
+    if (confirm("O'qituvchini o'chirmoqchimisiz?")) { await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); loadDashboardData(); }
 }
+
+async function clearData(type) {
+    if (confirm("Tozalansinmi?")) { await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); loadDashboardData(); }
+}
+
+// --- O'QITUVCHI PANEL LOGIKASI ---
 const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
 
 async function loadTeacherDashboard() {
@@ -227,7 +234,7 @@ async function loadTeacherDashboard() {
 
         const isLessonTime = checkLessonTime(teacher);
         
-        // FAQAT SHU KRIZGA TEGISHLI USTOZNING GURUHIDAGI BOLALARNI FILTRLASH
+        // FAQAT USHBU USTOZNING SHAXSIY GURUHIDAGI BOLALARNI FILTRLASH
         const filteredStudents = (data.students || []).filter(s => s.teacherId === currentTeacherId);
         renderTeacherStudents(filteredStudents, isLessonTime, currentTeacherId);
     } catch (err) { console.error(err); }
@@ -263,8 +270,7 @@ function checkLessonTime(teacher) {
 
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const tbody = document.getElementById('teacherStudentsTable') || document.getElementById('teacherTeacherStudentsTable');
-    if (!tbody) return;
-    tbody.innerHTML = '';
+    if (!tbody) return; tbody.innerHTML = '';
 
     students.forEach(s => {
         const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
@@ -287,23 +293,19 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
                 <td>${s.birthYear}-yil</td>
                 <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
                 <td>${attendanceCellContent}</td>
-            </tr>
-        `;
+            </tr>`;
     });
 }
 
 async function submitAttendance(studentId, status, teacherId) {
-    if (!confirm("Davomatni saqlamoqchimisiz?")) return;
+    if (!confirm("Davomatni tasdiqlaysizmi? (Bu amalni qaytarib bo'lmaydi)")) return;
     try {
         const response = await fetch(`${API_URL}/attendance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ teacherId, studentId, status })
         });
-        if (response.ok) {
-            alert("Davomat saqlandi!");
-            loadTeacherDashboard();
-        }
+        if (response.ok) { alert("Davomat saqlandi, tugmalar muzlatildi!"); loadTeacherDashboard(); }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
