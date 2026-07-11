@@ -30,7 +30,6 @@ window.logout = function() { localStorage.clear(); window.location.href = '/inde
 
 let allStudents = [];
 let allTeachers = [];
-
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
@@ -91,11 +90,11 @@ window.toggleGroupMode = function() {
         document.getElementById('newGroupWrapper').style.display = 'block';
     }
 }
+
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
 }
-
 function renderStudents(students) {
     const tbody = document.getElementById('studentsTableBody');
     if (!tbody) return; tbody.innerHTML = '';
@@ -149,6 +148,7 @@ function renderTeachers(teachers) {
             </tr>`;
     });
 }
+
 async function saveStudent(e) {
     e.preventDefault();
     const name = document.getElementById('studName').value;
@@ -175,7 +175,6 @@ async function saveStudent(e) {
     });
     if (response.ok) { document.getElementById('studentForm').reset(); document.getElementById('groupSelectionContainer').style.display='none'; loadDashboardData(); }
 }
-
 async function saveTeacher(e) {
     e.preventDefault();
     const name = document.getElementById('teachName').value;
@@ -342,4 +341,7 @@ window.onload = function() {
         document.getElementById('studentForm').addEventListener('submit', saveStudent);
         document.getElementById('teacherForm').addEventListener('submit', saveTeacher);
     }
-if (document.getElementById('teacherGroupsContainer')) {loadTeacherDashboard();}};
+    if (document.getElementById('teacherGroupsContainer')) {
+        loadTeacherDashboard();
+    }
+};
