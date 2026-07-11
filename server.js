@@ -47,9 +47,6 @@ function readDB() {
 function writeDB(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
-
-// --- API ENDPOINTS ---
-
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
     const db = readDB();
@@ -63,7 +60,6 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ success: false, message: "Login yoki parol xato!" });
 });
 
-// GURUH NOMINI (groupName) QABUL QILIB BAZAGA YAXLIT YOZADIGAN TO'G'RILANGAN INTERFEYS
 app.post('/api/students', (req, res) => {
     const { name, phone, birthYear, fee, parentChatId, teacherId, groupName } = req.body;
     const db = readDB();
@@ -77,7 +73,7 @@ app.post('/api/students', (req, res) => {
         balance: 0, 
         parentChatId: parentChatId || null,
         teacherId: teacherId,
-        groupName: groupName || "Asosiy" // Agar guruh nomi kelmasa "Asosiy" deb yozadi, aslo undefined bo'lmaydi!
+        groupName: groupName || "Asosiy"
     };
     
     db.students.push(newStudent);
@@ -112,6 +108,7 @@ app.delete('/api/teachers/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// QULFLANISHNI ID BO'YICHA 100% TA'MINLAYDIGAN MUZLATISH BACKENDI
 app.post('/api/attendance', (req, res) => {
     const { teacherId, studentId, status } = req.body;
     const db = readDB();
@@ -124,9 +121,16 @@ app.post('/api/attendance', (req, res) => {
     const halfFee = Math.round(perLessonFee / 2);
     
     teacher.salary += halfFee;
-    db.center_profit += halfFee; // 50% Markaz hisobiga o'tdi
+    db.center_profit += halfFee; // 50% Markaz sof foydasiga o'tdi
     
-    db.attendance.push({ date: new Date().toISOString().split('T'), studentName: student.name, teacherName: teacher.name, status: status });
+    // Davomat ro'yxatiga o'quvchining ID raqamini qat'iy ulab saqlaymiz
+    db.attendance.push({ 
+        date: new Date().toISOString().split('T'), 
+        studentId: student.id, 
+        studentName: student.name, 
+        teacherName: teacher.name, 
+        status: status 
+    });
     writeDB(db);
 
     if (bot && student.parentChatId) {
@@ -142,7 +146,6 @@ app.post('/api/attendance', (req, res) => {
     }
     res.json({ success: true });
 });
-
 app.delete('/api/clear/:type', (req, res) => {
     const type = req.params.type;
     const db = readDB();
@@ -152,6 +155,7 @@ app.delete('/api/clear/:type', (req, res) => {
     res.json({ success: true });
 });
 
+// HARF XATOLARIDAN QAT'IY NAZAR ID BO'YICHA QUFLAYDIGAN DATA API
 app.get('/api/data', (req, res) => {
     const db = readDB();
     const todayStr = new Date().toISOString().split('T');
@@ -159,7 +163,7 @@ app.get('/api/data', (req, res) => {
     const updatedStudents = db.students.map(student => {
         const hasAttendedToday = db.attendance.some(att => 
             att.date === todayStr && 
-            att.studentName === student.name
+            (att.studentId === student.id || att.studentName.toLowerCase().trim() === student.name.toLowerCase().trim())
         );
         return { ...student, attendedToday: hasAttendedToday };
     });
@@ -191,4 +195,3 @@ schedule.scheduleJob('0 0 1 * *', function(){
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda barqaror yondi!`));
-
