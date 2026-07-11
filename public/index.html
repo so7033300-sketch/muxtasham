@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EduManage CRM - Tizimga Kirish</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/style.css">
 </head>
 <body>
 
@@ -27,40 +27,7 @@
         <div id="errorMessage" style="color: #f87171; text-align: center; margin-top: 15px; font-size: 14px; display: none;"></div>
     </div>
 
-    <!-- Tizim logikasi ulangan skript -->
-    <script>
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const login = document.getElementById('loginInput').value;
-            const password = document.getElementById('passwordInput').value;
-            const errorDiv = document.getElementById('errorMessage');
-            
-            try {
-                const response = await fetch('https://onrender.com', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ login, password })
-                });
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    if (data.role === 'admin') {
-                        window.location.href = 'admin.html';
-                    } else if (data.role === 'teacher') {
-                        localStorage.setItem('teacherId', data.teacherId);
-                        window.location.href = 'ustoz.html';
-                    }
-                } else {
-                    errorDiv.style.display = 'block';
-                    errorDiv.innerText = data.message;
-                }
-            } catch (err) {
-                errorDiv.style.display = 'block';
-                errorDiv.innerText = "Server bilan aloqa uzildi!";
-            }
-        });
-    </script>
+    <!-- Barcha sahifalar uchun umumiy bo'lgan tashqi mantiqiy fayl -->
+    <script src="/script.js"></script>
 </body>
 </html>
