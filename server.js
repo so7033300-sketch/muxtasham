@@ -13,17 +13,14 @@ const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// --- TELEGRAM BOT SOZLAMASI (ETELERAM 401 XATOSISIZ VA XAVFSIZ) ---
 const BOT_TOKEN = '8955968685:AAEv-KraJbKvgWkpiHAREjecGI3F038N0io'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
     try {
-        bot = new TelegramBot(BOT_TOKEN, { polling: false }); // Pollingni o'chirdik, qizil xatoliklar endi aslo chiqmaydi
+        bot = new TelegramBot(BOT_TOKEN, { polling: false });
         console.log("⚠️ Telegram Bot xabarnomalar uchun tayyor holatda!");
-    } catch (e) {
-        console.log("Bot yaratishda xato:", e.message);
-    }
+    } catch (e) { console.log(e.message); }
 }
 
 function getTashkentDate() {
@@ -47,8 +44,6 @@ function readDB() {
 }
 
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
-
-// --- API ENDPOINTS ---
 
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
@@ -85,14 +80,13 @@ app.delete('/api/students/:id', (req, res) => {
     res.json({ success: true });
 });
 
-// O'QITUVCHINI SAQLASH INTERFEYSI (TO'LIQ TIKLANDI)
 app.post('/api/teachers', (req, res) => {
     const { name, subject, timeStart, timeEnd, days, login, password } = req.body;
     const db = readDB();
     const newTeacher = { id: Date.now().toString(), name, subject, timeStart, timeEnd, days, login, password, salary: 0 };
     db.teachers.push(newTeacher);
     writeDB(db);
-    res.json({ success: true, teacher: newTeacher });
+    res.json({ success: true });
 });
 
 app.delete('/api/teachers/:id', (req, res) => {
@@ -102,6 +96,7 @@ app.delete('/api/teachers/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// JADVALDA ISMLAR CHIQLSHI UCHUN TO'G'RILANGAN DAVOMAT BACKENDI
 app.post('/api/attendance', (req, res) => {
     const { teacherId, studentId, status } = req.body;
     const db = readDB();
@@ -115,11 +110,14 @@ app.post('/api/attendance', (req, res) => {
     teacher.salary += halfFee;
     db.center_profit += halfFee;
     
+    // Frontend chiroyli o'qishi uchun ham IDlarni, ham ismlarni birga yozamiz!
     db.attendance.push({ 
         date: getTashkentDate(), 
         studentId: student.id, 
-        groupName: student.groupName,
+        studentName: student.name, // Ism qo'shildi
         teacherId: teacherId,
+        teacherName: teacher.name, // Ustoz ismi qo'shildi
+        groupName: student.groupName,
         status: status 
     });
     writeDB(db);
