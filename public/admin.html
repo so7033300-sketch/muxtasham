@@ -21,7 +21,7 @@
 
     <div class="dashboard-container">
         
-        <!-- Yuqori Boshqaruv Qismi (Header) - Qidiruv o'rniga Markaz Foydasi qo'yildi -->
+        <!-- Yuqori Boshqaruv Qismi (Header) -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div style="font-size: 16px; font-weight: 500;">
@@ -29,8 +29,7 @@
             </div>
             <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
         </div>
-
-        <!-- Formlar -->
+        <!-- Formlar (O'quvchi va O'qituvchi qo'shish) -->
         <div class="grid-2">
             <!-- Yangi O'quvchi Qo'shish Oynasi -->
             <div class="card glass-container" style="max-width: 100%;">
@@ -64,7 +63,6 @@
                     <button type="submit" class="btn">O'quvchini Saqlash</button>
                 </form>
             </div>
-
             <!-- Yangi O'qituvchi Qo'shish Oynasi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3>Yangi O'qituvchi Qo'shish</h3>
@@ -84,6 +82,7 @@
                         </div>
                     </div>
                     
+                    <!-- Checkbox dars kunlari -->
                     <div class="input-group" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
                         <label style="display: block; margin-bottom: 10px; color: #38bdf8; font-size: 14px; font-weight: 500;">Dars kunlarini tanlang:</label>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px;">
@@ -120,8 +119,7 @@
                 </form>
             </div>
         </div>
-
-        <!-- Barcha O'quvchilar Jadvali — Qidiruv aynan rasmda ko'rsatilgan joyga tushirildi -->
+        <!-- Barcha O'quvchilar Jadvali -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
                 <h3 style="margin-bottom: 0;">Barcha O'quvchilar Ro'yxati</h3>
@@ -147,7 +145,6 @@
                 </table>
             </div>
         </div>
-
         <!-- Kunlik Davomat Tarixi -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
@@ -170,3 +167,28 @@
             </div>
         </div>
 
+        <!-- O'qituvchilar Ro'yxati va Ularning Balansi Jadvali -->
+        <div class="card glass-container" style="max-width: 100%;">
+            <h3>O'qituvchilar Ro'yxati va Ularning Balansi</h3>
+            <div class="table-responsive">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>O'qituvchi F.I.Sh</th>
+                            <th>Fan</th>
+                            <th>Kunlar / Vaqt</th>
+                            <th>Ishlagan Puli (Balans)</th>
+                            <th>Login / Parol</th>
+                        </tr>
+                    </thead>
+                    <tbody id="teachersTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script src="/script.js"></script>
+</body>
+</html>
