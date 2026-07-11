@@ -208,6 +208,26 @@ async function clearData(type) {
         if (response.ok) loadDashboardData();
     }
 }
+// O'qituvchini tizimdan butunlay o'chirib tashlash funksiyasi
+window.deleteTeacher = async function(teacherId) {
+    if (!confirm("Ushbu o'qituvchini tizimdan butunlay o'chirib tashlamoqchimisiz? (O'qituvchi paneliga boshqa kira olmaydi)")) return;
+    
+    try {
+        const response = await fetch(`${API_URL}/teachers/${teacherId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            alert("O'qituvchi muvaffaqiyatli o'chirildi!");
+            loadDashboardData(); // Admin paneldagi jadvallarni qayta yangilash
+        } else {
+            alert("O'chirishda xatolik yuz berdi.");
+        }
+    } catch (err) {
+        alert("Server bilan aloqa uzildi!");
+    }
+}
+
 const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
 
 async function loadTeacherDashboard() {
