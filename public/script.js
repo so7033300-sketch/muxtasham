@@ -1,5 +1,4 @@
-// Render serveringizning mutlaq to'liq manzili
-const API_URL = 'https://onrender.com';
+const API_URL = '/api';
 
 
 // Funksiyani global window obyektiga bog'laymiz (Tugma 100% ishlashi uchun)
