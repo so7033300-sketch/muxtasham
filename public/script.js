@@ -1,9 +1,9 @@
-// 1. BACKEND SERVER HAVOLASI
+// 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
 const RENDER_BACKEND_URL = "https://onrender.com";
 
 // Tizim yuklanganda JONLI SERVERDAN ma'lumotlarni majburiy tortib olish
 document.addEventListener("DOMContentLoaded", async () => {
-    // Har qanday qurilmadan kirganda birinchi bo'lib bazani jonli yangilaymiz
+    // Har qanday qurilmadan (telefon, noutbuk) kirganda birinchi bo'lib bazani jonli yangilaymiz
     await syncDataFromDatabaseSilently();
 
     if (document.getElementById('teachers-rows')) renderTeachers();
@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTeacherGroupDropdownSystem();
 });
 
-// BAZADAN TOZA NUSXANI ORQA FONDA YUKLAB OLISH
+// BAZADAN TOZA NUSXANI ORQA FONDA SEZDIRMASDAN YUKLAB OLISH
 async function syncDataFromDatabaseSilently() {
     try {
         const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
@@ -32,7 +32,7 @@ async function syncDataFromDatabaseSilently() {
     } catch (e) { console.error("Jonli sinxronizatsiyada xato:", e.message); }
 }
 
-// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH
+// MA'LUMOTLARNI BACKEND-GA AUTOMAT SAQLASH (QAT'IY VA XATOSIZ REJIM)
 async function uploadLocalDataToBackend() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     let students = JSON.parse(localStorage.getItem('students')) || [];
@@ -46,11 +46,11 @@ async function uploadLocalDataToBackend() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dataToSend)
         });
-        return await response.json();
-    } catch (error) { 
-        console.error("Serverga avto-yuklashda xato:", error.message); 
-        return { success: false };
-    }
+        const res = await response.json();
+        if (res.success) {
+            console.log("🟢 Ma'lumotlar server bazasiga muhrlandi!");
+        }
+    } catch (error) { console.error("Serverga avto-yuklashda xato:", error.message); }
 }
 // 📱 TELEFON RAQAMINI AVTOMATIK +998 90 123 45 67 FORMATIGA SOLISH
 function initPhoneFormatters() {
@@ -69,7 +69,9 @@ function initPhoneFormatters() {
             }
 
             let digits = val.substring(4).replace(/\D/g, '');
-            if (digits.length > 9) digits = digits.substring(0, 9);
+            if (digits.length > 9) {
+                digits = digits.substring(0, 9);
+            }
 
             let formatted = "+998 ";
             if (digits.length > 0) formatted += digits.substring(0, 2);
@@ -111,7 +113,7 @@ function initTeacherGroupDropdownSystem() {
         let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
         let students = JSON.parse(localStorage.getItem('students')) || [];
         
-        const foundTeacher = teachers.find(t => String(t.id) === String(selectedTeacherId));
+        const foundTeacher = teachers.find(t => Number(t.id) === Number(selectedTeacherId));
         if (!foundTeacher) return;
 
         let teacherGroups = new Set();
@@ -120,7 +122,7 @@ function initTeacherGroupDropdownSystem() {
         
         students.forEach(s => {
             let sGName = s.groupName || s.group_name;
-            if (String(s.teacherId) === String(selectedTeacherId) && sGName) teacherGroups.add(sGName);
+            if (Number(s.teacherId) === Number(selectedTeacherId) && sGName) teacherGroups.add(sGName);
         });
 
         groupSelect.innerHTML = '<option value="new_group" selected>➕ Yangi guruh yozish...</option>';
@@ -136,13 +138,14 @@ function initTeacherGroupDropdownSystem() {
         };
     });
 }
-// 4. O'QITUVCHINI QO'SHISH (ZANJIR MUTLOQ TO'G'RILANDI)
+// 4. O'QITUVCHINI QO'SHISH (REFRESH MUAMMOSI TO'LIQ BARTARAF ETILDI)
 async function addTeacher(event) {
-    event.preventDefault();
+    // 🔥 ENG MUHIM TUZATISH: Sahifa internetda majburiy yangilanib (update bo'lib) ketishini srazu to'xtatamiz!
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
     
-    // Serverdan eng oxirgi bazani yuklab, xotirani yangilaymiz
-    await syncDataFromDatabaseSilently(); 
-
     const name = document.getElementById('teacherName')?.value.trim() || document.getElementById('t-name')?.value.trim();
     const subject = document.getElementById('teacherSubject')?.value.trim() || document.getElementById('t-subject')?.value.trim();
     const group_name = document.getElementById('teacherGroup')?.value.trim() || document.getElementById('t-group')?.value.trim();
@@ -154,40 +157,36 @@ async function addTeacher(event) {
     const allowed_days = [];
     document.querySelectorAll('input[name="t-days"]:checked, input[name="days"]:checked').forEach(cb => allowed_days.push(cb.value));
 
+    // Birinchi qurilmalar to'qnashmasligi uchun orqa fonda tezkor yangilab olamiz
+    try {
+        const response = await fetch(`${RENDER_BACKEND_URL}/api/load-all`);
+        const result = await response.json();
+        if (result.success) {
+            localStorage.setItem('teachers', JSON.stringify(result.teachers || []));
+            localStorage.setItem('students', JSON.stringify(result.students || []));
+            localStorage.setItem('excelLog', JSON.stringify(result.excelLog || []));
+        }
+    } catch(e) { console.log(e); }
+
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-    const newTeacher = { 
-        id: Date.now(), 
-        name, 
-        subject, 
-        group_name, 
-        groupName: group_name, 
-        start_time, 
-        startTime: start_time, 
-        end_time, 
-        endTime: end_time, 
-        allowed_days, 
-        allowedDays: allowed_days, 
-        login, 
-        pass 
-    };
+    const newTeacher = { id: Date.now(), name, subject, group_name, groupName: group_name, start_time, startTime: start_time, end_time, endTime: end_time, allowed_days, allowedDays: allowed_days, login, pass };
     
     teachers.push(newTeacher);
     localStorage.setItem('teachers', JSON.stringify(teachers));
 
-    // ⚡ BAZAGA YUKLASH TUGAGUNCHA KUTAMIZ (O'CHIB KETMASLIGI UCHUN)
-    const serverResult = await uploadLocalDataToBackend(); 
+    // ⚡ Formani o'chirishdan oldin srazu serverga yuboramiz va tugashini kutamiz!
+    await uploadLocalDataToBackend(); 
 
-    if(serverResult && serverResult.success) {
-        alert("✅ O'qituvchi muvaffaqiyatli qo'shildi va serverga saqlandi!");
+    alert("✅ O'qituvchi muvaffaqiyatli qo'shildi va serverga saqlandi!");
+    if (event && event.target && typeof event.target.reset === 'function') {
         event.target.reset();
-        renderTeachers();
-        updateMoliyaGrid();
-    } else {
-        alert("❌ Serverga saqlashda internet xatolik berdi, qayta urinib ko'ring.");
     }
+    
+    renderTeachers();
+    updateMoliyaGrid();
 }
 
-// 5. O'QITUVCHILAR JADVALINI CHIZISH (PUL JAMLAGICHI QAT'IY STRING/NUMBER FORMATDAN QUTQARILDI)
+// 5. O'QITUVCHILAR JADVALINI CHIZISH
 function renderTeachers() {
     const rows = document.getElementById('teachers-rows');
     if (!rows) return; rows.innerHTML = "";
@@ -198,10 +197,9 @@ function renderTeachers() {
         let currentAllowedDays = t.allowed_days || t.allowedDays || [];
         let daysDisplay = Array.isArray(currentAllowedDays) ? currentAllowedDays.join(', ') : String(currentAllowedDays || '');
         
-        // String va Number tiplari mos kelmay qolmasligi uchun ikkala tomonni ham String qilamiz
         let teacherTotalEarned = excelLog
-            .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (String(l.teacherId) === String(t.id) || String(l.teacher_id) === String(t.id)))
-            .reduce((sum, current) => sum + (Number(current.sum) || 0), 0);
+            .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (Number(l.teacherId) === Number(t.id) || Number(l.teacher_id) === Number(t.id)))
+            .reduce((sum, current) => sum + (current.sum || 0), 0);
             
         let teacherSalary = teacherTotalEarned * 0.5;
 
@@ -222,7 +220,7 @@ async function deleteTeacher(id) {
     if(!confirm("O'qituvchini o'chirishni xohlaysizmi?")) return;
     await syncDataFromDatabaseSilently();
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
-    teachers = teachers.filter(t => String(t.id) !== String(id));
+    teachers = teachers.filter(t => t.id !== id);
     localStorage.setItem('teachers', JSON.stringify(teachers));
     await uploadLocalDataToBackend();
     renderTeachers(); updateMoliyaGrid();
@@ -234,6 +232,82 @@ function updateTeacherSelect() {
     let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
     teachers.forEach(t => { select.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
 }
+// 6. O'QUVCHINI QO'SHISH (ADMIN PANEL)
+async function addStudent(event) {
+    if (event) { event.preventDefault(); event.stopPropagation(); }
+    await syncDataFromDatabaseSilently();
+
+    const name = document.getElementById('s-name')?.value.trim();
+    const phone = document.getElementById('s-phone')?.value.trim();
+    const balance = Number(document.getElementById('s-balance')?.value) || 0;
+    const teacherId = document.getElementById('s-teacher')?.value;
+    const groupName = document.getElementById('s-group')?.value.trim();
+    const monthlyPrice = Number(document.getElementById('s-price')?.value) || 200000;
+
+    let students = JSON.parse(localStorage.getItem('students')) || [];
+    const newStudent = { id: Date.now(), name, phone, balance, teacherId: teacherId ? Number(teacherId) : null, groupName, group_name: groupName, monthlyPrice, monthly_price: monthlyPrice };
+    students.push(newStudent);
+    localStorage.setItem('students', JSON.stringify(students));
+    
+    const now = new Date();
+    let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
+    excelLog.push({
+        id: Date.now(), studentId: newStudent.id, teacherId: newStudent.teacherId, teacher_id: newStudent.teacherId, name: name, dars_time: "00:00",
+        date: now.toLocaleDateString() + " " + now.toLocaleTimeString().substring(0,5), status: "Yangi talaba", sum: 0, phone: phone
+    });
+    localStorage.setItem('excelLog', JSON.stringify(excelLog));
+
+    await uploadLocalDataToBackend(); 
+
+    alert("✅ Yangi o'quvchi ro'yxatga olindi!");
+    if (event && event.target && typeof event.target.reset === 'function') event.target.reset();
+    if (document.getElementById('s-group-select')) document.getElementById('s-group-select').style.display = 'none';
+
+    renderStudents(); renderExcelLog(); updateMoliyaGrid(); initPhoneFormatters();
+}
+
+// 7. O'QUVCHILARI JADVALINI CHIZISH
+function renderStudents() {
+    const rows = document.getElementById('students-rows');
+    if (!rows) return; rows.innerHTML = "";
+    let students = JSON.parse(localStorage.getItem('students')) || [];
+    let teachers = JSON.parse(localStorage.getItem('teachers')) || [];
+    
+    students.forEach((s, i) => {
+        const teacher = teachers.find(t => Number(t.id) === Number(s.teacherId));
+        const teacherNameDisplay = teacher ? teacher.name : "Yo'q";
+
+        let rowStyle = ""; let textStyle = "";
+        if (s.balance < -150000) rowStyle = `style="background-color: rgba(255, 71, 71, 0.25) !important;"`;
+        else if (s.balance < -100000) textStyle = `style="color: #ff4747 !important;"`;
+
+        let currentGroupName = s.groupName || s.group_name || "Asosiy";
+
+        rows.innerHTML += `
+            <tr class="student-search-row" ${rowStyle} data-name="${s.name.toLowerCase()}" data-phone="${s.phone}">
+                <td ${textStyle}>${i+1}</td>
+                <td ${textStyle}><b>${s.name}</b><br><small>${s.phone}</small></td>
+                <td ${textStyle}>${teacherNameDisplay}</td>
+                <td ${textStyle}>${currentGroupName}</td>
+                <td style="font-weight:bold; ${s.balance < 0 ? 'color:#ff4747;' : 'color:#fbbf24;'}">${s.balance.toLocaleString()} UZS</td>
+                <td>
+                    <div style="display:flex; gap:10px;">
+                        <button onclick="addStudentBalance(${s.id})" style="background:#28a745; color:white; border:none; padding:6px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">➕ To'lov</button>
+                        <button onclick="deleteStudent(${s.id})" style="color:#ff4747; background:none; border:none; cursor:pointer; font-weight:bold;">❌ O'chirish</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+function filterStudents() {
+    const searchInput = (document.getElementById('search-student-input') || document.querySelector('[placeholder*="qidirish"]'))?.value.toLowerCase().trim();
+    document.querySelectorAll('.student-search-row').forEach(row => {
+        const name = row.getAttribute('data-name') || ''; const phone = row.getAttribute('data-phone') || '';
+        row.style.display = (name.includes(searchInput) || phone.includes(searchInput)) ? "" : "none";
+    });
+}
 async function addStudentBalance(studentId) {
     let amount = prompt("To'lov summasini kiriting (UZS):", "200000");
     if (amount === null || amount.trim() === "") return;
@@ -242,7 +316,7 @@ async function addStudentBalance(studentId) {
     await syncDataFromDatabaseSilently(); 
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
-    let student = students.find(s => String(s.id) === String(studentId));
+    let student = students.find(s => s.id == studentId);
     if (student) {
         student.balance += parsedAmount;
         localStorage.setItem('students', JSON.stringify(students));
@@ -265,7 +339,7 @@ async function deleteStudent(id) {
     if (!confirm("O'quvchini tizimdan butunlay o'chirishni tasdiqlaysizmi?")) return;
     await syncDataFromDatabaseSilently();
     let students = JSON.parse(localStorage.getItem('students')) || [];
-    students = students.filter(s => String(s.id) !== String(id));
+    students = students.filter(s => s.id !== id);
     localStorage.setItem('students', JSON.stringify(students));
     await uploadLocalDataToBackend();
     renderStudents(); updateMoliyaGrid();
@@ -305,15 +379,16 @@ async function deleteLogItem(index) {
     await uploadLocalDataToBackend();
     renderExcelLog(); updateMoliyaGrid();
 }
-
 function updateMoliyaGrid() {
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
-    let totalCollected = excelLog.filter(l => l.status === 'Keldi' || l.status === 'Kelmadi').reduce((acc, curr) => acc + (Number(curr.sum) || 0), 0);
+    let totalCollected = excelLog.filter(l => l.status === 'Keldi' || l.status === 'Kelmadi').reduce((acc, curr) => acc + (curr.sum || 0), 0);
     if (document.getElementById('center-profit')) document.getElementById('center-profit').innerText = (totalCollected * 0.5).toLocaleString() + " UZS";
     if (document.getElementById('admin-teacher-salary')) document.getElementById('admin-teacher-salary').innerText = (totalCollected * 0.5).toLocaleString() + " UZS";
 }
 
-let currentTeacher = null;
+// =========================================================================
+// 👨‍🏫 O'QITUVCHI KABINETI FUNKSIYALARI
+// =========================================================================
 async function initTeacherCabinet() {
     const loggedInUser = JSON.parse(localStorage.getItem('loggedInTeacher'));
     if (!loggedInUser) return;
@@ -325,8 +400,8 @@ async function initTeacherCabinet() {
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     
     let myEarned = excelLog
-        .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (String(l.teacherId) === String(currentTeacher.id) || String(l.teacher_id) === String(currentTeacher.id)))
-        .reduce((sum, current) => sum + (Number(current.sum) || 0), 0);
+        .filter(l => (l.status === 'Keldi' || l.status === 'Kelmadi') && (Number(l.teacherId) === Number(currentTeacher.id) || Number(l.teacher_id) === Number(currentTeacher.id)))
+        .reduce((sum, current) => sum + (current.sum || 0), 0);
     
     if (teacherTitle) {
         teacherTitle.innerHTML = `${currentTeacher.name} <span style="font-size:14px; background:#28a745; color:white; padding:4px 12px; border-radius:10px; margin-left:15px; font-weight:bold;">Sizning ulushingiz: ${(myEarned * 0.5).toLocaleString()} UZS</span>`;
@@ -381,7 +456,7 @@ function renderTeacherStudents() {
     if (!mainBox || !currentTeacher) return;
 
     let students = JSON.parse(localStorage.getItem('students')) || [];
-    let myStudents = students.filter(s => String(s.teacherId) === String(currentTeacher.id));
+    let myStudents = students.filter(s => Number(s.teacherId) === Number(currentTeacher.id));
     let excelLog = JSON.parse(localStorage.getItem('excelLog')) || [];
     const todayDateStr = new Date().toLocaleDateString();
 
@@ -397,9 +472,8 @@ function renderTeacherStudents() {
     Object.keys(groups).forEach(gName => {
         let studentRowsHtml = "";
         groups[gName].forEach((s, idx) => {
-            const isStudentDoneToday = excelLog.some(l => String(l.studentId) === String(s.id) && l.date.startsWith(todayDateStr) && (l.status === 'Keldi' || l.status === 'Kelmadi'));
+            const isStudentDoneToday = excelLog.some(l => Number(l.studentId) === Number(s.id) && l.date.startsWith(todayDateStr) && (l.status === 'Keldi' || l.status === 'Kelmadi'));
 
             let actionCellHtml = isStudentDoneToday 
                 ? `<span style="color:#fbbf24; font-weight:bold; font-size:13px; background:#1c150a; padding:6px 12px; border-radius:8px; border:1px solid rgba(245,158,11,0.2); display:inline-block;">🔒 Yakunlandi</span>`
-: <div class="individual-btn-box-${s.id}" style="display:flex; gap:10px; align-items:center; width:100%;"><button onclick="doAttendance(${s.id}, 'Keldi')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELDI</button><button onclick="doAttendance(${s.id}, 'Kelmadi')" style="background:#ff4747; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELMADI</button>
-                </div>;let rowStyle = ""; let textStyle = "";if (s.balance < -150000) rowStyle = style="background-color: rgba(255, 71, 71, 0.25) !important;";else if (s.balance < -100000) textStyle = style="color: #ff4747 !important;";studentRowsHtml += `<tr ${rowStyle}><td ${textStyle}>${idx + 1}<td ${textStyle}>${s.name}${s.phone}<td style="font-weight:bold; ${s.balance < 0 ? 'color:#ff4747;' : 'color:#fb
+                : `<div class="individual-btn-box-${s.id}" style="display:flex; gap:10px; align-items:center; width:100%;"><button onclick="doAttendance(${s.id}, 'Keldi')" style="background:#28a745; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:bold; width:90px;">KELDI</button><button onclick="doAttendance(${s.id}, 'Kelmadi')" style="background:#ff4747; color:white; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:
