@@ -1,15 +1,10 @@
 const API_URL = '/api';
 
-// Tizimga xavfsiz va sahifa yangilanmasdan kirish funksiyasi
 window.executeLogin = async function() {
     const login = document.getElementById('loginInput').value;
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
-    
-    if(!login || !password) {
-        alert("Iltimos, login va parolni to'liq kiriting!");
-        return;
-    }
+    if(!login || !password) return alert("Iltimos, login va parolni to'liq kiriting!");
     
     try {
         const response = await fetch(`${API_URL}/login`, {
@@ -18,11 +13,9 @@ window.executeLogin = async function() {
             body: JSON.stringify({ login, password })
         });
         const data = await response.json();
-        
         if (data.success) {
-            if (data.role === 'admin') {
-                window.location.href = '/admin.html';
-            } else if (data.role === 'teacher') {
+            if (data.role === 'admin') window.location.href = '/admin.html';
+            else if (data.role === 'teacher') {
                 localStorage.setItem('teacherId', data.teacherId);
                 window.location.href = '/ustoz.html';
             }
@@ -30,29 +23,21 @@ window.executeLogin = async function() {
             errorDiv.style.display = 'block';
             errorDiv.innerText = data.message;
         }
-    } catch (err) {
-        errorDiv.style.display = 'block';
-        errorDiv.innerText = "Server bilan aloqa uzildi!";
-    }
+    } catch (err) { errorDiv.style.display = 'block'; errorDiv.innerText = "Server bilan aloqa uzildi!"; }
 }
 
-window.logout = function() {
-    localStorage.clear();
-    window.location.href = '/index.html';
-}
+window.logout = function() { localStorage.clear(); window.location.href = '/index.html'; }
+
 let allStudents = [];
 let allTeachers = [];
 
-// Admin panelidagi barcha ma'lumotlarni serverdan yuklash
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
         const data = await response.json();
-        
         allStudents = data.students || [];
         allTeachers = data.teachers || [];
         
-        // Dinamik ravishda o'quvchi qo'shish joyiga ustozlarni joylash
         const teacherSelect = document.getElementById('studTeacher');
         if (teacherSelect) {
             teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga qo\'shish...</option>';
@@ -60,28 +45,17 @@ async function loadDashboardData() {
                 teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`;
             });
         }
-
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
         renderTeachers(allTeachers);
-
-        // Serverdan kelayotgan markaz foydasini ekranga chiqarish
-        const centerProfit = data.center_profit || 0;
-        const profitDisplay = document.getElementById('centerProfitDisplay');
-        if (profitDisplay) {
-            profitDisplay.innerText = `${centerProfit.toLocaleString()} so'm`;
-        }
-    } catch (err) {
-        console.error("Ma'lumotlarni yuklashda xatolik yuz berdi!");
-    }
+        if (document.getElementById('centerProfitDisplay')) document.getElementById('centerProfitDisplay').innerText = `${(data.center_profit || 0).toLocaleString()} so'm`;
+    } catch (err) { console.error(err); }
 }
 
-// USTOZ TANLANGANDA GURUH OPTIONLARINI JAVASCRIPTDA SILLIQ FILTRLASH
 window.onTeacherSelected = function() {
     const teacherId = document.getElementById('studTeacher').value;
     const container = document.getElementById('groupSelectionContainer');
     const groupSelect = document.getElementById('studGroupSelect');
-    
     if (!teacherId) return;
     container.style.display = 'block';
 
@@ -117,16 +91,14 @@ window.toggleGroupMode = function() {
         document.getElementById('newGroupWrapper').style.display = 'block';
     }
 }
-
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
 }
+
 function renderStudents(students) {
     const tbody = document.getElementById('studentsTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    
+    if (!tbody) return; tbody.innerHTML = '';
     students.forEach(s => {
         const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
         const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
@@ -146,33 +118,31 @@ function renderStudents(students) {
                         <button class="btn" onclick="makePayment('${s.id}')">To'lash</button>
                     </div>
                 </td>
+                <td>
+                    <button class="btn danger-btn" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="deleteStudent('${s.id}')">O'chirish</button>
+                </td>
             </tr>`;
     });
 }
 
 function renderAttendance(attendance) {
     const tbody = document.getElementById('attendanceTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    
+    if (!tbody) return; tbody.innerHTML = '';
     attendance.slice().reverse().forEach(a => {
-        const statusBadge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
-        tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.studentName}</td><td>${a.teacherName}</td><td>${statusBadge}</td></tr>`;
+        const badge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
+        tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.studentName}</td><td>${a.teacherName}</td><td>${badge}</td></tr>`;
     });
 }
 
 function renderTeachers(teachers) {
     const tbody = document.getElementById('teachersTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    
+    if (!tbody) return; tbody.innerHTML = '';
     teachers.forEach(t => {
-        const daysText = Array.isArray(t.days) ? t.days.join(', ') : t.days;
         tbody.innerHTML += `
             <tr>
                 <td><strong>${t.name}</strong></td>
                 <td>${t.subject}</td>
-                <td>${daysText} (${t.timeStart}-${t.timeEnd})</td>
+                <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td>
                 <td><span class="status-badge status-paid">${t.salary.toLocaleString()} so'm</span></td>
                 <td><code>${t.login} / ${t.password}</code></td>
                 <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteTeacher('${t.id}')">O'chirish</button></td>
@@ -190,7 +160,6 @@ async function saveStudent(e) {
     
     const mode = document.getElementById('groupModeSelect').value;
     let groupName = "";
-    
     if (mode === 'select') {
         groupName = document.getElementById('studGroupSelect').value;
         if (!groupName) return alert("Iltimos, guruhni tanlang!");
@@ -204,11 +173,7 @@ async function saveStudent(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
     });
-    if (response.ok) { 
-        document.getElementById('studentForm').reset(); 
-        document.getElementById('groupSelectionContainer').style.display='none'; 
-        loadDashboardData(); 
-    }
+    if (response.ok) { document.getElementById('studentForm').reset(); document.getElementById('groupSelectionContainer').style.display='none'; loadDashboardData(); }
 }
 
 async function saveTeacher(e) {
@@ -219,10 +184,8 @@ async function saveTeacher(e) {
     const timeEnd = document.getElementById('teachTimeEnd').value;
     const login = document.getElementById('teachLogin').value;
     const password = document.getElementById('teachPass').value;
-    
     const checked = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
-    const days = []; 
-    checked.forEach(b => days.push(b.value));
+    const days = []; checked.forEach(b => days.push(b.value));
     if (days.length === 0) return alert("Iltimos, dars kunini tanlang!");
 
     const response = await fetch(`${API_URL}/teachers`, {
@@ -230,37 +193,31 @@ async function saveTeacher(e) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
     });
-    if (response.ok) { 
-        document.getElementById('teacherForm').reset(); 
-        loadDashboardData(); 
-    }
+    if (response.ok) { document.getElementById('teacherForm').reset(); loadDashboardData(); }
 }
 
 async function makePayment(studentId) {
     const amt = document.getElementById(`pay_${studentId}`).value;
     if (!amt || amt <= 0) return alert("To'g'ri summa kiriting!");
-    
-    const response = await fetch(`${API_URL}/students/pay`, { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify({ studentId, amount: amt }) 
-    });
+    const response = await fetch(`${API_URL}/students/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentId, amount: amt }) });
     if (response.ok) loadDashboardData();
 }
 
-window.deleteTeacher = async function(id) {
-    if (confirm("O'qituvchini tizimdan butunlay o'chirmoqchimisiz?")) { 
-        await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); 
-        loadDashboardData(); 
+window.deleteStudent = async function(id) {
+    if (confirm("Ushbu o'quvchini tizimdan butunlay o'chirib tashlamoqchimisiz?")) {
+        await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' });
+        loadDashboardData();
     }
 }
 
-async function clearData(type) {
-    if (confirm("Haqiqatdan ham ushbu ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) { 
-        await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); 
-        loadDashboardData(); 
-    }
+window.deleteTeacher = async function(id) {
+    if (confirm("O'qituvchini o'chirmoqchimisiz?")) { await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); loadDashboardData(); }
 }
+
+async function clearData(type) {
+    if (confirm("Tozalansinmi?")) { await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); loadDashboardData(); }
+}
+
 const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
 
 async function loadTeacherDashboard() {
@@ -280,8 +237,6 @@ async function loadTeacherDashboard() {
         document.getElementById('teacherSalary').innerText = `${teacher.salary.toLocaleString()} so'm`;
 
         const isLessonTime = checkLessonTime(teacher);
-        
-        // FAQAT USHBU USTOZNING SHAXSIY GURUHIDAGI BOLALARNI FILTRLASH
         const filteredStudents = (data.students || []).filter(s => s.teacherId === currentTeacherId);
         renderTeacherStudents(filteredStudents, isLessonTime, currentTeacherId);
     } catch (err) { console.error(err); }
@@ -317,14 +272,11 @@ function checkLessonTime(teacher) {
 
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const container = document.getElementById('teacherGroupsContainer');
-    if (!container) return;
-    container.innerHTML = '';
-
+    if (!container) return; container.innerHTML = '';
     if (students.length === 0) {
         container.innerHTML = `<div class="card glass-container" style="max-width: 100%; text-align: center; color: #64748b;">Hozircha guruhlaringizda o'quvchilar mavjud emas.</div>`;
         return;
     }
-
     const groups = {};
     students.forEach(s => {
         const gName = s.groupName || "Asosiy Guruh";
@@ -334,42 +286,21 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
 
     for (const groupName in groups) {
         const groupStudents = groups[groupName];
-
         const groupCard = document.createElement('div');
-        groupCard.className = 'card glass-container';
-        groupCard.style.maxWidth = '100%';
-        groupCard.style.marginBottom = '30px';
-
+        groupCard.className = 'card glass-container'; groupCard.style.maxWidth = '100%'; groupCard.style.marginBottom = '30px';
         groupCard.innerHTML = `<h3 class="group-title">📦 Guruh: ${groupName} (${groupStudents.length} ta o'quvchi)</h3>`;
-
-        const tableResponsive = document.createElement('div');
-        tableResponsive.className = 'table-responsive';
-
+        const tableResponsive = document.createElement('div'); tableResponsive.className = 'table-responsive';
         const table = document.createElement('table');
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Ism Familya</th>
-                    <th>Telefon raqam</th>
-                    <th>Tug'ilgan yili</th>
-                    <th>O'quvchi Balansi</th>
-                    <th>Davomat (Faqat dars vaqtida)</th>
-                </tr>
-            </thead>
-        `;
-
+        table.innerHTML = `<thead><tr><th>Ism Familya</th><th>Telefon raqam</th><th>Tug'ilgan yili</th><th>O'quvchi Balansi</th><th>Davomat (Faqat dars vaqtida)</th></tr></thead>`;
         const tbody = document.createElement('tbody');
 
         groupStudents.forEach(s => {
             const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
             const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-            
-            // Muzlatish qoidasini kuchaytirdik: dars vaqti bo'lishi shart VA bugun hali davomat qilinmagan bo'lishi kerak
-            const isButtonActive = isLessonTime && (s.attendedToday === false || s.attendedToday === undefined || s.attendedToday === null);
+            const isButtonActive = isLessonTime && !s.attendedToday;
             const disabledAttr = isButtonActive ? '' : 'disabled';
             const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
 
-            // Agar bola bugun belgilab bo'lingan bo'lsa, tugmalar zudlik bilan qulflanadi
             const attendanceCellContent = s.attendedToday 
                 ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
                 : `<div style="display: flex; gap: 10px;">
@@ -386,11 +317,7 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
                     <td>${attendanceCellContent}</td>
                 </tr>`;
         });
-
-        table.appendChild(tbody);
-        tableResponsive.appendChild(table);
-        groupCard.appendChild(tableResponsive);
-        container.appendChild(groupCard);
+        table.appendChild(tbody); tableResponsive.appendChild(table); groupCard.appendChild(tableResponsive); container.appendChild(groupCard);
     }
 }
 
@@ -403,9 +330,8 @@ async function submitAttendance(studentId, status, teacherId) {
             body: JSON.stringify({ teacherId, studentId, status })
         });
         if (response.ok) {
-            alert("Davomat saqlandi va ushbu o'quvchi uchun tugmalar qulflandi!");
-            // MUHIM: Serverdan yangi 'attendedToday' ma'lumotlarini qayta o'qib, ekranni zumda muzlatish
-            loadTeacherDashboard();
+            alert("Davomat saqlandi va ushbu guruh o'quvchisi bloklandi!");
+            await loadTeacherDashboard();
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
@@ -416,8 +342,4 @@ window.onload = function() {
         document.getElementById('studentForm').addEventListener('submit', saveStudent);
         document.getElementById('teacherForm').addEventListener('submit', saveTeacher);
     }
-    if (document.getElementById('teacherGroupsContainer')) {
-        loadTeacherDashboard();
-    }
-};
-
+if (document.getElementById('teacherGroupsContainer')) {loadTeacherDashboard();}};
