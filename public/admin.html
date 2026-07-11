@@ -15,7 +15,7 @@
         .inline-form input { padding: 8px 12px; font-size: 13px; }
         .inline-form .btn { padding: 8px 15px; font-size: 13px; width: auto; }
         
-        /* Oq oynani yo'qotib, premium qorong'u va silliq dizayn berish */
+        /* Rasmdagi oq oynalarni yo'qotib, premium quyuq va chiroyli qilish stillari */
         select {
             appearance: none;
             -webkit-appearance: none;
@@ -23,6 +23,11 @@
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
             color: #ffffff !important;
             cursor: pointer;
+            padding: 14px 20px;
+            width: 100%;
+            border-radius: 12px;
+            outline: none;
+            font-size: 15px;
         }
         select option { 
             background-color: #111026 !important; 
@@ -47,7 +52,7 @@
 
     <div class="dashboard-container">
         
-        <!-- Header va Markaz Foydasi -->
+        <!-- Yuqori boshqaruv paneli -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div style="font-size: 16px; font-weight: 500;">
@@ -89,12 +94,12 @@
                         </select>
                     </div>
 
-                    <!-- DINAMIK GURUH OYNA VA MATN INPUTI -->
+                    <!-- JAVASCRIPT KO'P KUNLIK TEKSHIRUVIGA MOS GURUH TANLASH -->
                     <div id="groupSelectionContainer" class="dynamic-group-box" style="display: none;">
                         <div class="input-group" style="margin-bottom: 10px;">
                             <select id="groupModeSelect" onchange="toggleGroupMode()">
                                 <option value="select">Mavjud guruhlardan tanlash</option>
-                                <option value="create">Yangi guruh nomi yozish</option>
+                                <option value="create">Mavjud guruh yo'q, yangi oching</option>
                             </select>
                         </div>
                         
