@@ -63,8 +63,9 @@ app.post('/api/login', (req, res) => {
     res.status(401).json({ success: false, message: "Login yoki parol xato!" });
 });
 
+// GURUH NOMINI (groupName) QABUL QILIB BAZAGA YAXLIT YOZADIGAN TO'G'RILANGAN INTERFEYS
 app.post('/api/students', (req, res) => {
-    const { name, phone, birthYear, fee, parentChatId, teacherId } = req.body;
+    const { name, phone, birthYear, fee, parentChatId, teacherId, groupName } = req.body;
     const db = readDB();
     
     const newStudent = { 
@@ -75,7 +76,8 @@ app.post('/api/students', (req, res) => {
         fee: parseInt(fee), 
         balance: 0, 
         parentChatId: parentChatId || null,
-        teacherId: teacherId // O'quvchi biriktirilgan ustoz/guruh ID si
+        teacherId: teacherId,
+        groupName: groupName || "Asosiy" // Agar guruh nomi kelmasa "Asosiy" deb yozadi, aslo undefined bo'lmaydi!
     };
     
     db.students.push(newStudent);
@@ -106,7 +108,6 @@ app.delete('/api/teachers/:id', (req, res) => {
     const teacherId = req.params.id;
     const db = readDB();
     db.teachers = db.teachers.filter(t => t.id !== teacherId);
-    // Ustoz o'chganda uning guruhidagi bolalarni ham tozalash yoki yetim qoldirmaslik uchun saqlash
     writeDB(db);
     res.json({ success: true });
 });
@@ -123,9 +124,9 @@ app.post('/api/attendance', (req, res) => {
     const halfFee = Math.round(perLessonFee / 2);
     
     teacher.salary += halfFee;
-    db.center_profit += halfFee; // 50% Markaz foydasiga yozildi
+    db.center_profit += halfFee; // 50% Markaz hisobiga o'tdi
     
-    db.attendance.push({ date: new Date().toISOString().split('T')[0], studentName: student.name, teacherName: teacher.name, status: status });
+    db.attendance.push({ date: new Date().toISOString().split('T'), studentName: student.name, teacherName: teacher.name, status: status });
     writeDB(db);
 
     if (bot && student.parentChatId) {
@@ -153,7 +154,7 @@ app.delete('/api/clear/:type', (req, res) => {
 
 app.get('/api/data', (req, res) => {
     const db = readDB();
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = new Date().toISOString().split('T');
 
     const updatedStudents = db.students.map(student => {
         const hasAttendedToday = db.attendance.some(att => 
@@ -177,7 +178,7 @@ app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.h
 
 schedule.scheduleJob('0 0 1 * *', function(){
     const db = readDB();
-    const currentDate = new Date().toISOString().split('T')[0];
+    const currentDate = new Date().toISOString().split('T');
     db.history.center_profit.push({ date: currentDate, amount: db.center_profit || 0 });
     db.teachers.forEach(t => {
         db.history.teacher_salary.push({ date: currentDate, teacherId: t.id, teacherName: t.name, salary: t.salary });
@@ -189,4 +190,5 @@ schedule.scheduleJob('0 0 1 * *', function(){
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT} portda faol!`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda barqaror yondi!`));
+
