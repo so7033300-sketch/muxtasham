@@ -42,6 +42,7 @@ window.logout = function() {
 }
 let allStudents = [];
 
+// Admin panelidagi barcha ma'lumotlarni va markaz foydasini yuklash
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
@@ -52,7 +53,7 @@ async function loadDashboardData() {
         renderAttendance(data.attendance || []);
         renderTeachers(data.teachers || []);
 
-        // Serverdan kelayotgan markaz foydasini ekranga chiqarish
+        // Serverdan kelayotgan markaz foydasini chiroyli formatda ekranga chiqarish
         const centerProfit = data.center_profit || 0;
         const profitDisplay = document.getElementById('centerProfitDisplay');
         if (profitDisplay) {
@@ -62,6 +63,7 @@ async function loadDashboardData() {
         console.error("Ma'lumotlarni yuklashda xatolik yuz berdi!");
     }
 }
+
 
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
