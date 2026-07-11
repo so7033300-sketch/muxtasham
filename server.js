@@ -6,13 +6,23 @@ const TelegramBot = require('node-telegram-bot-api');
 const schedule = require('node-schedule');
 
 const app = express();
-app.use(cors());
+
+// CORS xavfsizlik sozlamalarini kengaytiramiz (Brauzer bloklamasligi uchun)
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'DELETE'],
+    allowedHeaders: ['Content-Type']
+}));
+
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+
+// Static fayllar 'public' papkasida ekanligini ko'rsatamiz
+const publicPath = path.join(__dirname, 'public');
+app.use(express.static(publicPath));
 
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// Siz yaratgan rasmiy Telegram Bot Token
+// Telegram Bot Sozlamasi
 const BOT_TOKEN = '8955968685:AAEv-KraJbKvgWkpiHAREjecGI3F038N0io'; 
 let bot = null;
 
@@ -20,16 +30,21 @@ if (BOT_TOKEN) {
     try {
         bot = new TelegramBot(BOT_TOKEN, { polling: true });
         bot.on('polling_error', (error) => {
-            console.log("Telegram Bot Polling bildirishnomasi:", error.message);
+            console.log("Telegram Bot bildirishnomasi:", error.message);
         });
-        console.log("✅ Telegram Bot muvaffaqiyatli ulandi va faollashdi!");
+        console.log("✅ Telegram Bot faol!");
     } catch (e) {
-        console.log("Telegram botni ishga tushirishda xatolik:", e.message);
+        console.log("Telegram bot xatosi:", e.message);
     }
 }
 
 function readDB() {
     try {
+        if (!fs.existsSync(DB_FILE)) {
+            const initialData = { students: [], teachers: [], attendance: [], history: { center_profit: [], teacher_salary: [] } };
+            fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
+            return initialData;
+        }
         return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
     } catch (e) {
         return { students: [], teachers: [], attendance: [], history: { center_profit: [], teacher_salary: [] } };
@@ -40,7 +55,7 @@ function writeDB(data) {
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
 }
 
-// ---------------- CRM INTEGRATSIYA API ----------------
+// --- API ENDPOINTS ---
 
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
@@ -106,10 +121,10 @@ app.post('/api/attendance', (req, res) => {
             const statusText = status === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
             bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
             if (student.balance <= -150000) {
-                bot.sendMessage(student.parentChatId, `⚠️ DIQQAT! Farzandingiz ${student.name}ning qarzi ${Math.abs(student.balance).toLocaleString()} so'mga yetdi. Iltimos, tez fursatda to'lovni amalga oshiring!`);
+                bot.sendMessage(student.parentChatId, `⚠️ DIQQAT! Farzandingiz ${student.name}ning qarzi ${Math.abs(student.balance).toLocaleString()} so'mga yetdi. Iltimos, to'lov qiling!`);
             }
         } catch (botErr) {
-            console.log("Telegram bot jo'natish xatosi:", botErr.message);
+            console.log("Bot yuborish xatosi:", botErr.message);
         }
     }
     res.json({ success: true, studentBalance: student.balance, teacherSalary: teacher.salary });
@@ -121,11 +136,23 @@ app.delete('/api/clear/:type', (req, res) => {
     if (type === 'all') { db.students = []; db.teachers = []; db.attendance = []; }
     else if (type === 'attendance') { db.attendance = []; }
     writeDB(db);
-    res.json({ success: true, message: "Tozalash bajarildi" });
+    res.json({ success: true });
 });
 
 app.get('/api/data', (req, res) => res.json(readDB()));
 
+// --- HTML SAHIFALARNI TO'G'RI YONALISHI (ROUTING) ---
+app.get('/', (req, res) => {
+    res.sendFile(path.join(publicPath, 'index.html'));
+});
+app.get('/admin.html', (req, res) => {
+    res.sendFile(path.join(publicPath, 'admin.html'));
+});
+app.get('/ustoz.html', (req, res) => {
+    res.sendFile(path.join(publicPath, 'ustoz.html'));
+});
+
+// Oy boshida arxivlash
 schedule.scheduleJob('0 0 1 * *', function(){
     const db = readDB();
     const currentDate = new Date().toISOString().split('T')[0];
@@ -137,24 +164,7 @@ schedule.scheduleJob('0 0 1 * *', function(){
     db.center_profit = 0;
     if (db.history.center_profit.length > 3) db.history.center_profit.shift();
     writeDB(db);
-    console.log("Aylik arxivlash muvaffaqiyatli yakunlandi!");
 });
-// --- HTML SAHIFALARNI TO'G'RI YUKLASH (ROUTING) ---
-// Tizimga kirish (Login) sahifasi
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// Admin paneli sahifasi
-app.get('/admin.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// O'qituvchi paneli sahifasi
-app.get('/ustoz.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'ustoz.html'));
-});
-
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server Render platformasida ${PORT}-portda barqaror ishlamoqda!`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server ${PORT}-portda yonib turibdi!`));
