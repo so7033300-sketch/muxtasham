@@ -149,32 +149,6 @@ function renderTeachers(teachers) {
     });
 }
 
-async function saveStudent(e) {
-    e.preventDefault();
-    const name = document.getElementById('studName').value;
-    const phone = document.getElementById('studPhone').value;
-    const birthYear = document.getElementById('studBirth').value;
-    const fee = document.getElementById('studFee').value;
-    const teacherId = document.getElementById('studTeacher').value;
-    const parentChatId = document.getElementById('parentChatId').value;
-    
-    const mode = document.getElementById('groupModeSelect').value;
-    let groupName = "";
-    if (mode === 'select') {
-        groupName = document.getElementById('studGroupSelect').value;
-        if (!groupName) return alert("Iltimos, guruhni tanlang!");
-    } else {
-        groupName = document.getElementById('studNewGroupInput').value.trim();
-        if (!groupName) return alert("Iltimos, yangi guruh nomini yozing!");
-    }
-
-    const response = await fetch(`${API_URL}/students`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
-    });
-    if (response.ok) { document.getElementById('studentForm').reset(); document.getElementById('groupSelectionContainer').style.display='none'; loadDashboardData(); }
-}
 async function saveTeacher(e) {
     e.preventDefault();
     const name = document.getElementById('teachName').value;
@@ -242,7 +216,8 @@ async function loadTeacherDashboard() {
 }
 
 function checkLessonTime(teacher) {
-    const now = new Date();
+    // Brauzer soatini Toshkent vaqt zonasiga majburiy o'tkazamiz
+    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
     const currentDayIndex = now.getDay();
     const currentTimeStr = now.toTimeString().substring(0, 5);
     const teacherDaysString = Array.isArray(teacher.days) ? teacher.days.join(' ').toLowerCase() : String(teacher.days).toLowerCase();
