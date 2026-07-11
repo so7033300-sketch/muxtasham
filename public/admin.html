@@ -14,29 +14,24 @@
         .inline-form { display: flex; gap: 10px; align-items: center; }
         .inline-form input { padding: 8px 12px; font-size: 13px; }
         .inline-form .btn { padding: 8px 15px; font-size: 13px; width: auto; }
-        
-        /* Select ichidagi variantlar aniq va chiroyli ko'rinishi uchun */
-        select option {
-            background-color: #1e1b4b !important;
-            color: #ffffff !important;
-        }
+        select option { background-color: #1e1b4b !important; color: #ffffff !important; }
     </style>
 </head>
 <body>
 
     <div class="dashboard-container">
         
-        <!-- Yuqori boshqaruv paneli -->
+        <!-- Yuqori Boshqaruv Qismi (Header) - Qidiruv o'rniga Markaz Foydasi qo'yildi -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
-            <div class="input-group search-box">
-                <input type="text" id="searchStudent" placeholder="O'quvchini ism bo'yicha qidirish..." oninput="filterStudents()">
+            <div style="font-size: 16px; font-weight: 500;">
+                Markaz sof foydasi: <span class="status-badge status-paid" id="centerProfitDisplay" style="font-size: 16px; padding: 8px 16px;">0 so'm</span>
             </div>
             <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
         </div>
-        <!-- Ma'lumotlarni kiritish oynalari (Grid layout) -->
+
+        <!-- Formlar -->
         <div class="grid-2">
-            
             <!-- Yangi O'quvchi Qo'shish Oynasi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3>Yangi O'quvchi Qo'shish</h3>
@@ -52,7 +47,7 @@
                     </div>
                     <div class="input-group">
                         <select id="studFee" required>
-                            <option value="" disabled selected style="color: #94a3b8;">Oylik to'lov miqdorini tanlang</option>
+                            <option value="" disabled selected>Oylik to'lov miqdorini tanlang</option>
                             <option value="250000">250 000 so'm</option>
                             <option value="300000">300 000 so'm</option>
                             <option value="350000">350 000 so'm</option>
@@ -69,6 +64,7 @@
                     <button type="submit" class="btn">O'quvchini Saqlash</button>
                 </form>
             </div>
+
             <!-- Yangi O'qituvchi Qo'shish Oynasi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3>Yangi O'qituvchi Qo'shish</h3>
@@ -88,7 +84,6 @@
                         </div>
                     </div>
                     
-                    <!-- Aqlli va xatosiz ishlaydigan Checkbox dars kunlari tizimi -->
                     <div class="input-group" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
                         <label style="display: block; margin-bottom: 10px; color: #38bdf8; font-size: 14px; font-weight: 500;">Dars kunlarini tanlang:</label>
                         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px;">
@@ -124,12 +119,15 @@
                     <button type="submit" class="btn">O'qituvchini Saqlash</button>
                 </form>
             </div>
-
         </div>
-        <!-- Jadvallar qismi -->
+
+        <!-- Barcha O'quvchilar Jadvali — Qidiruv aynan rasmda ko'rsatilgan joyga tushirildi -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
                 <h3 style="margin-bottom: 0;">Barcha O'quvchilar Ro'yxati</h3>
+                <div class="input-group search-box">
+                    <input type="text" id="searchStudent" placeholder="O'quvchini ism bo'yicha qidirish..." oninput="filterStudents()">
+                </div>
                 <button class="btn danger-btn" style="width: auto; padding: 8px 15px; font-size: 13px;" onclick="clearData('all')">Hamma Ma'lumotlarni Tozalash</button>
             </div>
             <div class="table-responsive">
@@ -145,11 +143,12 @@
                         </tr>
                     </thead>
                     <tbody id="studentsTableBody">
-                        <!-- Dinamik o'quvchilar ro'yxati -->
                     </tbody>
                 </table>
             </div>
         </div>
+
+        <!-- Kunlik Davomat Tarixi -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
                 <h3 style="margin-bottom: 0;">Kunlik Davomat Tarixi</h3>
@@ -166,35 +165,8 @@
                         </tr>
                     </thead>
                     <tbody id="attendanceTableBody">
-                        <!-- Dinamik davomat tarixi -->
                     </tbody>
                 </table>
             </div>
         </div>
 
-        <div class="card glass-container" style="max-width: 100%;">
-            <h3>O'qituvchilar Ro'yxati va Ularning Balansi</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>O'qituvchi F.I.Sh</th>
-                            <th>Fan</th>
-                            <th>Kunlar / Vaqt</th>
-                            <th>Ishlagan Puli (Balans)</th>
-                            <th>Login / Parol</th>
-                        </tr>
-                    </thead>
-                    <tbody id="teachersTableBody">
-                        <!-- Dinamik o'qituvchilar ro'yxati -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- API bilan ishlovchi global tashqi mantiq fayli -->
-    <script src="/script.js"></script>
-</body>
-</html>
