@@ -1,148 +1,203 @@
 const express = require('express');
-const { Pool } = require('pg');
+const fs = require('fs');
 const cors = require('cors');
 const path = require('path');
+const TelegramBot = require('node-telegram-bot-api');
+const schedule = require('node-schedule');
+
 const app = express();
-
-// 🔓 INTERNET BLOKLARINI VA CORS TAQIQLARINI BUTUNLAY YECHISH
-app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'], allowedHeaders: ['Content-Type'] }));
+app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname)));
 
-// 💾 PULLIK POSTGRESQL BAZASIGA MAHKAM ZANJIRLASH
-const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const DB_FILE = path.join(__dirname, 'database.json');
+const BOT_TOKEN = 'Sizning_Telegram_Bot_Tokeningiz'; // Shu yerga Telegram Bot token qo'yiladi
+const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
-// SAYT OCHILGANDA JONLI REJIMDA PUBLIC PAPKASINI ISHGA TUSHIRISH
-app.use(express.static(path.join(__dirname, 'public')));
-
-// 🛠️ BAZANI ENG TOZA VA MUKAMMAL FORMATDA QAYTA QURISH
-async function initDatabaseTables() {
-    const client = await pool.connect();
+// Ma'lumotlarni o'qish va yozish funksiyalari
+function readDB() {
     try {
-        console.log("🔄 PostgreSQL jadvallari tekshirilmoqda...");
-        
-        await client.query(`
-            CREATE TABLE IF NOT EXISTS teachers (
-                id BIGINT PRIMARY KEY, 
-                name TEXT, 
-                subject TEXT, 
-                group_name TEXT, 
-                start_time TEXT, 
-                end_time TEXT, 
-                allowed_days TEXT, 
-                login TEXT, 
-                pass TEXT
-            );
-            
-            CREATE TABLE IF NOT EXISTS students (
-                id BIGINT PRIMARY KEY, 
-                name TEXT, 
-                phone TEXT, 
-                balance NUMERIC DEFAULT 0, 
-                teacher_id BIGINT, 
-                group_name TEXT, 
-                monthly_price NUMERIC DEFAULT 200000
-            );
-
-            CREATE TABLE IF NOT EXISTS excel_log (
-                id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY, 
-                student_id BIGINT, 
-                teacher_id BIGINT,
-                dars_time TEXT, 
-                name TEXT, 
-                date TEXT, 
-                status TEXT, 
-                sum NUMERIC DEFAULT 0, 
-                phone TEXT
-            );
-        `);
-        console.log("🟢 PostgreSQL jadvallari 100% ideal holatda tayyor!");
-    } catch (err) {
-        console.error("❌ Jadvallarni qurishda xatolik:", err.message);
-    } finally { client.release(); }
+        return JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+    } catch (e) {
+        return { students: [], teachers: [], attendance: [], history: { center_profit: [], teacher_salary: [] } };
+    }
 }
-initDatabaseTables();
-// ⚡ BARCHA MA'LUMOTLARNI SRAZU AVTOMAT BAZAGA SAQLASH (SAVE API)
-app.post('/api/save-all', async (req, res) => {
-    const { teachers, students, excelLog } = req.body; 
-    const client = await pool.connect();
-    try {
-        await client.query('BEGIN'); 
-        await client.query('DELETE FROM students'); 
-        await client.query('DELETE FROM teachers'); 
-        await client.query('DELETE FROM excel_log');
-        
-        if (teachers && Array.isArray(teachers)) {
-            for (let t of teachers) { 
-                let daysText = Array.isArray(t.allowed_days) ? t.allowed_days.join(', ') : (Array.isArray(t.allowedDays) ? t.allowedDays.join(', ') : String(t.allowed_days || t.allowedDays || ''));
-                let sTime = t.start_time || t.startTime || "14:00";
-                let eTime = t.end_time || t.endTime || "16:00";
-                let gName = t.group_name || t.groupName || "";
 
-                await client.query(`INSERT INTO teachers (id, name, subject, group_name, start_time, end_time, allowed_days, login, pass) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`, 
-                [t.id, t.name, t.subject, gName, sTime, eTime, daysText, t.login, t.pass]); 
-            }
-        }
-        
-        if (students && Array.isArray(students)) {
-            for (let s of students) { 
-                let gName = s.groupName || s.group_name || "";
-                let mPrice = s.monthlyPrice || s.monthly_price || 200000;
-                await client.query(`INSERT INTO students (id, name, phone, balance, teacher_id, group_name, monthly_price) VALUES ($1, $2, $3, $4, $5, $6, $7)`, 
-                [s.id, s.name, s.phone || "", s.balance || 0, s.teacherId || null, gName, mPrice]); 
-            }
-        }
-        
-        if (excelLog && Array.isArray(excelLog)) {
-            for (let l of excelLog) { 
-                let tId = l.teacherId || l.teacher_id || null;
-                let dTime = l.dars_time || l.darsTime || "00:00";
-                await client.query(`INSERT INTO excel_log (student_id, teacher_id, dars_time, name, date, status, sum, phone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`, 
-                [l.studentId || null, tId, dTime, l.name, l.date, l.status, l.sum || 0, l.phone || ""]); 
-            }
-        }
-        
-        await client.query('COMMIT'); 
-        res.json({ success: true, message: "Srazu bazaga yozildi!" });
-    } catch (err) { 
-        await client.query('ROLLBACK'); 
-        res.status(500).json({ success: false, error: err.message }); 
-    } finally { client.release(); }
+function writeDB(data) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8');
+}
+
+// ---------------- ALGORITMLAR VA API ----------------
+
+// 1. Tizimga kirish (Login)
+app.post('/api/login', (req, res) => {
+    const { login, password } = req.body;
+    const db = readDB();
+    
+    if (login === 'admin' && password === 'admin123') {
+        return res.json({ success: true, role: 'admin' });
+    }
+    
+    const teacher = db.teachers.find(t => t.login === login && t.password === password);
+    if (teacher) {
+        return res.json({ success: true, role: 'teacher', teacherId: teacher.id });
+    }
+    
+    res.status(401).json({ success: false, message: "Login yoki parol xato!" });
 });
 
-// 🔄 BARCHA MA'LUMOTLARNI JONLI YUKLASH (LOAD API)
-app.get('/api/load-all', async (req, res) => {
-    try {
-        const teachersRes = await pool.query('SELECT * FROM teachers'); 
-        const studentsRes = await pool.query('SELECT * FROM students'); 
-        const logsRes = await pool.query('SELECT * FROM excel_log ORDER BY id DESC');
+// 2. Yangi o'quvchi qo'shish
+app.post('/api/students', (req, res) => {
+    const { name, phone, birthYear, fee, parentChatId } = req.body;
+    const db = readDB();
+    
+    const newStudent = {
+        id: Date.now().toString(),
+        name,
+        phone,
+        birthYear,
+        fee: parseInt(fee),
+        balance: 0,
+        parentChatId: parentChatId || null // Telegram xabarnoma uchun
+    };
+    
+    db.students.push(newStudent);
+    writeDB(db);
+    res.json({ success: true, student: newStudent });
+});
+
+// 3. O'quvchi to'lov qilganda
+app.post('/api/students/pay', (req, res) => {
+    const { studentId, amount } = req.body;
+    const db = readDB();
+    const student = db.students.find(s => s.id === studentId);
+    
+    if (!student) return res.status(404).json({ success: false, message: "O'quvchi topilmadi" });
+    
+    student.balance += parseInt(amount);
+    writeDB(db);
+    res.json({ success: true, balance: student.balance });
+});
+
+// 4. Yangi o'qituvchi qo'shish
+app.post('/api/teachers', (req, res) => {
+    const { name, subject, timeStart, timeEnd, days, login, password } = req.body;
+    const db = readDB();
+    
+    const newTeacher = {
+        id: Date.now().toString(),
+        name,
+        subject,
+        timeStart, // Masalan: "14:00"
+        timeEnd,   // Masalan: "16:00"
+        days,      // Masalan: ["Dushanba", "Chorshanba", "Juma"]
+        login,
+        password,
+        salary: 0
+    };
+    
+    db.teachers.push(newTeacher);
+    writeDB(db);
+    res.json({ success: true, teacher: newTeacher });
+});
+
+// 5. Davomat qilish va Balansni 50/50 bo'lish algoritmi
+app.post('/api/attendance', (req, res) => {
+    const { teacherId, studentId, status } = req.body; // status: 'keldi' yoki 'kelmadi'
+    const db = readDB();
+    
+    const student = db.students.find(s => s.id === studentId);
+    const teacher = db.teachers.find(t => t.id === teacherId);
+    
+    if (!student || !teacher) return res.status(404).json({ success: false, message: "Ma'lumot xato" });
+    
+    // Bir darslik narxni hisoblash (1 oyda 12 ta dars deb hisoblaymiz: haftasiga 3 kun)
+    const perLessonFee = Math.round(student.fee / 12);
+    
+    // O'quvchidan pul yechish (Keldi yoki Kelmadi deyilsa ham baribir dars uchun yechiladi)
+    student.balance -= perLessonFee;
+    
+    // 50/50 bo'lish
+    const halfFee = Math.round(perLessonFee / 2);
+    teacher.salary += halfFee;
+    
+    // Markaz foydasini saqlash uchun bazada center_profit'ni oshiramiz
+    if(!db.center_profit) db.center_profit = 0;
+    db.center_profit += halfFee;
+    
+    // Davomat tarixini yozish
+    db.attendance.push({
+        date: new Date().toISOString().split('T')[0],
+        studentName: student.name,
+        teacherName: teacher.name,
+        status: status
+    });
+    
+    writeDB(db);
+    
+    // --- TELEGRAM BOT ORQALI HABAR YUBORISH ---
+    if (student.parentChatId) {
+        // Davomat xabari
+        const statusText = status === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
+        bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
         
-        res.json({
-            success: true,
-            teachers: teachersRes.rows.map(t => ({ 
-                id: Number(t.id), name: t.name, subject: t.subject, group_name: t.group_name, groupName: t.group_name,
-                start_time: t.start_time, startTime: t.start_time, end_time: t.end_time, endTime: t.end_time,
-                allowed_days: t.allowed_days ? t.allowed_days.split(', ') : [], allowedDays: t.allowed_days ? t.allowed_days.split(', ') : [],
-                login: t.login, pass: t.pass 
-            })),
-            students: studentsRes.rows.map(s => ({ 
-                id: Number(s.id), name: s.name, phone: s.phone, balance: Number(s.balance), 
-                teacherId: s.teacher_id ? Number(s.teacher_id) : null, groupName: s.group_name, group_name: s.group_name,
-                monthlyPrice: Number(s.monthly_price), monthly_price: Number(s.monthly_price)
-            })),
-            excelLog: logsRes.rows.map(l => ({ 
-                id: Number(l.id), studentId: l.student_id ? Number(l.student_id) : null, 
-                teacherId: l.teacher_id ? Number(l.teacher_id) : null, teacher_id: l.teacher_id ? Number(l.teacher_id) : null,
-                dars_time: l.dars_time, darsTime: l.dars_time, name: l.name, date: l.date, status: l.status, sum: Number(l.sum), phone: l.phone 
-            }))
+        // Qarzdorlik xabari (-150 000 so'mdan oshsa)
+        if (student.balance <= -150000) {
+            bot.sendMessage(student.parentChatId, `⚠️ DIQQAT! Farzandingiz ${student.name}ning qarzi ${Math.abs(student.balance)} so'mga yyetdi. Iltimos, tez orada to'lovni amalga oshiring!`);
+        }
+    }
+    
+    res.json({ success: true, studentBalance: student.balance, teacherSalary: teacher.salary });
+});
+
+// 6. Ma'lumotlarni o'chirish va tozalash
+app.delete('/api/clear/:type', (req, res) => {
+    const type = req.params.type;
+    const db = readDB();
+    
+    if (type === 'all') {
+        db.students = [];
+        db.teachers = [];
+        db.attendance = [];
+    } else if (type === 'attendance') {
+        db.attendance = [];
+    }
+    
+    writeDB(db);
+    res.json({ success: true, message: "Tozalash bajarildi" });
+});
+
+// Ma'lumotlarni olish (Get) API'lari
+app.get('/api/data', (req, res) => res.json(readDB()));
+
+// 7. HAR OYNING 1-KUNIDA TOZALASH VA 3 OYLIK TARIXNI SAQLASH (CRON JOB)
+schedule.scheduleJob('0 0 1 * *', function(){
+    const db = readDB();
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    // Arxivga oylik foyda va oyliklarni olish
+    db.history.center_profit.push({ date: currentDate, amount: db.center_profit || 0 });
+    
+    db.teachers.forEach(t => {
+        db.history.teacher_salary.push({
+            date: currentDate,
+            teacherId: t.id,
+            teacherName: t.name,
+            salary: t.salary
         });
-    } catch (err) { res.status(500).json({ success: false, error: err.message }); }
+        t.salary = 0; // Oylikni yangi oy uchun nolga tushirish
+    });
+    
+    db.center_profit = 0; // Markaz foydasini nolga tushirish
+    
+    // Tarixni faqat oxirgi 3 oylik qilib saqlash (Eng oxirgi 3 ta yozuv)
+    if (db.history.center_profit.length > 3) db.history.center_profit.shift();
+    if (db.history.teacher_salary.length > 45) db.history.teacher_salary.shift(); // 15 ta ustoz * 3 oy = 45
+    
+    writeDB(db);
+    console.log("Aylik arxivlash muvaffaqiyatli bajarildi!");
 });
 
-// 📌 ROUTING TIZIMI (SAHIFALARNI INTERNETDA TO'G'RI OCHISH)
-app.get('/admin.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'admin.html')); });
-app.get('/ustoz.html', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'ustoz.html')); });
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-app.get('*', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
-
-const PORT = process.env.PORT || 10000; 
-app.listen(PORT, () => console.log(`🚀 Pullik server xatoliklarsiz, pro-rejimda ishga tushdi!`));
+// Serverni ishga tushirish
+const PORT = 3000;
+app.listen(PORT, () => console.log(`Server http://localhost:${PORT} portida muvaffaqiyatli ishlamoqda!`));
