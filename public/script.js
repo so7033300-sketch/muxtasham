@@ -392,7 +392,7 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
 }
 
 async function submitAttendance(studentId, status, teacherId) {
-    if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz? (Bu amalni qaytarib bo'lmaydi)`)) return;
+    if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz? (Bu dars uchun amalni qaytarib bo'lmaydi)`)) return;
     try {
         const response = await fetch(`${API_URL}/attendance`, {
             method: 'POST',
@@ -400,8 +400,9 @@ async function submitAttendance(studentId, status, teacherId) {
             body: JSON.stringify({ teacherId, studentId, status })
         });
         if (response.ok) {
-            alert("Davomat saqlandi va ushbu guruh o'quvchisi bloklandi!");
-            loadTeacherDashboard();
+            alert("Davomat muvaffaqiyatli saqlandi va ushbu o'quvchi uchun qulflandi!");
+            // Ma'lumotlarni qayta yuklab, tugmalarni zudlik bilan muzlatish
+            await loadTeacherDashboard();
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
