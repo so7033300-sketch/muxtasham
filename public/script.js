@@ -95,34 +95,57 @@ function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
 }
-function renderStudents(students) {
-    const tbody = document.getElementById('studentsTableBody');
-    if (!tbody) return; tbody.innerHTML = '';
-    students.forEach(s => {
-        const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
-        const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-        const tObj = allTeachers.find(t => t.id === s.teacherId);
-        const displayName = tObj ? `${tObj.name} - ${s.groupName}` : 'Guruhsiz';
+// O'quvchini global xotira orqali sahifa yangilanmasdan xatosiz saqlash
+window.executeSaveStudent = async function() {
+    const name = document.getElementById('studName').value;
+    const phone = document.getElementById('studPhone').value;
+    const birthYear = document.getElementById('studBirth').value;
+    const fee = document.getElementById('studFee').value;
+    const teacherId = document.getElementById('studTeacher').value;
+    const parentChatId = document.getElementById('parentChatId').value;
+    
+    const mode = document.getElementById('groupModeSelect').value;
+    let groupName = "";
+    
+    if(!name || !phone || !birthYear || !fee || !teacherId) {
+        alert("Iltimos, o'quvchi ma'lumotlarini va guruhini to'liq to'ldiring!");
+        return;
+    }
+    
+    if (mode === 'select') {
+        groupName = document.getElementById('studGroupSelect').value;
+        if (!groupName) {
+            alert("Iltimos, mavjud guruhlardan birini tanlang!");
+            return;
+        }
+    } else {
+        groupName = document.getElementById('studNewGroupInput').value.trim();
+        if (!groupName) {
+            alert("Iltimos, yangi guruh nomini kiriting!");
+            return;
+        }
+    }
 
-        tbody.innerHTML += `
-            <tr class="${isDebtor}">
-                <td><strong>${s.name}</strong></td>
-                <td>${s.phone}</td>
-                <td><span class="status-badge" style="background:rgba(129,140,248,0.15); color:#818cf8;">${displayName}</span></td>
-                <td>${s.fee.toLocaleString()} so'm</td>
-                <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
-                <td>
-                    <div class="inline-form">
-                        <input type="number" id="pay_${s.id}" placeholder="Summa" style="width:110px;">
-                        <button class="btn" onclick="makePayment('${s.id}')">To'lash</button>
-                    </div>
-                </td>
-                <td>
-                    <button class="btn danger-btn" style="padding: 6px 12px; font-size: 12px; width: auto;" onclick="deleteStudent('${s.id}')">O'chirish</button>
-                </td>
-            </tr>`;
-    });
+    try {
+        const response = await fetch(`${API_URL}/students`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
+        });
+        
+        if (response.ok) {
+            alert("O'quvchi muvaffaqiyatli saqlandi!");
+            document.getElementById('studentForm').reset(); 
+            document.getElementById('groupSelectionContainer').style.display = 'none'; 
+            loadDashboardData(); // Jadvallarni sahifani yangilamasdan zumda qayta chizish
+        } else {
+            alert("O'quvchini saqlashda server xatosi yuz berdi.");
+        }
+    } catch (err) {
+        alert("Server bilan aloqa uzildi!");
+    }
 }
+
 
 function renderAttendance(attendance) {
     const tbody = document.getElementById('attendanceTableBody');
