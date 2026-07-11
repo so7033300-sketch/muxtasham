@@ -1,5 +1,5 @@
 // Server API manzili (Mahalliy joylashuv uchun)
-const API_URL = 'http://localhost:3000/api';
+const API_URL = 'https://muxtasham-jgqv.onrender.com';
 
 // Tizimga kirish (Login) funksiyasi
 async function handleLogin(e) {
