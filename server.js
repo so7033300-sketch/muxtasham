@@ -112,6 +112,18 @@ app.post('/api/attendance', (req, res) => {
     
     if(!db.center_profit) db.center_profit = 0;
     db.center_profit += halfFee;
+    // O'qituvchini ID raqami bo'yicha bazadan o'chirish API xizmati
+app.delete('/api/teachers/:id', (req, res) => {
+    const teacherId = req.params.id;
+    const db = readDB();
+    
+    // O'qituvchini ro'yxatdan qidirib o'chirish
+    db.teachers = db.teachers.filter(t => t.id !== teacherId);
+    
+    writeDB(db);
+    res.json({ success: true, message: "O'qituvchi muvaffaqiyatli o'chirildi" });
+});
+
     
     db.attendance.push({ date: new Date().toISOString().split('T')[0], studentName: student.name, teacherName: teacher.name, status: status });
     writeDB(db);
