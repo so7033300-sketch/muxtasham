@@ -1,5 +1,5 @@
-// Sizning faol Render serveringiz global manzili
-const API_URL = 'https://muxtasham-jgqv.onrender.com';
+// Render server manzili (Mahalliy yo'nalish xatosiz ishlashi uchun)
+const API_URL = 'https://onrender.com';
 
 // Tizimga kirish (Login) funksiyasi
 async function handleLogin(e) {
@@ -18,10 +18,10 @@ async function handleLogin(e) {
         
         if (data.success) {
             if (data.role === 'admin') {
-                window.location.href = 'admin.html';
+                window.location.href = '/admin.html';
             } else if (data.role === 'teacher') {
                 localStorage.setItem('teacherId', data.teacherId);
-                window.location.href = 'ustoz.html';
+                window.location.href = '/ustoz.html';
             }
         } else {
             errorDiv.style.display = 'block';
@@ -35,7 +35,7 @@ async function handleLogin(e) {
 
 function logout() {
     localStorage.clear();
-    window.location.href = 'index.html';
+    window.location.href = '/index.html';
 }
 let allStudents = [];
 
@@ -44,10 +44,10 @@ async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
         const data = await response.json();
-        allStudents = data.students;
+        allStudents = data.students || [];
         renderStudents(allStudents);
-        renderAttendance(data.attendance);
-        renderTeachers(data.teachers);
+        renderAttendance(data.attendance || []);
+        renderTeachers(data.teachers || []);
     } catch (err) {
         console.error("Ma'lumotlarni yuklashda xatolik yuz berdi!");
     }
@@ -106,7 +106,7 @@ function renderAttendance(attendance) {
     });
 }
 
-// O'qituvchilar ro'yxati va ularning oyligini jadvalga chiqarish
+// O'qituvchilar ro'yxati va ularning oyligini chiqarish
 function renderTeachers(teachers) {
     const tbody = document.getElementById('teachersTableBody');
     if (!tbody) return;
@@ -186,14 +186,14 @@ async function makePayment(studentId) {
 
 // Jadvallarni o'chirish va tozalash funksiyasi
 async function clearData(type) {
-    if (confirm("Haqiqatdan ham ushbu ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) {
+    if (confirm("Ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) {
         const response = await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' });
         if (response.ok) loadDashboardData();
     }
 }
 const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
 
-// O'qituvchining shaxsiy ma'lumotlarini yuklash va ekranga chiqarish
+// O'qituvchining shaxsiy ma'lumotlarini yuklash
 async function loadTeacherDashboard() {
     const currentTeacherId = localStorage.getItem('teacherId');
     if (!currentTeacherId) return;
@@ -211,11 +211,11 @@ async function loadTeacherDashboard() {
         document.getElementById('teacherSalary').innerText = `${teacher.salary.toLocaleString()} so'm`;
 
         const isLessonTime = checkLessonTime(teacher);
-        renderTeacherStudents(data.students, isLessonTime, currentTeacherId);
+        renderTeacherStudents(data.students || [], isLessonTime, currentTeacherId);
     } catch (err) { console.error(err); }
 }
 
-// Dars kunlari va soatini tekshirib tugmalarni bloklash yoki ochish funksiyasi
+// Dars kunlari va soatini tekshirib tugmalarni bloklash funksiyasi
 function checkLessonTime(teacher) {
     const now = new Date();
     const currentDayIndex = now.getDay();
@@ -240,9 +240,9 @@ function checkLessonTime(teacher) {
     }
 }
 
-// Ustoz darsidagi o'quvchilarni jadvalga chiqarish funksiyasi
+// Ustoz panelida bolalar ro'yxatini chiqarish
 function renderTeacherStudents(students, isLessonTime, teacherId) {
-    const tbody = document.getElementById('teacherStudentsTable');
+    const tbody = document.getElementById('teacherStudentsTable') || document.getElementById('teacherTeacherStudentsTable');
     if (!tbody) return;
     tbody.innerHTML = '';
 
@@ -279,13 +279,13 @@ async function submitAttendance(studentId, status, teacherId) {
             body: JSON.stringify({ teacherId, studentId, status })
         });
         if (response.ok) {
-            alert("Davomat saqlandi va ota-onaga Telegram bot orqali xabar yuborildi!");
+            alert("Davomat saqlandi va balanslar yangilandi!");
             loadTeacherDashboard();
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
-// Sahifa turiga qarab kerakli funksiyalarni ishga tushirish (Global Routing)
+// Sahifaga mos qismlarni avtomatik yuklash (Routing Boshqaruvchisi)
 window.onload = function() {
     if (document.getElementById('loginForm')) {
         document.getElementById('loginForm').addEventListener('submit', handleLogin);
@@ -295,7 +295,7 @@ window.onload = function() {
         document.getElementById('studentForm').addEventListener('submit', saveStudent);
         document.getElementById('teacherForm').addEventListener('submit', saveTeacher);
     }
-    if (document.getElementById('teacherStudentsTable')) {
+    if (document.getElementById('teacherStudentsTable') || document.getElementById('teacherTeacherStudentsTable')) {
         loadTeacherDashboard();
     }
 };
