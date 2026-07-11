@@ -1,6 +1,5 @@
 const API_URL = '/api';
 
-
 // Funksiyani global window obyektiga bog'laymiz (Tugma 100% ishlashi uchun)
 window.executeLogin = async function() {
     const login = document.getElementById('loginInput').value;
@@ -41,10 +40,8 @@ window.logout = function() {
     localStorage.clear();
     window.location.href = '/index.html';
 }
-
 let allStudents = [];
 
-// Admin panelidagi barcha ma'lumotlarni serverdan yuklash
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
@@ -58,13 +55,11 @@ async function loadDashboardData() {
     }
 }
 
-// Ism bo'yicha o'quvchilarni tezkor qidirish (Filter)
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     const filtered = allStudents.filter(s => s.name.toLowerCase().includes(query));
     renderStudents(filtered);
 }
-// O'quvchilarni jadvalga chiqarish va qarzdorlarni qizil qilish
 function renderStudents(students) {
     const tbody = document.getElementById('studentsTableBody');
     if (!tbody) return;
@@ -92,7 +87,6 @@ function renderStudents(students) {
     });
 }
 
-// Davomat tarixini jadvalga chiqarish
 function renderAttendance(attendance) {
     const tbody = document.getElementById('attendanceTableBody');
     if (!tbody) return;
@@ -111,25 +105,24 @@ function renderAttendance(attendance) {
     });
 }
 
-// O'qituvchilar ro'yxati va ularning oyligini chiqarish
 function renderTeachers(teachers) {
     const tbody = document.getElementById('teachersTableBody');
     if (!tbody) return;
     tbody.innerHTML = '';
     
     teachers.forEach(t => {
+        const daysText = Array.isArray(t.days) ? t.days.join(', ') : t.days;
         tbody.innerHTML += `
             <tr>
                 <td><strong>${t.name}</strong></td>
                 <td>${t.subject}</td>
-                <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td>
+                <td>${daysText} (${t.timeStart}-${t.timeEnd})</td>
                 <td><span class="status-badge status-paid" style="background:rgba(56, 189, 248, 0.2); color:#38bdf8;">${t.salary.toLocaleString()} so'm</span></td>
                 <td><code>${t.login} / ${t.password}</code></td>
             </tr>
         `;
     });
 }
-// Yangi o'quvchini bazaga qo'shish
 async function saveStudent(e) {
     e.preventDefault();
     const name = document.getElementById('studName').value;
@@ -149,17 +142,25 @@ async function saveStudent(e) {
     }
 }
 
-// Yangi o'qituvchini bazaga qo'shish
 async function saveTeacher(e) {
     e.preventDefault();
     const name = document.getElementById('teachName').value;
     const subject = document.getElementById('teachSubject').value;
     const timeStart = document.getElementById('teachTimeStart').value;
     const timeEnd = document.getElementById('teachTimeEnd').value;
-    const daysStr = document.getElementById('teachDays').value;
     const login = document.getElementById('teachLogin').value;
     const password = document.getElementById('teachPass').value;
-    const days = daysStr.split(',').map(d => d.trim());
+
+    const checkedBoxes = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
+    const days = [];
+    checkedBoxes.forEach(box => {
+        days.push(box.value);
+    });
+
+    if (days.length === 0) {
+        alert("Iltimos, kamida bitta dars kunini tanlang!");
+        return;
+    }
 
     const response = await fetch(`${API_URL}/teachers`, {
         method: 'POST',
@@ -172,7 +173,6 @@ async function saveTeacher(e) {
     }
 }
 
-// O'quvchi to'lovini qabul qilish
 async function makePayment(studentId) {
     const amountInput = document.getElementById(`pay_${studentId}`);
     const amount = amountInput.value;
@@ -189,7 +189,6 @@ async function makePayment(studentId) {
     }
 }
 
-// Jadvallarni o'chirish va tozalash funksiyasi
 async function clearData(type) {
     if (confirm("Ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) {
         const response = await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' });
@@ -198,7 +197,6 @@ async function clearData(type) {
 }
 const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
 
-// O'qituvchining shaxsiy ma'lumotlarini yuklash
 async function loadTeacherDashboard() {
     const currentTeacherId = localStorage.getItem('teacherId');
     if (!currentTeacherId) return;
@@ -209,9 +207,11 @@ async function loadTeacherDashboard() {
         const teacher = data.teachers.find(t => t.id === currentTeacherId);
         if (!teacher) { logout(); return; }
 
+        const teacherDaysArray = Array.isArray(teacher.days) ? teacher.days : [teacher.days];
+
         document.getElementById('teacherNameHeader').innerText = teacher.name;
         document.getElementById('teacherSubject').innerText = teacher.subject;
-        document.getElementById('teacherDays').innerText = teacher.days.join(', ');
+        document.getElementById('teacherDays').innerText = teacherDaysArray.join(', ');
         document.getElementById('teacherTime').innerText = `${teacher.timeStart} - ${teacher.timeEnd}`;
         document.getElementById('teacherSalary').innerText = `${teacher.salary.toLocaleString()} so'm`;
 
@@ -220,12 +220,17 @@ async function loadTeacherDashboard() {
     } catch (err) { console.error(err); }
 }
 
-// Dars kunlari va soatini tekshirib tugmalarni bloklash funksiyasi
 function checkLessonTime(teacher) {
     const now = new Date();
     const currentDayIndex = now.getDay();
     const currentTimeStr = now.toTimeString().substring(0, 5);
-    const hasLessonToday = teacher.days.some(day => dayIndexMap[day.toLowerCase().trim()] === currentDayIndex);
+
+    const teacherDaysString = Array.isArray(teacher.days) ? teacher.days.join(' ').toLowerCase() : String(teacher.days).toLowerCase();
+
+    const daysUz = { 0: "yakshanba", 1: "dushanba", 2: "seshanba", 3: "chorshanba", 4: "payshanba", 5: "juma", 6: "shanba" };
+    const todayName = daysUz[currentDayIndex];
+    const hasLessonToday = teacherDaysString.includes(todayName);
+
     const noticeDiv = document.getElementById('timeStatusNotice');
     if (!noticeDiv) return false;
 
@@ -245,7 +250,6 @@ function checkLessonTime(teacher) {
     }
 }
 
-// Ustoz panelida bolalar ro'yxatini chiqarish
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const tbody = document.getElementById('teacherStudentsTable') || document.getElementById('teacherTeacherStudentsTable');
     if (!tbody) return;
@@ -274,7 +278,6 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
     });
 }
 
-// Davomat belgilash va serverga yuborish
 async function submitAttendance(studentId, status, teacherId) {
     if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz?`)) return;
     try {
@@ -284,13 +287,12 @@ async function submitAttendance(studentId, status, teacherId) {
             body: JSON.stringify({ teacherId, studentId, status })
         });
         if (response.ok) {
-            alert("Davomat saqlandi va balanslar muvaffaqiyatli taqsimlandi!");
+            alert("Davomat saqlandi va balanslar yangilandi!");
             loadTeacherDashboard();
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
-// Sahifaga mos qismlarni avtomatik yuklash (Global Routing Boshqaruvchisi)
 window.onload = function() {
     if (document.getElementById('studentsTableBody')) {
         loadDashboardData();
