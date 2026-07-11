@@ -148,25 +148,46 @@ function renderTeachers(teachers) {
             </tr>`;
     });
 }
-
-async function saveTeacher(e) {
-    e.preventDefault();
+// O'qituvchini global xotira orqali sahifa yangilanmasdan xatosiz saqlash
+window.executeSaveTeacher = async function() {
     const name = document.getElementById('teachName').value;
     const subject = document.getElementById('teachSubject').value;
     const timeStart = document.getElementById('teachTimeStart').value;
     const timeEnd = document.getElementById('teachTimeEnd').value;
     const login = document.getElementById('teachLogin').value;
     const password = document.getElementById('teachPass').value;
+    
     const checked = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
-    const days = []; checked.forEach(b => days.push(b.value));
-    if (days.length === 0) return alert("Iltimos, dars kunini tanlang!");
+    const days = []; 
+    checked.forEach(b => days.push(b.value));
+    
+    if(!name || !subject || !timeStart || !timeEnd || !login || !password) {
+        alert("Iltimos, o'qituvchi ma'lumotlarini to'liq to'ldiring!");
+        return;
+    }
+    
+    if (days.length === 0) {
+        alert("Iltimos, kamida bitta dars kunini tanlang!");
+        return;
+    }
 
-    const response = await fetch(`${API_URL}/teachers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
-    });
-    if (response.ok) { document.getElementById('teacherForm').reset(); loadDashboardData(); }
+    try {
+        const response = await fetch(`${API_URL}/teachers`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
+        });
+        
+        if (response.ok) {
+            alert("O'qituvchi muvaffaqiyatli saqlandi!");
+            document.getElementById('teacherForm').reset(); 
+            loadDashboardData(); // Jadvallarni sahifani yangilamasdan zumda qayta chizish
+        } else {
+            alert("O'qituvchini saqlashda server xatosi yuz berdi.");
+        }
+    } catch (err) {
+        alert("Server bilan aloqa uzildi!");
+    }
 }
 
 async function makePayment(studentId) {
