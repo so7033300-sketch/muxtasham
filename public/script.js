@@ -315,46 +315,102 @@ function checkLessonTime(teacher) {
     }
 }
 
+// Ustoz panelida o'quvchilarni guruhlar bo'yicha ajratib chiqarish algoritmi
 function renderTeacherStudents(students, isLessonTime, teacherId) {
-    const tbody = document.getElementById('teacherStudentsTable') || document.getElementById('teacherTeacherStudentsTable');
-    if (!tbody) return; tbody.innerHTML = '';
+    const container = document.getElementById('teacherGroupsContainer');
+    if (!container) return;
+    container.innerHTML = '';
 
+    if (students.length === 0) {
+        container.innerHTML = `<div class="card glass-container" style="max-width: 100%; text-align: center; color: #64748b;">Hozircha guruhlaringizda o'quvchilar mavjud emas.</div>`;
+        return;
+    }
+
+    // 1. O'quvchilarni guruh nomi (groupName) bo'yicha guruhlarga ajratish
+    const groups = {};
     students.forEach(s => {
-        const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
-        const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-        const isButtonActive = isLessonTime && !s.attendedToday;
-        const disabledAttr = isButtonActive ? '' : 'disabled';
-        const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
-
-        const attendanceCellContent = s.attendedToday 
-            ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
-            : `<div style="display: flex; gap: 10px;">
-                    <button ${disabledAttr} class="btn btn-success ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'keldi', '${teacherId}')">Keldi</button>
-                    <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi', '${teacherId}')">Kelmadi</button>
-               </div>`;
-
-        tbody.innerHTML += `
-            <tr class="${isDebtor}">
-                <td><strong>${s.name}</strong></td>
-                <td>${s.phone}</td>
-                <td>${s.birthYear}-yil</td>
-                <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
-                <td>${attendanceCellContent}</td>
-            </tr>`;
+        const gName = s.groupName || "Asosiy Guruh";
+        if (!groups[gName]) {
+            groups[gName] = [];
+        }
+        groups[gName].push(s);
     });
+
+    // 2. Har bir guruh uchun alohida jadval bloki yaratish
+    for (const groupName in groups) {
+        const groupStudents = groups[groupName];
+
+        // Guruh bloki konteyneri
+        const groupCard = document.createElement('div');
+        groupCard.className = 'card glass-container';
+        groupCard.style.maxWidth = '100%';
+        groupCard.style.marginBottom = '30px';
+
+        // Guruh nomi sarlavhasi
+        groupCard.innerHTML = `<h3 class="group-title">📦 Guruh: ${groupName} (${groupStudents.length} ta o'quvchi)</h3>`;
+
+        // Jadval arxitekturasi
+        const tableResponsive = document.createElement('div');
+        tableResponsive.className = 'table-responsive';
+
+        const table = document.createElement('table');
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th>Ism Familya</th>
+                    <th>Telefon raqam</th>
+                    <th>Tug'ilgan yili</th>
+                    <th>O'quvchi Balansi</th>
+                    <th>Davomat (Faqat dars vaqtida)</th>
+                </tr>
+            </thead>
+        `;
+
+        const tbody = document.createElement('tbody');
+
+        // Guruh ichidagi o'quvchilarni qatorga joylash
+        groupStudents.forEach(s => {
+            const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
+            const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
+            const isButtonActive = isLessonTime && !s.attendedToday;
+            const disabledAttr = isButtonActive ? '' : 'disabled';
+            const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
+
+            const attendanceCellContent = s.attendedToday 
+                ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
+                : `<div style="display: flex; gap: 10px;">
+                        <button ${disabledAttr} class="btn btn-success ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'keldi', '${teacherId}')">Keldi</button>
+                        <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi', '${teacherId}')">Kelmadi</button>
+                   </div>`;
+
+            tbody.innerHTML += `
+                <tr class="${isDebtor}">
+                    <td><strong>${s.name}</strong></td>
+                    <td>${s.phone}</td>
+                    <td>${s.birthYear}-yil</td>
+                    <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
+                    <td>${attendanceCellContent}</td>
+                </tr>`;
+        });
+
+        table.appendChild(tbody);
+        tableResponsive.appendChild(table);
+        groupCard.appendChild(tableResponsive);
+        container.appendChild(groupCard);
+    }
 }
 
 async function submitAttendance(studentId, status, teacherId) {
-    if (!confirm("Davomatni tasdiqlaysizmi? (Bu amalni qaytarib bo'lmaydi)")) return;
+    if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz? (Bu amalni qaytarib bo'lmaydi)`)) return;
     try {
         const response = await fetch(`${API_URL}/attendance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ teacherId, studentId, status })
         });
-        if (response.ok) { 
-            alert("Davomat saqlandi, tugmalar muzlatildi!"); 
-            loadTeacherDashboard(); 
+        if (response.ok) {
+            alert("Davomat saqlandi va ushbu guruh o'quvchisi bloklandi!");
+            loadTeacherDashboard();
         }
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
@@ -365,7 +421,7 @@ window.onload = function() {
         document.getElementById('studentForm').addEventListener('submit', saveStudent);
         document.getElementById('teacherForm').addEventListener('submit', saveTeacher);
     }
-    if (document.getElementById('teacherStudentsTable') || document.getElementById('teacherTeacherStudentsTable')) {
+    if (document.getElementById('teacherGroupsContainer')) {
         loadTeacherDashboard();
     }
 };
