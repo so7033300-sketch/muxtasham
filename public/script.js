@@ -1,4 +1,4 @@
-// Sizning shaxsiy Render serveringiz manzili
+// Sizning faol Render serveringiz global manzili
 const API_URL = 'https://muxtasham-jgqv.onrender.com';
 
 // Tizimga kirish (Login) funksiyasi
@@ -39,6 +39,7 @@ function logout() {
 }
 let allStudents = [];
 
+// Admin panelidagi barcha ma'lumotlarni serverdan yuklash
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
@@ -52,11 +53,13 @@ async function loadDashboardData() {
     }
 }
 
+// Ism bo'yicha o'quvchilarni tezkor qidirish (Filter)
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     const filtered = allStudents.filter(s => s.name.toLowerCase().includes(query));
     renderStudents(filtered);
 }
+// O'quvchilarni jadvalga chiqarish va qarzdorlarni qizil qilish
 function renderStudents(students) {
     const tbody = document.getElementById('studentsTableBody');
     if (!tbody) return;
@@ -84,6 +87,7 @@ function renderStudents(students) {
     });
 }
 
+// Davomat tarixini jadvalga chiqarish
 function renderAttendance(attendance) {
     const tbody = document.getElementById('attendanceTableBody');
     if (!tbody) return;
@@ -102,6 +106,7 @@ function renderAttendance(attendance) {
     });
 }
 
+// O'qituvchilar ro'yxati va ularning oyligini jadvalga chiqarish
 function renderTeachers(teachers) {
     const tbody = document.getElementById('teachersTableBody');
     if (!tbody) return;
@@ -119,6 +124,7 @@ function renderTeachers(teachers) {
         `;
     });
 }
+// Yangi o'quvchini bazaga qo'shish
 async function saveStudent(e) {
     e.preventDefault();
     const name = document.getElementById('studName').value;
@@ -138,6 +144,7 @@ async function saveStudent(e) {
     }
 }
 
+// Yangi o'qituvchini bazaga qo'shish
 async function saveTeacher(e) {
     e.preventDefault();
     const name = document.getElementById('teachName').value;
@@ -160,6 +167,7 @@ async function saveTeacher(e) {
     }
 }
 
+// O'quvchi to'lovini qabul qilish
 async function makePayment(studentId) {
     const amountInput = document.getElementById(`pay_${studentId}`);
     const amount = amountInput.value;
@@ -176,6 +184,7 @@ async function makePayment(studentId) {
     }
 }
 
+// Jadvallarni o'chirish va tozalash funksiyasi
 async function clearData(type) {
     if (confirm("Haqiqatdan ham ushbu ma'lumotlarni o'chirib, bazani tozalamoqchimisiz?")) {
         const response = await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' });
@@ -184,6 +193,7 @@ async function clearData(type) {
 }
 const dayIndexMap = {"dushanba": 1, "seshanba": 2, "chorshanba": 3, "payshanba": 4, "juma": 5, "shanba": 6, "yakshanba": 0};
 
+// O'qituvchining shaxsiy ma'lumotlarini yuklash va ekranga chiqarish
 async function loadTeacherDashboard() {
     const currentTeacherId = localStorage.getItem('teacherId');
     if (!currentTeacherId) return;
@@ -205,6 +215,7 @@ async function loadTeacherDashboard() {
     } catch (err) { console.error(err); }
 }
 
+// Dars kunlari va soatini tekshirib tugmalarni bloklash yoki ochish funksiyasi
 function checkLessonTime(teacher) {
     const now = new Date();
     const currentDayIndex = now.getDay();
@@ -229,6 +240,7 @@ function checkLessonTime(teacher) {
     }
 }
 
+// Ustoz darsidagi o'quvchilarni jadvalga chiqarish funksiyasi
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const tbody = document.getElementById('teacherStudentsTable');
     if (!tbody) return;
@@ -257,6 +269,7 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
     });
 }
 
+// Davomat belgilash va serverga yuborish
 async function submitAttendance(studentId, status, teacherId) {
     if (!confirm(`O'quvchini '${status.toUpperCase()}' deb belgilamoqchimisiz?`)) return;
     try {
@@ -272,6 +285,7 @@ async function submitAttendance(studentId, status, teacherId) {
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
+// Sahifa turiga qarab kerakli funksiyalarni ishga tushirish (Global Routing)
 window.onload = function() {
     if (document.getElementById('loginForm')) {
         document.getElementById('loginForm').addEventListener('submit', handleLogin);
