@@ -1,4 +1,4 @@
-/* Umumiy Sozlamalar va Shriftlar */
+/* Google Fonts orqali zamonaviy va silliq shrift ulash */
 @import url('https://googleapis.com');
 
 * {
@@ -18,8 +18,7 @@ body {
     color: #f1f5f9;
     overflow-x: hidden;
 }
-
-/* Glassmorphic Konteyner */
+/* Premium Shisha Effekti (Glassmorphism) */
 .glass-container {
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(16px);
@@ -33,7 +32,7 @@ body {
     animation: fadeIn 0.8s ease-out;
 }
 
-/* Kengaytirilgan Panel Konteyneri (Admin va Ustoz uchun) */
+/* Kengaytirilgan Dashboard Konteyneri */
 .dashboard-container {
     width: 95%;
     max-width: 1400px;
@@ -42,7 +41,6 @@ body {
     align-self: flex-start;
 }
 
-/* Silliq Animatsiyalar */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
@@ -57,8 +55,6 @@ h2, h3 {
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
-
-/* Input va Form Elementlari */
 .input-group {
     position: relative;
     margin-bottom: 20px;
@@ -81,7 +77,7 @@ input:focus, select:focus {
     box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
 }
 
-/* Premium Effektli Tugmalar */
+/* Kursor yurganda silliq ko'tariluvchi 3D tugmalar */
 .btn {
     width: 100%;
     padding: 14px;
@@ -96,16 +92,10 @@ input:focus, select:focus {
 }
 
 .btn:hover {
-    transform: translateY(-4px); /* Kursor yurganda yuqoriga ko'tarilish */
+    transform: translateY(-4px); /* Tugmani yuqoriga silliq siljitish */
     box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
     background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
 }
-
-.btn:active {
-    transform: translateY(-1px);
-}
-
-/* Jadvallar (Tables) */
 .table-responsive {
     overflow-x: auto;
     margin-bottom: 30px;
@@ -135,14 +125,10 @@ tr:hover {
     background: rgba(255, 255, 255, 0.02);
 }
 
-/* Qarzdorlik Statusi (Qizil Oynalar) */
+/* 150 000 so'mdan ko'p qarzi bor o'quvchilarni butunlay qizil qilish oynasi */
 .debtor-row {
     background: rgba(239, 68, 68, 0.15) !important;
     border-left: 4px solid #ef4444;
-}
-
-.debtor-row:hover {
-    background: rgba(239, 68, 68, 0.25) !important;
 }
 
 .status-badge {
@@ -155,7 +141,6 @@ tr:hover {
 .status-paid { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
 .status-debt { background: rgba(239, 68, 68, 0.2); color: #f87171; }
 
-/* Grid Sistema Layout panellar uchun */
 .grid-2 {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
