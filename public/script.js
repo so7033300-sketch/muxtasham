@@ -1,5 +1,5 @@
 // 1. BACKEND SERVER HAVOLASI (MUTLOQ TO'G'RI VARIANT)
-const RENDER_BACKEND_URL = "https://muxtasham-jgqv.onrender.com";
+const RENDER_BACKEND_URL = "https://onrender.com";
 
 // Tizim yuklanganda JONLI SERVERDAN ma'lumotlarni majburiy tortib olish
 document.addEventListener("DOMContentLoaded", async () => {
