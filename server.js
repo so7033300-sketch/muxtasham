@@ -139,6 +139,22 @@ schedule.scheduleJob('0 0 1 * *', function(){
     writeDB(db);
     console.log("Aylik arxivlash muvaffaqiyatli yakunlandi!");
 });
+// --- HTML SAHIFALARNI TO'G'RI YUKLASH (ROUTING) ---
+// Tizimga kirish (Login) sahifasi
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Admin paneli sahifasi
+app.get('/admin.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// O'qituvchi paneli sahifasi
+app.get('/ustoz.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'ustoz.html'));
+});
+
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server Render platformasida ${PORT}-portda barqaror ishlamoqda!`));
