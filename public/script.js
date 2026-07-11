@@ -281,7 +281,7 @@ async function loadTeacherDashboard() {
 
         const isLessonTime = checkLessonTime(teacher);
         
-        // FAQAT USHBU USTOZNING SHAXSIY GURUHIDAGI BOLALARNL FILTRLASH
+        // FAQAT USHBU USTOZNING SHAXSIY GURUHIDAGI BOLALARNI FILTRLASH
         const filteredStudents = (data.students || []).filter(s => s.teacherId === currentTeacherId);
         renderTeacherStudents(filteredStudents, isLessonTime, currentTeacherId);
     } catch (err) { console.error(err); }
@@ -315,7 +315,6 @@ function checkLessonTime(teacher) {
     }
 }
 
-// Ustoz panelida o'quvchilarni guruhlar bo'yicha ajratib chiqarish algoritmi
 function renderTeacherStudents(students, isLessonTime, teacherId) {
     const container = document.getElementById('teacherGroupsContainer');
     if (!container) return;
@@ -326,30 +325,23 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
         return;
     }
 
-    // 1. O'quvchilarni guruh nomi (groupName) bo'yicha guruhlarga ajratish
     const groups = {};
     students.forEach(s => {
         const gName = s.groupName || "Asosiy Guruh";
-        if (!groups[gName]) {
-            groups[gName] = [];
-        }
+        if (!groups[gName]) { groups[gName] = []; }
         groups[gName].push(s);
     });
 
-    // 2. Har bir guruh uchun alohida jadval bloki yaratish
     for (const groupName in groups) {
         const groupStudents = groups[groupName];
 
-        // Guruh bloki konteyneri
         const groupCard = document.createElement('div');
         groupCard.className = 'card glass-container';
         groupCard.style.maxWidth = '100%';
         groupCard.style.marginBottom = '30px';
 
-        // Guruh nomi sarlavhasi
         groupCard.innerHTML = `<h3 class="group-title">📦 Guruh: ${groupName} (${groupStudents.length} ta o'quvchi)</h3>`;
 
-        // Jadval arxitekturasi
         const tableResponsive = document.createElement('div');
         tableResponsive.className = 'table-responsive';
 
@@ -368,7 +360,6 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
 
         const tbody = document.createElement('tbody');
 
-        // Guruh ichidagi o'quvchilarni qatorga joylash
         groupStudents.forEach(s => {
             const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
             const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
@@ -415,6 +406,7 @@ async function submitAttendance(studentId, status, teacherId) {
     } catch (err) { alert("Server bilan aloqa uzildi!"); }
 }
 
+// MUTLAQ TO'G'RILANGAN JONLI QULFLASH TIZIMI INITIALIZATIONI
 window.onload = function() {
     if (document.getElementById('studentsTableBody')) {
         loadDashboardData();
