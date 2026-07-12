@@ -1,4 +1,4 @@
-  const express = require('express');
+const express = require('express');
 const fs = require('fs');
 const cors = require('cors');
 const path = require('path');
@@ -12,8 +12,9 @@ app.use(express.json());
 const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
-// --- TELEGRAM BOT SOZLAMASI (YANGI OCHILGAN BOTFATHER TOKENI INTEGRATSIYASI) ---
-const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
+
+// --- TELEGRAM BOT SOZLAMASI ---
+const BOT_TOKEN = '8812254760:AAHwgpoASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
@@ -24,7 +25,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             console.log("✅ Yangi bot muvaffaqiyatli ishga tushdi va ulandi!");
         });
 
-        // Ota-ona /start bosganda uning shaxsiy Chat ID raqamini aniqlab adminga yo'naltirish logikasi
+        // Ota-ona /start bosganda uning shaxsiy Chat ID raqamini aniqlab adminga yo'naltirish
         bot.onText(/\/start/, (msg) => {
             const chatId = msg.chat.id;
             const firstName = msg.from.first_name || "Foydalanuvchi";
@@ -32,9 +33,8 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
                                    `<b>"Muxtasham L/C"</b> ota-onalar bildirishnoma tizimiga xush kelibsiz.\n\n` +
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring.Admin profili @sobirov_cybersecurity`;
+                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring. Admin profili: @sobirov_cybersecurity`;
             
-            // Shaxsiy profilingizga o'tish uchun maxsus Telegram inline tugmasi
             const inlineKeyboard = {
                 reply_markup: {
                     inline_keyboard: [
@@ -56,6 +56,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
     }
 }
 
+
 function getTashkentDate() {
     const options = { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' };
     const formatter = new Intl.DateTimeFormat('en-US', options);
@@ -71,14 +72,68 @@ function readDB() {
             return initialData;
         }
         const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
+        if (!db.history) db.history = { center_profit: [], teacher_salary: [] };
         if (typeof db.center_profit !== 'number') db.center_profit = 0;
         return db;
     } catch (e) { return { students: [], teachers: [], attendance: [], center_profit: 0, history: { center_profit: [], teacher_salary: [] } }; }
 }
 
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
-// --- CRM API ENDPOINTS ---
+// --- HAR MINUTDA DARS TUGASHINI POYLASH TAYMERI ---
+schedule.scheduleJob('* * * * *', function() {
+    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
+    const currentTimeStr = now.toTimeString().substring(0, 5);
+    const currentDayIndex = now.getDay();
+    const daysUz = { 0: "yakshanba", 1: "dushanba", 2: "seshanba", 3: "chorshanba", 4: "payshanba", 5: "juma", 6: "shanba" };
+    const todayName = daysUz[currentDayIndex];
+    const db = readDB();
+    
+    db.teachers.forEach(teacher => {
+        const teacherDaysString = teacher.days.join(' ').toLowerCase();
+        if (teacherDaysString.includes(todayName) && teacher.timeEnd === currentTimeStr) {
+            const groupStudents = db.students.filter(s => s.teacherId === teacher.id);
+            groupStudents.forEach(student => {
+                if (bot && student.parentChatId) {
+                    try {
+                        const finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi <b>${teacher.subject}</b> darsi tugadi va barcha o'quvchilar uyiga ketdi. 🚀\n\n✍️ Savollar bo'lsa: @sobirov_cybersecurity`;
+                        bot.sendMessage(student.parentChatId, finishMessage, { parse_mode: 'HTML' });
+                    } catch (err) { console.log(err.message); }
+                }
+            });
+        }
+    });
+});
 
+// --- HAR OYNING 1-SANASIDA ARXIVLASH TAYMERI (Muzlatish va Nollash) ---
+schedule.scheduleJob('0 0 1 * *', function() {
+    const db = readDB();
+    const currentTashkentDate = getTashkentDate();
+    const currentMonthStr = currentTashkentDate.substring(0, 7); // Masalan: "2026-07"
+
+    // 1. Markaz foydasini arxivga ko'chirish
+    db.history.center_profit.push({ date: currentMonthStr, amount: db.center_profit || 0 });
+
+    // 2. Har bir o'qituvchi oyligini arxivga ko'chirish va balansini nollash
+    db.teachers.forEach(t => {
+        db.history.teacher_salary.push({ date: currentMonthStr, teacherName: t.name, subject: t.subject, salary: t.salary || 0 });
+        t.salary = 0; // Ustoz oyligi nollanadi
+    });
+
+    db.center_profit = 0; // Markaz foydasi nollanadi
+
+    // 3. Arxivlarni qat'iy 3 oylik hajmda cheklash (Eskilarini o'chirish)
+    if (db.history.center_profit.length > 3) db.history.center_profit.shift();
+    
+    // O'qituvchilar soniga qarab cheklash (Oxirgi 3 oy ichidagi yozuvlar soni)
+    const maxTeacherRecords = db.teachers.length * 3;
+    while (db.history.teacher_salary.length > maxTeacherRecords && maxTeacherRecords > 0) {
+        db.history.teacher_salary.shift();
+    }
+
+    writeDB(db);
+    console.log("📊 Yangi oy balansi nollanib, arxiv muvaffaqiyatli saqlandi!");
+});
+// --- CRM API ENDPOINTS ---
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
     const db = readDB();
@@ -165,7 +220,7 @@ app.post('/api/attendance', (req, res) => {
 
 app.delete('/api/clear/:type', (req, res) => {
     const db = readDB();
-    if (req.params.type === 'all') { db.students = []; db.teachers = []; db.attendance = []; db.center_profit = 0; }
+    if (req.params.type === 'all') { db.students = []; db.teachers = []; db.attendance = []; db.center_profit = 0; db.history = { center_profit: [], teacher_salary: [] }; }
     else if (req.params.type === 'attendance') db.attendance = [];
     writeDB(db);
     res.json({ success: true });
@@ -174,16 +229,12 @@ app.delete('/api/clear/:type', (req, res) => {
 app.get('/api/data', (req, res) => {
     const db = readDB();
     const todayStr = getTashkentDate();
-    
     const updatedStudents = db.students.map(student => {
-        const hasAttendedToday = db.attendance.some(att => 
-            att.date === todayStr && 
-            att.studentId === student.id && 
-            att.groupName === student.groupName
-        );
+        const hasAttendedToday = db.attendance.some(att => att.date === todayStr && att.studentId === student.id && att.groupName === student.groupName);
         return { ...student, attendedToday: hasAttendedToday };
     });
-    res.json({ students: updatedStudents, teachers: db.teachers, attendance: db.attendance, center_profit: db.center_profit });
+    // Frontendga arxiv tarixini ham (history) qo'shib uzatamiz
+    res.json({ students: updatedStudents, teachers: db.teachers, attendance: db.attendance, center_profit: db.center_profit, history: db.history });
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));
@@ -191,4 +242,4 @@ app.get('/admin.html', (req, res) => res.sendFile(path.join(publicPath, 'admin.h
 app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.html')));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda faol!`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server faol`));
