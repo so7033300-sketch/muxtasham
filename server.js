@@ -96,7 +96,6 @@ app.delete('/api/teachers/:id', (req, res) => {
     res.json({ success: true });
 });
 
-// JADVALDA ISMLAR CHIQLSHI UCHUN TO'G'RILANGAN DAVOMAT BACKENDI
 app.post('/api/attendance', (req, res) => {
     const { teacherId, studentId, status } = req.body;
     const db = readDB();
@@ -110,13 +109,12 @@ app.post('/api/attendance', (req, res) => {
     teacher.salary += halfFee;
     db.center_profit += halfFee;
     
-    // Frontend chiroyli o'qishi uchun ham IDlarni, ham ismlarni birga yozamiz!
     db.attendance.push({ 
         date: getTashkentDate(), 
         studentId: student.id, 
-        studentName: student.name, // Ism qo'shildi
+        studentName: student.name,
         teacherId: teacherId,
-        teacherName: teacher.name, // Ustoz ismi qo'shildi
+        teacherName: teacher.name,
         groupName: student.groupName,
         status: status 
     });
