@@ -14,7 +14,7 @@ app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
 // --- TELEGRAM BOT SOZLAMASI ---
-const BOT_TOKEN = '8812254760:AAHwgPOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
+const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
@@ -33,15 +33,13 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
                                    `<b>"Muxtasham L/C"</b> ota-onalar bildirishnoma tizimiga xush kelibsiz.\n\n` +
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring.`;
+                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring. @sobirov_cybersecurity`;
             
             const inlineKeyboard = {
                 reply_markup: {
                     inline_keyboard: [
                         [
                             {
-                                text: "💬 ID raqamni adminga jo'natish",
-                                url: "https://t.me"
                             }
                         ]
                     ]
