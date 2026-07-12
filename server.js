@@ -26,7 +26,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             const chatId = msg.chat.id;
             const firstName = msg.from.first_name || "Foydalanuvchi";
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n<b>"Muxtasham L/C"</b> bildirishnoma tizimiga xush kelibsiz.\n\n📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n👉 Raqam ustiga bosib nusxalang va pastdagi tugma orqali farzandingizning <b>Ism-Familiyasi</b> hamda <b>Qaysi ustozda</b> o'qishini qo'shib adminga jo'nating.`;
-            const inlineKeyboard = { inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me" }]] };
+            const inlineKeyboard = { inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me/sobirov_cybersecurity" }]] };
             bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', reply_markup: inlineKeyboard });
         });
     } catch (e) { console.log(e.message); }
