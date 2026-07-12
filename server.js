@@ -183,7 +183,7 @@ app.post('/api/attendance', (req, res) => {
 
     if (bot && student.parentChatId) {
         try {
-            const statusText = status === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
+            const statusText = status === '' ? " keldi✅." : " kelmadi❌.";
             bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
         } catch (e) {}
     }
