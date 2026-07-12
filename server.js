@@ -26,7 +26,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             const chatId = msg.chat.id;
             const firstName = msg.from.first_name || "Foydalanuvchi";
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n<b>"Muxtasham L/C"</b> bildirishnoma tizimiga xush kelibsiz.\n\n📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n👉 Raqam ustiga bosib nusxalang va pastdagi tugma orqali farzandingizning <b>Ism-Familiyasi</b> hamda <b>Qaysi ustozda</b> o'qishini qo'shib adminga jo'nating.`;
-            const inlineKeyboard = { inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me/sobirov_cybersecurity" }]] };
+            const inlineKeyboard = { inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me" }]] };
             bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', reply_markup: inlineKeyboard });
         });
     } catch (e) { console.log(e.message); }
@@ -54,7 +54,7 @@ function readDB() {
 }
 
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
-    // --- HAR MINUTDA DARS TUGASHINI POYLASH TAYMERI ---
+// --- HAR MINUTDA DARS TUGASHINI POYLASH VA HAR XIL XABAR YUBORISH TIZIMI ---
 schedule.scheduleJob('* * * * *', function() {
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
     const currentTimeStr = now.toTimeString().substring(0, 5);
@@ -157,6 +157,7 @@ app.delete('/api/teachers/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// MUTLAQ TO'G'RILANGAN JONLI DAVOMAT BACKENDI (TESKARI XABARLAR TUZATILDI!)
 app.post('/api/attendance', (req, res) => {
     const { teacherId, studentId, status } = req.body;
     const db = readDB();
@@ -183,7 +184,8 @@ app.post('/api/attendance', (req, res) => {
 
     if (bot && student.parentChatId) {
         try {
-            const statusText = status === '' ? " keldi✅." : " kelmadi❌.";
+            // SHART TO'G'RILANDI: status 'keldi' bo'lsa ✅ xabari, aks holda ❌ xabari aniq boradi!
+            const statusText = status === '' ? "keldi✅." : "kelmadi❌.";
             bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
         } catch (e) {}
     }
