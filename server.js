@@ -33,15 +33,13 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
                                    `<b>"Muxtasham L/C"</b> ota-onalar bildirishnoma tizimiga xush kelibsiz.\n\n` +
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring. Admin profili: @sobirov_cybersecurity`;
+                                   `👉 Iltimos, ushbu ID raqamni kopiya qilib oling va farzandingizni ism familyasi bilan birgalikda o'quv markazi adminiga yuboring. Admin profili: @sobirov_cybersecurity`;
             
             const inlineKeyboard = {
                 reply_markup: {
                     inline_keyboard: [
                         [
                             {
-                                text: "💬 ID raqamni adminga jo'natish",
-                                url: "https://t.me"
                             }
                         ]
                     ]
@@ -206,8 +204,8 @@ app.post('/api/attendance', (req, res) => {
 
     if (bot && student.parentChatId) {
         try {
-            const statusText = status === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
-            bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
+            const statusText = status === "✅ darsga keldi." : "❌ darsga kelmadi.";
+            bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} ${statusText}`);
         } catch (e) {}
     }
     res.json({ success: true });
