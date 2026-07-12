@@ -1,4 +1,4 @@
-const express = require('express');
+  const express = require('express');
 const fs = require('fs');
 const cors = require('cors');
 const path = require('path');
@@ -12,8 +12,7 @@ app.use(express.json());
 const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
-
-// --- TELEGRAM BOT SOZLAMASI ---
+// --- TELEGRAM BOT SOZLAMASI (YANGI OCHILGAN BOTFATHER TOKENI INTEGRATSIYASI) ---
 const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
@@ -33,13 +32,16 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
                                    `<b>"Muxtasham L/C"</b> ota-onalar bildirishnoma tizimiga xush kelibsiz.\n\n` +
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring. @sobirov_cybersecurity`;
+                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring.Admin profili @sobirov_cybersecurity`;
             
+            // Shaxsiy profilingizga o'tish uchun maxsus Telegram inline tugmasi
             const inlineKeyboard = {
                 reply_markup: {
                     inline_keyboard: [
                         [
                             {
+                                text: "💬 ID raqamni adminga jo'natish",
+                                url: "https://t.me"
                             }
                         ]
                     ]
@@ -75,43 +77,6 @@ function readDB() {
 }
 
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
-// --- HAR MINUTDA DARS TUGASHINI POYLAYDIGAN SMART TAYMER ---
-// O'zbekiston vaqti bilan har minutda hamma ustozlarning 'timeEnd' (Dars tugash) vaqtini tekshiradi.
-schedule.scheduleJob('* * * * *', function() {
-    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
-    const currentTimeStr = now.toTimeString().substring(0, 5); // Masalan: "14:30"
-    const currentDayIndex = now.getDay();
-    const daysUz = { 0: "yakshanba", 1: "dushanba", 2: "seshanba", 3: "chorshanba", 4: "payshanba", 5: "juma", 6: "shanba" };
-    const todayName = daysUz[currentDayIndex];
-
-    const db = readDB();
-    
-    db.teachers.forEach(teacher => {
-        const teacherDaysString = teacher.days.join(' ').toLowerCase();
-        
-        // Agar bugun ustozning dars kuni bo'lsa VA dars aynan shu minutda tugagan bo'lsa
-        if (teacherDaysString.includes(todayName) && teacher.timeEnd === currentTimeStr) {
-            console.log(`🔒 Ustoz ${teacher.name}ning dars vaqti tugadi. Ota-onalarga xabar yuborilmoqda...`);
-            
-            // Shu ustozga tegishli barcha o'quvchilarni topamiz
-            const groupStudents = db.students.filter(s => s.teacherId === teacher.id);
-            
-            groupStudents.forEach(student => {
-                // Agar o'quvchining ota-onasini Telegram ID si kiritilgan bo'lsa
-                if (bot && student.parentChatId) {
-                    try {
-                        const finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\n` +
-                                              `Hurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi <b>${teacher.subject}</b> darsi tugadi va barcha o'quvchilar uyiga ketdi. 🚀`;
-                        
-                        bot.sendMessage(student.parentChatId, finishMessage, { parse_mode: 'HTML' });
-                    } catch (err) {
-                        console.log(`Xabar yuborishda xatolik (${student.name}):`, err.message);
-                    }
-                }
-            });
-        }
-    });
-});
 // --- CRM API ENDPOINTS ---
 
 app.post('/api/login', (req, res) => {
