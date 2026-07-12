@@ -13,15 +13,20 @@ const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
+// --- TELEGRAM BOT SOZLAMASI (MUVAFFAQIYATLI XABAR YUBORISH UCHUN TIKLANDI) ---
 const BOT_TOKEN = '8955968685:AAEv-KraJbKvgWkpiHAREjecGI3F038N0io'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
     try {
-        bot = new TelegramBot(BOT_TOKEN, { polling: false });
-        console.log("⚠️ Telegram Bot xabarnomalar uchun tayyor holatda!");
-    } catch (e) { console.log(e.message); }
+        // Pollingni faqat xabarlarni tarqatish (push) uchun xavfsiz rejamizda yoqamiz
+        bot = new TelegramBot(BOT_TOKEN, { polling: { autoStart: true, params: { timeout: 10 } } });
+        console.log("✅ Telegram Bot xabarnomalarni yetkazib berishga to'liq tayyor!");
+    } catch (e) {
+        console.log("Bot ulanish xatosi:", e.message);
+    }
 }
+
 
 function getTashkentDate() {
     const options = { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' };
