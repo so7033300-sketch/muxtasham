@@ -35,7 +35,6 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
                                    `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring. Admin profili: @sobirov_cybersecurity`;
             
-            // Tugma havolasi sizning shaxsiy @sobirov_cybersecurity admin profilingizga xatosiz ulandi
             const inlineKeyboard = {
                 reply_markup: {
                     inline_keyboard: [
