@@ -32,7 +32,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
                                    `<b>"Muxtasham L/C"</b> ota-onalar bildirishnoma tizimiga xush kelibsiz.\n\n` +
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring.@sobirov_cyber`;
+                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring.Admin profili @sobirov_cybersecurity`;
             
             // Shaxsiy profilingizga o'tish uchun maxsus Telegram inline tugmasi
             const inlineKeyboard = {
