@@ -22,9 +22,7 @@
     </style>
 </head>
 <body>
-
     <div class="dashboard-container">
-        <!-- Header -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div style="font-size: 16px; font-weight: 500;">
@@ -110,22 +108,7 @@
                 <div class="input-group search-box"> <input type="text" id="searchStudent" placeholder="Qidirish..." oninput="filterStudents()"> </div>
                 <button class="btn danger-btn" style="width: auto; padding: 8px 15px; font-size: 13px;" onclick="clearData('all')">Hamma Ma'lumotlarni Tozalash</button>
             </div>
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Ism Familya</th>
-                            <th>Telefon raqam</th>
-                            <th>Ustoz (Guruh)</th>
-                            <th>Oylik To'lov</th>
-                            <th>Balans</th>
-                            <th>To'lov Qabul</th>
-                            <th>Amallar</th>
-                        </tr>
-                    </thead>
-                    <tbody id="studentsTableBody"></tbody>
-                </table>
-            </div>
+            <div class="table-responsive"> <table> <thead> <tr> <th>Ism Familya</th> <th>Telefon raqam</th> <th>Ustoz (Guruh)</th> <th>Oylik To'lov</th> <th>Balans</th> <th>To'lov Qabul</th> <th>Amallar</th> </tr> </thead> <tbody id="studentsTableBody"></tbody> </table> </div>
         </div>
 
         <!-- Kunlik Davomat Tarixi -->
@@ -134,48 +117,24 @@
             <div class="table-responsive"> <table> <thead> <tr> <th>Sana</th> <th>O'quvchi F.I.Sh</th> <th>O'qituvchi</th> <th>Status</th> </tr> </thead> <tbody id="attendanceTableBody"></tbody> </table> </div>
         </div>
 
-        <!-- Amaldagi O'qituvchilar Ro'yxati -->
+        <!-- O'qituvchilar Ro'yxati -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <h3>O'qituvchilar Ro'yxati va Ularning Joriy Balansi</h3>
-            <div class="table-responsive">
-                <table>
-                    <thead> <tr> <th>O'qituvchi F.I.Sh</th> <th>Fan</th> <th>Kunlar / Vaqt</th> <th>Oylik Balans</th> <th>Login / Parol</th> <th>Amallar</th> </tr> </thead>
-                    <tbody id="teachersTableBody"></tbody>
-                </table>
-            </div>
+            <div class="table-responsive"> <table> <thead> <tr> <th>O'qituvchi F.I.Sh</th> <th>Fan</th> <th>Kunlar / Vaqt</th> <th>Oylik Balans</th> <th>Login / Parol</th> <th>Amallar</th> </tr> </thead> <tbody id="teachersTableBody"></tbody> </table> </div>
         </div>
 
-        <!-- 🔥 YANGI QO'SHILGAN: O'TGAN OYLAR MOLIYAVIY ARXIV JADVALI (Muzlatilgan Tarix) -->
+        <!-- O'TGAN OYLAR MOLIYAVIY ARXIV JADVALI -->
         <div class="grid-2" style="gap: 30px;">
-            <!-- A. Markazning o'tgan oylardagi foyda arxivi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3 class="archive-title">📦 Markaz Foyda Arxivi (Oxirgi 3 oy)</h3>
-                <div class="table-responsive">
-                    <table>
-                        <thead> <tr> <th>Yil-Oy</th> <th>Arxivlangan Sof Foyda</th> </tr> </thead>
-                        <tbody id="centerArchiveTableBody">
-                            <tr><td colspan="2" style="text-align:center; color:#64748b;">Hozircha arxiv ma'lumotlari mavjud emas.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="table-responsive"> <table> <thead> <tr> <th>Yil-Oy</th> <th>Arxivlangan Sof Foyda</th> </tr> </thead> <tbody id="centerArchiveTableBody"></tbody> </table> </div>
             </div>
-
-            <!-- B. Ustozlarning o'tgan oylardagi oylik arxivi -->
             <div class="card glass-container" style="max-width: 100%;">
                 <h3 class="archive-title">📦 O'qituvchilar Oylik Arxivi (Oxirgi 3 oy)</h3>
-                <div class="table-responsive">
-                    <table>
-                        <thead> <tr> <th>Yil-Oy</th> <th>O'qituvchi</th> <th>Fan</th> <th>Olingan Oylik</th> </tr> </thead>
-                        <tbody id="teacherArchiveTableBody">
-                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Hozircha arxiv ma'lumotlari mavjud emas.</td></tr>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="table-responsive"> <table> <thead> <tr> <th>Yil-Oy</th> <th>O'qituvchi</th> <th>Fan</th> <th>Olingan Oylik</th> </tr> </thead> <tbody id="teacherArchiveTableBody"></tbody> </table> </div>
             </div>
         </div>
-
     </div>
-
     <script src="/script.js"></script>
 </body>
 </html>
