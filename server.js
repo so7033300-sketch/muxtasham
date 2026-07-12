@@ -13,13 +13,19 @@ const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 // --- TELEGRAM BOT SOZLAMASI (OTA-ONAGA AVTOMATIK ID BERIB ADMINGA YO'NALTIRISH) ---
+// --- TELEGRAM BOT SOZLAMASI (KESHNI MAJBURIY TOZALASH VA TIRILTIRISH TIZIMI) ---
 const BOT_TOKEN = '8955968685:AAEv-KraJbKvgWkpiHAREjecGI3F038N0io'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
     try {
+        // autoStart: true orqali pollingni yoqamiz
         bot = new TelegramBot(BOT_TOKEN, { polling: { autoStart: true, params: { timeout: 10 } } });
-        console.log("✅ Telegram Bot xabarnomalar uchun to'liq tayyor!");
+        
+        // MUHIM QATOR: Telegram serverlaridagi eski tiqilib qolgan webhook keshini butunlay tozalaymiz
+        bot.deleteWebHook().then(() => {
+            console.log("✅ Telegram Webhook keshi tozalandi va Polling faollashdi!");
+        });
 
         // Ota-ona /start bosganda uning shaxsiy Chat ID raqamini aniqlab adminga yo'naltirish logikasi
         bot.onText(/\/start/, (msg) => {
@@ -31,7 +37,6 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
                                    `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring.`;
             
-            // Shaxsiy profilingizga o'tish uchun maxsus Telegram inline tugmasi
             const inlineKeyboard = {
                 reply_markup: {
                     inline_keyboard: [
