@@ -36,7 +36,7 @@ async function loadDashboardData() {
         const teacherSelect = document.getElementById('studTeacher');
         if (teacherSelect) {
             teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga qo\'shish...</option>';
-            allTeachers.forEach(t => { teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>'; });
+            allTeachers.forEach(t => { teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
         }
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
@@ -67,7 +67,7 @@ window.onTeacherSelected = function() {
         toggleGroupMode();
     } else {
         groupSelect.innerHTML = '<option value="" disabled selected>Guruhni tanlang...</option>';
-        teacherGroups.forEach(g => { groupSelect.innerHTML += `<option value="${g}">${g}</option>'; });
+        teacherGroups.forEach(g => { groupSelect.innerHTML += `<option value="${g}">${g}</option>`; });
         document.getElementById('groupModeSelect').value = 'select';
         toggleGroupMode();
     }
@@ -278,7 +278,6 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
             const disabledAttr = isButtonActive ? '' : 'disabled';
             const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
 
-            // --- ENG ASOSIY TUZATISH SHU YERDA: 'keldi' va 'kelmadi' argumentlari to'liq o'z joyiga qaytarildi! ---
             const attendanceCellContent = s.attendedToday 
                 ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
                 : `<div style="display: flex; gap: 10px;">
