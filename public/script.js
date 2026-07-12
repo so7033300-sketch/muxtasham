@@ -36,7 +36,7 @@ async function loadDashboardData() {
         const teacherSelect = document.getElementById('studTeacher');
         if (teacherSelect) {
             teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga qo\'shish...</option>';
-            allTeachers.forEach(t => { teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
+            allTeachers.forEach(t => { teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>'; });
         }
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
@@ -67,7 +67,7 @@ window.onTeacherSelected = function() {
         toggleGroupMode();
     } else {
         groupSelect.innerHTML = '<option value="" disabled selected>Guruhni tanlang...</option>';
-        teacherGroups.forEach(g => { groupSelect.innerHTML += `<option value="${g}">${g}</option>`; });
+        teacherGroups.forEach(g => { groupSelect.innerHTML += `<option value="${g}">${g}</option>'; });
         document.getElementById('groupModeSelect').value = 'select';
         toggleGroupMode();
     }
@@ -265,7 +265,7 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
         const groupStudents = groups[groupName];
         const groupCard = document.createElement('div');
         groupCard.className = 'card glass-container'; groupCard.style.maxWidth = '100%'; groupCard.style.marginBottom = '30px';
-        groupCard.innerHTML = `<h3 class="group-title">📦 Guruh: ${groupName} (${groupStudents.length} ta o'quvchi)</h3>`;
+        groupCard.innerHTML = `<h3>📦 Guruh: ${groupName} (${groupStudents.length} ta o'quvchi)</h3>`;
         const tableResponsive = document.createElement('div'); tableResponsive.className = 'table-responsive';
         const table = document.createElement('table');
         table.innerHTML = `<thead><tr><th>Ism Familya</th><th>Telefon raqam</th><th>Tug'ilgan yili</th><th>O'quvchi Balansi</th><th>Davomat</th></tr></thead>`;
@@ -278,7 +278,7 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
             const disabledAttr = isButtonActive ? '' : 'disabled';
             const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
 
-            // MUTLAQ TO'G'RILANDI: "Keldi" tugmasi serverga aniq 'keldi' buyrug'ini, "Kelmadi" esa 'kelmadi' buyrug'ini yuboradi!
+            // --- ENG ASOSIY TUZATISH SHU YERDA: 'keldi' va 'kelmadi' argumentlari to'liq o'z joyiga qaytarildi! ---
             const attendanceCellContent = s.attendedToday 
                 ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
                 : `<div style="display: flex; gap: 10px;">
