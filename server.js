@@ -13,7 +13,7 @@ const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// --- TELEGRAM BOT SOZLAMASI ---
+// --- TELEGRAM BOT SOZLAMASI (YANGI TIRIK TOKEN VA ADMIN PROFILI INTEGRATSIYASI) ---
 const BOT_TOKEN = '8812254760:AAHwgpoASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
@@ -25,7 +25,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             console.log("✅ Yangi bot muvaffaqiyatli ishga tushdi va ulandi!");
         });
 
-        // Ota-ona /start bosganda uning shaxsiy Chat ID raqamini aniqlab adminga yo'naltirish
+        // Ota-ona /start bosganda uning shaxsiy Chat ID raqamini aniqlab adminga yo'naltirish logikasi
         bot.onText(/\/start/, (msg) => {
             const chatId = msg.chat.id;
             const firstName = msg.from.first_name || "Foydalanuvchi";
@@ -35,6 +35,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
                                    `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring. Admin profili: @sobirov_cybersecurity`;
             
+            // Tugma havolasi sizning shaxsiy @sobirov_cybersecurity admin profilingizga xatosiz ulandi
             const inlineKeyboard = {
                 reply_markup: {
                     inline_keyboard: [
@@ -55,7 +56,6 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
         console.log("Bot ulanish xatosi:", e.message);
     }
 }
-
 
 function getTashkentDate() {
     const options = { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -104,27 +104,23 @@ schedule.scheduleJob('* * * * *', function() {
     });
 });
 
-// --- HAR OYNING 1-SANASIDA ARXIVLASH TAYMERI (Muzlatish va Nollash) ---
+// --- HAR OYNING 1-SANASIDA ARXIVLASH TAYMERI ---
 schedule.scheduleJob('0 0 1 * *', function() {
     const db = readDB();
     const currentTashkentDate = getTashkentDate();
-    const currentMonthStr = currentTashkentDate.substring(0, 7); // Masalan: "2026-07"
+    const currentMonthStr = currentTashkentDate.substring(0, 7);
 
-    // 1. Markaz foydasini arxivga ko'chirish
     db.history.center_profit.push({ date: currentMonthStr, amount: db.center_profit || 0 });
 
-    // 2. Har bir o'qituvchi oyligini arxivga ko'chirish va balansini nollash
     db.teachers.forEach(t => {
         db.history.teacher_salary.push({ date: currentMonthStr, teacherName: t.name, subject: t.subject, salary: t.salary || 0 });
-        t.salary = 0; // Ustoz oyligi nollanadi
+        t.salary = 0;
     });
 
-    db.center_profit = 0; // Markaz foydasi nollanadi
+    db.center_profit = 0;
 
-    // 3. Arxivlarni qat'iy 3 oylik hajmda cheklash (Eskilarini o'chirish)
     if (db.history.center_profit.length > 3) db.history.center_profit.shift();
     
-    // O'qituvchilar soniga qarab cheklash (Oxirgi 3 oy ichidagi yozuvlar soni)
     const maxTeacherRecords = db.teachers.length * 3;
     while (db.history.teacher_salary.length > maxTeacherRecords && maxTeacherRecords > 0) {
         db.history.teacher_salary.shift();
@@ -233,7 +229,6 @@ app.get('/api/data', (req, res) => {
         const hasAttendedToday = db.attendance.some(att => att.date === todayStr && att.studentId === student.id && att.groupName === student.groupName);
         return { ...student, attendedToday: hasAttendedToday };
     });
-    // Frontendga arxiv tarixini ham (history) qo'shib uzatamiz
     res.json({ students: updatedStudents, teachers: db.teachers, attendance: db.attendance, center_profit: db.center_profit, history: db.history });
 });
 
@@ -242,4 +237,4 @@ app.get('/admin.html', (req, res) => res.sendFile(path.join(publicPath, 'admin.h
 app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.html')));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server faol`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda faol!`));
