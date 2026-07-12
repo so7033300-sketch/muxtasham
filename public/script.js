@@ -278,6 +278,7 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
             const disabledAttr = isButtonActive ? '' : 'disabled';
             const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
 
+            // MUTLAQ TO'G'RILANDI: "Keldi" tugmasi serverga aniq 'keldi' buyrug'ini, "Kelmadi" esa 'kelmadi' buyrug'ini yuboradi!
             const attendanceCellContent = s.attendedToday 
                 ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
                 : `<div style="display: flex; gap: 10px;">
