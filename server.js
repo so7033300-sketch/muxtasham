@@ -13,45 +13,34 @@ const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// --- TELEGRAM BOT SOZLAMASI (MUTLAQ XATOSIZ TOZA TOKEN BILAN) ---
+// --- TELEGRAM BOT SOZLAMASI (YANGILANGAN QISQA VA LONDA MATN BILAN) ---
 const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
     try {
         bot = new TelegramBot(BOT_TOKEN, { polling: { autoStart: true, params: { timeout: 10 } } });
-        
-        bot.deleteWebHook().then(() => {
-            console.log("✅ Yangi bot muvaffaqiyatli ishga tushdi va ulandi!");
-        });
+        bot.deleteWebHook().then(() => console.log("✅ Bot faol!"));
 
-        // Ota-ona /start bosganda uning shaxsiy Chat ID raqamini aniqlab adminga yo'naltirish logikasi
         bot.onText(/\/start/, (msg) => {
             const chatId = msg.chat.id;
             const firstName = msg.from.first_name || "Foydalanuvchi";
             
+            // Qisqa, londa va tushunarli yangi matn (Ustoz ismini ham so'raydi)
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
-                                   `<b>"Muxtasham L/C"</b> ota-onalar bildirishnoma tizimiga xush kelibsiz.\n\n` +
+                                   `<b>"Muxtasham L/C"</b> bildirishnoma tizimiga xush kelibsiz.\n\n` +
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Iltimos, ushbu ID raqamni kopiya qilib oling va farzandingizni ism familyasi bilan birgalikda o'quv markazi adminiga yuboring. Admin profili: @sobirov_cybersecurity`;
+                                   `👉 Raqam ustiga bosib nusxalang va pastdagi tugma orqali farzandingizning <b>Ism-Familiyasi</b> hamda <b>Qaysi ustozda</b> o'qishini qo'shib adminga jo'nating.`;
             
             const inlineKeyboard = {
                 reply_markup: {
-                    inline_keyboard: [
-                        [
-                            {
-                            }
-                        ]
-                    ]
+                    inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me" }]]
                 }
             };
             
             bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', ...inlineKeyboard });
         });
-
-    } catch (e) {
-        console.log("Bot ulanish xatosi:", e.message);
-    }
+    } catch (e) { console.log(e.message); }
 }
 
 function getTashkentDate() {
@@ -124,7 +113,7 @@ schedule.scheduleJob('0 0 1 * *', function() {
     }
 
     writeDB(db);
-    console.log("📊 Yangi oy balansi nollanib, arxiv muvaffaqiyatli saqlandi!");
+    console.log("📊 Arxiv saqlandi!");
 });
 // --- CRM API ENDPOINTS ---
 app.post('/api/login', (req, res) => {
@@ -178,6 +167,7 @@ app.delete('/api/teachers/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// OXIRI TO'G'RILANGAN, ARALASHIB KETMAYDIGAN TOZA DAVOMAT BILDIRISHNOMASI
 app.post('/api/attendance', (req, res) => {
     const { teacherId, studentId, status } = req.body;
     const db = readDB();
@@ -204,8 +194,9 @@ app.post('/api/attendance', (req, res) => {
 
     if (bot && student.parentChatId) {
         try {
-            const statusText = status === "✅ darsga keldi." : "❌ darsga kelmadi.";
-            bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} ${statusText}`);
+            // Tushunarsiz takrorlanishlar olib tashlandi: faqat "✅ darsga keldi" yoki "❌ darsga kelmadi" boradi!
+            const statusText = status === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
+            bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
         } catch (e) {}
     }
     res.json({ success: true });
@@ -234,4 +225,4 @@ app.get('/admin.html', (req, res) => res.sendFile(path.join(publicPath, 'admin.h
 app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.html')));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda faol!`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server faol`));
