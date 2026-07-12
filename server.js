@@ -12,21 +12,46 @@ app.use(express.json());
 const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
-
-// --- TELEGRAM BOT SOZLAMASI (MUVAFFAQIYATLI XABAR YUBORISH UCHUN TIKLANDI) ---
+// --- TELEGRAM BOT SOZLAMASI (OTA-ONAGA AVTOMATIK ID BERIB ADMINGA YO'NALTIRISH) ---
 const BOT_TOKEN = '8955968685:AAEv-KraJbKvgWkpiHAREjecGI3F038N0io'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
     try {
-        // Pollingni faqat xabarlarni tarqatish (push) uchun xavfsiz rejamizda yoqamiz
         bot = new TelegramBot(BOT_TOKEN, { polling: { autoStart: true, params: { timeout: 10 } } });
-        console.log("✅ Telegram Bot xabarnomalarni yetkazib berishga to'liq tayyor!");
+        console.log("✅ Telegram Bot xabarnomalar uchun to'liq tayyor!");
+
+        // Ota-ona /start bosganda uning shaxsiy Chat ID raqamini aniqlab adminga yo'naltirish logikasi
+        bot.onText(/\/start/, (msg) => {
+            const chatId = msg.chat.id;
+            const firstName = msg.from.first_name || "Foydalanuvchi";
+            
+            const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
+                                   `<b>"Muxtasham L/C"</b> ota-onalar bildirishnoma tizimiga xush kelibsiz.\n\n` +
+                                   `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
+                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring.`;
+            
+            // Shaxsiy profilingizga o'tish uchun maxsus Telegram inline tugmasi
+            const inlineKeyboard = {
+                reply_markup: {
+                    inline_keyboard: [
+                        [
+                            {
+                                text: "💬 ID raqamni adminga jo'natish",
+                                url: "https://t.me"
+                            }
+                        ]
+                    ]
+                }
+            };
+            
+            bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', ...inlineKeyboard });
+        });
+
     } catch (e) {
         console.log("Bot ulanish xatosi:", e.message);
     }
 }
-
 
 function getTashkentDate() {
     const options = { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' };
@@ -49,6 +74,7 @@ function readDB() {
 }
 
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
+// --- CRM API ENDPOINTS ---
 
 app.post('/api/login', (req, res) => {
     const { login, password } = req.body;
@@ -162,4 +188,4 @@ app.get('/admin.html', (req, res) => res.sendFile(path.join(publicPath, 'admin.h
 app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.html')));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server faol`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda faol!`));
