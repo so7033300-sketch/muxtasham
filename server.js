@@ -13,32 +13,21 @@ const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// --- TELEGRAM BOT SOZLAMASI (YANGILANGAN QISQA VA LONDA MATN BILAN) ---
+// --- TELEGRAM BOT SOZLAMASI ---
 const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
     try {
         bot = new TelegramBot(BOT_TOKEN, { polling: { autoStart: true, params: { timeout: 10 } } });
-        bot.deleteWebHook().then(() => console.log("✅ Bot faol!"));
+        bot.deleteWebHook().then(() => console.log("✅ Bot ulandi!"));
 
         bot.onText(/\/start/, (msg) => {
             const chatId = msg.chat.id;
             const firstName = msg.from.first_name || "Foydalanuvchi";
-            
-            // Qisqa, londa va tushunarli yangi matn (Ustoz ismini ham so'raydi)
-            const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
-                                   `<b>"Muxtasham L/C"</b> bildirishnoma tizimiga xush kelibsiz.\n\n` +
-                                   `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Raqam ustiga bosib nusxalang va pastdagi tugma orqali farzandingizning <b>Ism-Familiyasi</b> hamda <b>Qaysi ustozda</b> o'qishini qo'shib adminga jo'nating`;
-            
-            const inlineKeyboard = {
-                reply_markup: {
-                    inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me/sobirov_cybersecurity" }]]
-                }
-            };
-            
-            bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', ...inlineKeyboard });
+            const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n<b>"Muxtasham L/C"</b> bildirishnoma tizimiga xush kelibsiz.\n\n📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n👉 Raqam ustiga bosib nusxalang va pastdagi tugma orqali farzandingizning <b>Ism-Familiyasi</b> hamda <b>Qaysi ustozda</b> o'qishini qo'shib adminga jo'nating.`;
+            const inlineKeyboard = { inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me/sobirov_cybersecurity" }]] };
+            bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', reply_markup: inlineKeyboard });
         });
     } catch (e) { console.log(e.message); }
 }
@@ -65,23 +54,33 @@ function readDB() {
 }
 
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
-// --- HAR MINUTDA DARS TUGASHINI POYLASH TAYMERI ---
+    // --- HAR MINUTDA DARS TUGASHINI POYLASH TAYMERI ---
 schedule.scheduleJob('* * * * *', function() {
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
     const currentTimeStr = now.toTimeString().substring(0, 5);
     const currentDayIndex = now.getDay();
     const daysUz = { 0: "yakshanba", 1: "dushanba", 2: "seshanba", 3: "chorshanba", 4: "payshanba", 5: "juma", 6: "shanba" };
     const todayName = daysUz[currentDayIndex];
+    const todayDateStr = getTashkentDate();
     const db = readDB();
     
     db.teachers.forEach(teacher => {
         const teacherDaysString = teacher.days.join(' ').toLowerCase();
         if (teacherDaysString.includes(todayName) && teacher.timeEnd === currentTimeStr) {
             const groupStudents = db.students.filter(s => s.teacherId === teacher.id);
+            
             groupStudents.forEach(student => {
                 if (bot && student.parentChatId) {
+                    const todayAttendance = db.attendance.find(att => att.date === todayDateStr && att.studentId === student.id && att.teacherId === teacher.id);
+                    
+                    let finishMessage = ``;
+                    if (todayAttendance && todayAttendance.status === 'kelmadi') {
+                        finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, bugungi <b>${teacher.subject}</b> darsi tugadi. Farzandingiz <b>${student.name}</b> bugungi darsda ❌ <b>umuman qatnashmadi</b>.`;
+                    } else {
+                        finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi <b>${teacher.subject}</b> darsi tugadi va barcha o'quvchilar uyiga ketdi. 🚀\n\nSavollar bo'lsa: @sobirov_cybersecurity`;
+                    }
+                    
                     try {
-                        const finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi <b>${teacher.subject}</b> darsi tugadi va barcha o'quvchilar uyiga ketdi. 🚀\n\n✍️ Savollar bo'lsa: @sobirov_cybersecurity`;
                         bot.sendMessage(student.parentChatId, finishMessage, { parse_mode: 'HTML' });
                     } catch (err) { console.log(err.message); }
                 }
@@ -95,25 +94,16 @@ schedule.scheduleJob('0 0 1 * *', function() {
     const db = readDB();
     const currentTashkentDate = getTashkentDate();
     const currentMonthStr = currentTashkentDate.substring(0, 7);
-
     db.history.center_profit.push({ date: currentMonthStr, amount: db.center_profit || 0 });
-
     db.teachers.forEach(t => {
         db.history.teacher_salary.push({ date: currentMonthStr, teacherName: t.name, subject: t.subject, salary: t.salary || 0 });
         t.salary = 0;
     });
-
     db.center_profit = 0;
-
     if (db.history.center_profit.length > 3) db.history.center_profit.shift();
-    
     const maxTeacherRecords = db.teachers.length * 3;
-    while (db.history.teacher_salary.length > maxTeacherRecords && maxTeacherRecords > 0) {
-        db.history.teacher_salary.shift();
-    }
-
+    while (db.history.teacher_salary.length > maxTeacherRecords && maxTeacherRecords > 0) { db.history.teacher_salary.shift(); }
     writeDB(db);
-    console.log("📊 Arxiv saqlandi!");
 });
 // --- CRM API ENDPOINTS ---
 app.post('/api/login', (req, res) => {
@@ -167,7 +157,6 @@ app.delete('/api/teachers/:id', (req, res) => {
     res.json({ success: true });
 });
 
-// OXIRI TO'G'RILANGAN, ARALASHIB KETMAYDIGAN TOZA DAVOMAT BILDIRISHNOMASI
 app.post('/api/attendance', (req, res) => {
     const { teacherId, studentId, status } = req.body;
     const db = readDB();
@@ -194,7 +183,6 @@ app.post('/api/attendance', (req, res) => {
 
     if (bot && student.parentChatId) {
         try {
-            // Tushunarsiz takrorlanishlar olib tashlandi: faqat "✅ darsga keldi" yoki "❌ darsga kelmadi" boradi!
             const statusText = status === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
             bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
         } catch (e) {}
@@ -225,4 +213,4 @@ app.get('/admin.html', (req, res) => res.sendFile(path.join(publicPath, 'admin.h
 app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.html')));
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server faol`));
+app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda faol!`));
