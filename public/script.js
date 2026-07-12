@@ -6,6 +6,7 @@ window.executeLogin = async function() {
     const password = document.getElementById('passwordInput').value;
     const errorDiv = document.getElementById('errorMessage');
     if(!login || !password) return alert("Iltimos, login va parolni kiriting!");
+    
     try {
         const response = await fetch(`${API_URL}/login`, {
             method: 'POST',
@@ -24,6 +25,7 @@ window.executeLogin = async function() {
 }
 
 window.logout = function() { localStorage.clear(); window.location.href = '/index.html'; }
+
 async function loadDashboardData() {
     try {
         const response = await fetch(`${API_URL}/data`);
@@ -39,10 +41,13 @@ async function loadDashboardData() {
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
         renderTeachers(allTeachers);
+        
+        // Yangi qo'shilgan arxiv jadvallarini chizish funksiyasini chaqiramos
+        renderFinancialArchive(data.history || { center_profit: [], teacher_salary: [] });
+
         if (document.getElementById('centerProfitDisplay')) document.getElementById('centerProfitDisplay').innerText = `${(data.center_profit || 0).toLocaleString()} so'm`;
     } catch (err) { console.error(err); }
 }
-
 window.onTeacherSelected = function() {
     const teacherId = document.getElementById('studTeacher').value;
     const container = document.getElementById('groupSelectionContainer');
@@ -130,6 +135,36 @@ function renderTeachers(teachers) {
                 <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteTeacher('${t.id}')">O'chirish</button></td>
             </tr>`;
     });
+}
+
+// 🔥 YANGI ARXIV CHIZUVCHI ALGORITM (Xatosiz va professional tarix oynasi)
+function renderFinancialArchive(history) {
+    const centerTbody = document.getElementById('centerArchiveTableBody');
+    const teacherTbody = document.getElementById('teacherArchiveTableBody');
+    
+    // A. Markaz foyda arxivi jadvali
+    if (centerTbody) {
+        if (!history.center_profit || history.center_profit.length === 0) {
+            centerTbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#64748b;">Hozircha arxivlangan foyda yo'q.</td></tr>`;
+        } else {
+            centerTbody.innerHTML = '';
+            history.center_profit.slice().reverse().forEach(item => {
+                centerTbody.innerHTML += `<tr><td><span class="time-badge">${item.date}</span></td><td><strong style="color:#22c55e;">+${item.amount.toLocaleString()} so'm</strong></td></tr>`;
+            });
+        }
+    }
+
+    // B. O'qituvchilar oylik arxivi jadvali
+    if (teacherTbody) {
+        if (!history.teacher_salary || history.teacher_salary.length === 0) {
+            teacherTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">Hozircha arxivlangan oyliklar yo'q.</td></tr>`;
+        } else {
+            teacherTbody.innerHTML = '';
+            history.teacher_salary.slice().reverse().forEach(item => {
+                teacherTbody.innerHTML += `<tr><td><span class="time-badge">${item.date}</span></td><td><strong>${item.teacherName}</strong></td><td>${item.subject}</td><td><span class="status-badge status-paid">${item.salary.toLocaleString()} so'm</span></td></tr>`;
+            });
+        }
+    }
 }
 async function saveStudent(e) {
     if(e) e.preventDefault();
