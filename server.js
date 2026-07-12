@@ -34,7 +34,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             
             const inlineKeyboard = {
                 reply_markup: {
-                    inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me" }]]
+                    inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://@sobirov_cybersecurity" }]]
                 }
             };
             
