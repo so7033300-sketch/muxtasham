@@ -14,45 +14,17 @@
         .inline-form { display: flex; gap: 10px; align-items: center; }
         .inline-form input { padding: 8px 12px; font-size: 13px; }
         .inline-form .btn { padding: 8px 15px; font-size: 13px; width: auto; }
-        
-        /* Oq oynani butunlay yo'qotib, premium quyuq va silliq ko'rinishga keltirish */
-        select {
-            appearance: none;
-            -webkit-appearance: none;
-            background: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            color: #ffffff !important;
-            cursor: pointer;
-            padding: 14px 20px;
-            width: 100%;
-            border-radius: 12px;
-            outline: none;
-            font-size: 15px;
-        }
-        select option { 
-            background-color: #111026 !important; 
-            color: #ffffff !important; 
-            padding: 12px !important;
-        }
-        select:focus {
-            border-color: #38bdf8 !important;
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.2) !important;
-        }
-        .dynamic-group-box {
-            animation: fadeIn 0.4s ease-out;
-            background: rgba(255, 255, 255, 0.02);
-            padding: 15px;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            margin-bottom: 20px;
-        }
+        select { appearance: none; -webkit-appearance: none; background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: #ffffff !important; cursor: pointer; padding: 14px 20px; width: 100%; border-radius: 12px; outline: none; font-size: 15px; }
+        select option { background-color: #111026 !important; color: #ffffff !important; padding: 12px !important; }
+        select:focus { border-color: #38bdf8 !important; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2) !important; }
+        .dynamic-group-box { animation: fadeIn 0.4s ease-out; background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 20px; }
+        .archive-title { color: #a78bfa !important; border-left: 4px solid #a78bfa !important; padding-left: 15px; margin-top: 20px; text-align: left; }
     </style>
 </head>
 <body>
 
     <div class="dashboard-container">
-        
-        <!-- Yuqori boshqaruv paneli -->
+        <!-- Header -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div style="font-size: 16px; font-weight: 500;">
@@ -65,15 +37,9 @@
             <div class="card glass-container" style="max-width: 100%;">
                 <h3>Yangi O'quvchi Qo'shish</h3>
                 <form id="studentForm">
-                    <div class="input-group">
-                        <input type="text" id="studName" placeholder="F.I.Sh (Ism Familya)" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="text" id="studPhone" placeholder="Telefon raqami (998901234567)" required>
-                    </div>
-                    <div class="input-group">
-                        <input type="number" id="studBirth" placeholder="Tug'ilgan yili (Yil)" required>
-                    </div>
+                    <div class="input-group"> <input type="text" id="studName" placeholder="F.I.Sh (Ism Familya)" required> </div>
+                    <div class="input-group"> <input type="text" id="studPhone" placeholder="Telefon raqami (998901234567)" required> </div>
+                    <div class="input-group"> <input type="number" id="studBirth" placeholder="Tug'ilgan yili (Yil)" required> </div>
                     <div class="input-group">
                         <select id="studFee" required>
                             <option value="" disabled selected>Oylik to'lov miqdorini tanlang</option>
@@ -87,14 +53,7 @@
                             <option value="600000">600 000 so'm</option>
                         </select>
                     </div>
-                    
-                    <div class="input-group">
-                        <select id="studTeacher" onchange="onTeacherSelected()" required>
-                            <option value="" disabled selected>Qaysi o'qituvchiga qo'shish...</option>
-                        </select>
-                    </div>
-
-                    <!-- DINAMIK GURUH TANLASH BO'LIMI -->
+                    <div class="input-group"> <select id="studTeacher" onchange="onTeacherSelected()" required><option value="" disabled selected>Qaysi o'qituvchiga qo'shish...</option></select> </div>
                     <div id="groupSelectionContainer" class="dynamic-group-box" style="display: none;">
                         <div class="input-group" style="margin-bottom: 10px;">
                             <select id="groupModeSelect" onchange="toggleGroupMode()">
@@ -102,21 +61,14 @@
                                 <option value="create">Mavjud guruh yo'q, yangi oching</option>
                             </select>
                         </div>
-                        
                         <div id="existingGroupWrapper" class="input-group" style="margin-bottom: 0;">
-                            <select id="studGroupSelect">
-                                <option value="" disabled selected>Guruhni tanlang...</option>
-                            </select>
+                            <select id="studGroupSelect"><option value="" disabled selected>Guruhni tanlang...</option></select>
                         </div>
-
                         <div id="newGroupWrapper" class="input-group" style="margin-bottom: 0; display: none;">
                             <input type="text" id="studNewGroupInput" placeholder="Yangi guruh nomini kiriting (Masalan: Group-1)">
                         </div>
                     </div>
-
-                    <div class="input-group">
-                        <input type="text" id="parentChatId" placeholder="Ota-ona Telegram Chat ID (ixtiyoriy)">
-                    </div>
+                    <div class="input-group"> <input type="text" id="parentChatId" placeholder="Ota-ona Telegram Chat ID (ixtiyoriy)"> </div>
                     <button type="submit" class="btn">O'quvchini Saqlash</button>
                 </form>
             </div>
@@ -133,30 +85,15 @@
                     </div>
                     <div class="input-group" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
                         <label style="display: block; margin-bottom: 10px; color: #38bdf8; font-size: 14px;">Dars kunlarini tanlang:</label>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px;">
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                                <input type="checkbox" name="teachDaysCheck" value="Dushanba" style="width: auto; padding: 0;"> Dushanba
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                                <input type="checkbox" name="teachDaysCheck" value="Seshanba" style="width: auto; padding: 0;"> Seshanba
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                                <input type="checkbox" name="teachDaysCheck" value="Chorshanba" style="width: auto; padding: 0;"> Chorshanba
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                                <input type="checkbox" name="teachDaysCheck" value="Payshanba" style="width: auto; padding: 0;"> Payshanba
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                                <input type="checkbox" name="teachDaysCheck" value="Juma" style="width: auto; padding: 0;"> Juma
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                                <input type="checkbox" name="teachDaysCheck" value="Shanba" style="width: auto; padding: 0;"> Shanba
-                            </label>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 14px;">
-                                <input type="checkbox" name="teachDaysCheck" value="Yakshanba" style="width: auto; padding: 0;"> Yakshanba
-                            </label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px;">
+                            <label><input type="checkbox" name="teachDaysCheck" value="Dushanba" style="width:auto;"> Dushanba</label>
+                            <label><input type="checkbox" name="teachDaysCheck" value="Seshanba" style="width:auto;"> Seshanba</label>
+                            <label><input type="checkbox" name="teachDaysCheck" value="Chorshanba" style="width:auto;"> Chorshanba</label>
+                            <label><input type="checkbox" name="teachDaysCheck" value="Payshanba" style="width:auto;"> Payshanba</label>
+                            <label><input type="checkbox" name="teachDaysCheck" value="Juma" style="width:auto;"> Juma</label>
+                            <label><input type="checkbox" name="teachDaysCheck" value="Shanba" style="width:auto;"> Shanba</label>
+                            <label><input type="checkbox" name="teachDaysCheck" value="Yakshanba" style="width:auto;"> Yakshanba</label>
                         </div>
-
                     </div>
                     <div class="grid-2" style="margin-bottom: 0; gap: 10px;">
                         <div class="input-group"> <input type="text" id="teachLogin" placeholder="Login" required> </div>
@@ -166,7 +103,7 @@
                 </form>
             </div>
         </div>
-        <!-- O'quvchilar Jadvali (O'chirish tugmasi bor) -->
+        <!-- O'quvchilar Ro'yxati -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header">
                 <h3 style="margin-bottom: 0;">Barcha O'quvchilar Ro'yxati</h3>
@@ -191,15 +128,15 @@
             </div>
         </div>
 
-        <!-- Davomat Tarixi -->
+        <!-- Kunlik Davomat Tarixi -->
         <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
             <div class="flex-header"> <h3 style="margin-bottom: 0;">Kunlik Davomat Tarixi</h3> <button class="btn danger-btn" style="width: auto; padding: 8px 15px; font-size: 13px;" onclick="clearData('attendance')">Davomatni Tozalash</button> </div>
             <div class="table-responsive"> <table> <thead> <tr> <th>Sana</th> <th>O'quvchi F.I.Sh</th> <th>O'qituvchi</th> <th>Status</th> </tr> </thead> <tbody id="attendanceTableBody"></tbody> </table> </div>
         </div>
 
-        <!-- O'qituvchilar Ro'yxati -->
-        <div class="card glass-container" style="max-width: 100%;">
-            <h3>O'qituvchilar Ro'yxati va Ularning Balansi</h3>
+        <!-- Amaldagi O'qituvchilar Ro'yxati -->
+        <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
+            <h3>O'qituvchilar Ro'yxati va Ularning Joriy Balansi</h3>
             <div class="table-responsive">
                 <table>
                     <thead> <tr> <th>O'qituvchi F.I.Sh</th> <th>Fan</th> <th>Kunlar / Vaqt</th> <th>Oylik Balans</th> <th>Login / Parol</th> <th>Amallar</th> </tr> </thead>
@@ -207,6 +144,36 @@
                 </table>
             </div>
         </div>
+
+        <!-- 🔥 YANGI QO'SHILGAN: O'TGAN OYLAR MOLIYAVIY ARXIV JADVALI (Muzlatilgan Tarix) -->
+        <div class="grid-2" style="gap: 30px;">
+            <!-- A. Markazning o'tgan oylardagi foyda arxivi -->
+            <div class="card glass-container" style="max-width: 100%;">
+                <h3 class="archive-title">📦 Markaz Foyda Arxivi (Oxirgi 3 oy)</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead> <tr> <th>Yil-Oy</th> <th>Arxivlangan Sof Foyda</th> </tr> </thead>
+                        <tbody id="centerArchiveTableBody">
+                            <tr><td colspan="2" style="text-align:center; color:#64748b;">Hozircha arxiv ma'lumotlari mavjud emas.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- B. Ustozlarning o'tgan oylardagi oylik arxivi -->
+            <div class="card glass-container" style="max-width: 100%;">
+                <h3 class="archive-title">📦 O'qituvchilar Oylik Arxivi (Oxirgi 3 oy)</h3>
+                <div class="table-responsive">
+                    <table>
+                        <thead> <tr> <th>Yil-Oy</th> <th>O'qituvchi</th> <th>Fan</th> <th>Olingan Oylik</th> </tr> </thead>
+                        <tbody id="teacherArchiveTableBody">
+                            <tr><td colspan="4" style="text-align:center; color:#64748b;">Hozircha arxiv ma'lumotlari mavjud emas.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <script src="/script.js"></script>
