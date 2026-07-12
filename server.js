@@ -30,7 +30,7 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
                                    `<b>"Muxtasham L/C"</b> bildirishnoma tizimiga xush kelibsiz.\n\n` +
                                    `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Raqam ustiga bosib nusxalang va pastdagi tugma orqali farzandingizning <b>Ism-Familiyasi</b> hamda <b>Qaysi ustozda</b> o'qishini qo'shib adminga jo'nating. Admin @sobirov_cybersecurity`;
+                                   `👉 Raqam ustiga bosib nusxalang va pastdagi tugma orqali farzandingizning <b>Ism-Familiyasi</b> hamda <b>Qaysi ustozda</b> o'qishini qo'shib adminga jo'nating`;
             
             const inlineKeyboard = {
                 reply_markup: {
