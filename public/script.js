@@ -41,8 +41,6 @@ async function loadDashboardData() {
         renderStudents(allStudents);
         renderAttendance(data.attendance || []);
         renderTeachers(allTeachers);
-        
-        // O'tgan oylar arxivi jadvallarini chizish
         renderFinancialArchive(data.history || { center_profit: [], teacher_salary: [] });
 
         if (document.getElementById('centerProfitDisplay')) document.getElementById('centerProfitDisplay').innerText = `${(data.center_profit || 0).toLocaleString()} so'm`;
@@ -137,7 +135,6 @@ function renderTeachers(teachers) {
     });
 }
 
-// 📦 O'TGAN 3 OYLIK MOLIYAVIY ARXIV JADVALINI CHIZISH FUNKSIYASI
 function renderFinancialArchive(history) {
     const centerTbody = document.getElementById('centerArchiveTableBody');
     const teacherTbody = document.getElementById('teacherArchiveTableBody');
@@ -164,7 +161,7 @@ function renderFinancialArchive(history) {
         }
     }
 }
-    async function saveStudent(e) {
+async function saveStudent(e) {
     if(e) e.preventDefault();
     const name = document.getElementById('studName').value;
     const phone = document.getElementById('studPhone').value;
@@ -288,7 +285,7 @@ function renderTeacherStudents(students, isLessonTime, teacherId) {
                         <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi', '${teacherId}')">Kelmadi</button>
                    </div>`;
 
-            tbody.innerHTML += `<tr class="${isDebtor}"><td>export strong<strong>${s.name}</strong></td><td>${s.phone}</td><td>${s.birthYear}-yil</td><td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td><td>${attendanceCellContent}</td></tr>`;
+            tbody.innerHTML += `<tr class="${isDebtor}"><td><strong>${s.name}</strong></td><td>${s.phone}</td><td>${s.birthYear}-yil</td><td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td><td>${attendanceCellContent}</td></tr>`;
         });
         table.appendChild(tbody); tableResponsive.appendChild(table); groupCard.appendChild(tableResponsive); container.appendChild(groupCard);
     }
