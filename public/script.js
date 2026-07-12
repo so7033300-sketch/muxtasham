@@ -1,239 +1,312 @@
-const express = require('express');
-const fs = require('fs');
-const cors = require('cors');
-const path = require('path');
-const TelegramBot = require('node-telegram-bot-api');
-const schedule = require('node-schedule');
+const API_URL = '/api';
+let allStudents = [], allTeachers = [];
 
-const app = express();
-app.use(cors({ origin: '*', methods: ['GET', 'POST', 'DELETE'], allowedHeaders: ['Content-Type'] }));
-app.use(express.json());
-
-const publicPath = path.join(__dirname, 'public');
-app.use(express.static(publicPath));
-const DB_FILE = path.join(__dirname, 'database.json');
-
-// --- TELEGRAM BOT SOZLAMASI (ISHONCHLI VA TO'G'RI ADMIN HAVOLASI BILAN) ---
-const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
-let bot = null;
-
-if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
+window.executeLogin = async function() {
+    const login = document.getElementById('loginInput').value;
+    const password = document.getElementById('passwordInput').value;
+    const errorDiv = document.getElementById('errorMessage');
+    if(!login || !password) return alert("Iltimos, login va parolni to'liq kiriting!");
+    
     try {
-        bot = new TelegramBot(BOT_TOKEN, { polling: { autoStart: true, params: { timeout: 10 } } });
+        const response = await fetch(`${API_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ login, password })
+        });
+        const data = await response.json();
+        if (data.success) {
+            if (data.role === 'admin') window.location.href = '/admin.html';
+            else if (data.role === 'teacher') {
+                localStorage.setItem('teacherId', data.teacherId);
+                window.location.href = '/ustoz.html';
+            }
+        } else { errorDiv.style.display = 'block'; errorDiv.innerText = data.message; }
+    } catch (err) { errorDiv.style.display = 'block'; errorDiv.innerText = "Server xatosi!"; }
+}
+
+window.logout = function() { localStorage.clear(); window.location.href = '/index.html'; }
+
+async function loadDashboardData() {
+    try {
+        const response = await fetch(`${API_URL}/data`);
+        const data = await response.json();
+        allStudents = data.students || [];
+        allTeachers = data.teachers || [];
         
-        bot.deleteWebHook().then(() => {
-            console.log("✅ Yangi bot muvaffaqiyatli ishga tushdi va ulandi!");
-        });
+        const teacherSelect = document.getElementById('studTeacher');
+        if (teacherSelect) {
+            teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga qo\'shish...</option>';
+            allTeachers.forEach(t => { teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
+        }
+        renderStudents(allStudents);
+        renderAttendance(data.attendance || []);
+        renderTeachers(allTeachers);
+        
+        // O'tgan oylar arxivi jadvallarini chizish
+        renderFinancialArchive(data.history || { center_profit: [], teacher_salary: [] });
 
-        // Ota-ona /start bosganda uning shaxsiy Chat ID raqamini aniqlab adminga yo'naltirish logikasi
-        bot.onText(/\/start/, (msg) => {
-            const chatId = msg.chat.id;
-            const firstName = msg.from.first_name || "Foydalanuvchi";
-            
-            const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n` +
-                                   `<b>"Muxtasham L/C"</b> ota-onalar bildirishnoma tizimiga xush kelibsiz.\n\n` +
-                                   `📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n` +
-                                   `👉 Iltimos, ushbu raqamni ustiga bosib nusxalang (kopiya qiling) va farzandingiz dars hisobotlarini faollashtirish uchun o'quv markazi adminiga yuboring. Admin profili: @sobirov_cybersecurity`;
-            
-            // Tugma havolasi sizning haqiqiy @sobirov_cybersecurity admin profilingizga ulandi
-            const inlineKeyboard = {
-                reply_markup: {
-                    inline_keyboard: [
-                        [
-                            {
-                                text: "💬 ID raqamni adminga jo'natish",
-                                url: "https://t.me"
-                            }
-                        ]
-                    ]
-                }
-            };
-            
-            bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', ...inlineKeyboard });
-        });
+        if (document.getElementById('centerProfitDisplay')) document.getElementById('centerProfitDisplay').innerText = `${(data.center_profit || 0).toLocaleString()} so'm`;
+    } catch (err) { console.error(err); }
+}
+window.onTeacherSelected = function() {
+    const teacherId = document.getElementById('studTeacher').value;
+    const container = document.getElementById('groupSelectionContainer');
+    const groupSelect = document.getElementById('studGroupSelect');
+    if (!teacherId) return;
+    container.style.display = 'block';
 
-    } catch (e) {
-        console.log("Bot ulanish xatosi:", e.message);
+    const teacherGroups = [];
+    allStudents.forEach(s => {
+        if (s.teacherId === teacherId && s.groupName && s.groupName !== "undefined" && !teacherGroups.includes(s.groupName)) {
+            teacherGroups.push(s.groupName);
+        }
+    });
+
+    groupSelect.innerHTML = '';
+    if (teacherGroups.length === 0) {
+        groupSelect.innerHTML = '<option value="" disabled selected>Mavjud guruh yo\'q, yangi oching</option>';
+        document.getElementById('groupModeSelect').value = 'create';
+        toggleGroupMode();
+    } else {
+        groupSelect.innerHTML = '<option value="" disabled selected>Guruhni tanlang...</option>';
+        teacherGroups.forEach(g => { groupSelect.innerHTML += `<option value="${g}">${g}</option>`; });
+        document.getElementById('groupModeSelect').value = 'select';
+        toggleGroupMode();
     }
 }
-function getTashkentDate() {
-    const options = { timeZone: 'Asia/Tashkent', year: 'numeric', month: '2-digit', day: '2-digit' };
-    const formatter = new Intl.DateTimeFormat('en-US', options);
-    const [{ value: month }, , { value: day }, , { value: year }] = formatter.formatToParts(new Date());
-    return `${year}-${month}-${day}`;
+
+window.toggleGroupMode = function() {
+    const mode = document.getElementById('groupModeSelect').value;
+    document.getElementById('existingGroupWrapper').style.display = mode === 'select' ? 'block' : 'none';
+    document.getElementById('newGroupWrapper').style.display = mode === 'create' ? 'block' : 'none';
 }
 
-function readDB() {
-    try {
-        if (!fs.existsSync(DB_FILE)) {
-            const initialData = { students: [], teachers: [], attendance: [], center_profit: 0, history: { center_profit: [], teacher_salary: [] } };
-            fs.writeFileSync(DB_FILE, JSON.stringify(initialData, null, 2), 'utf8');
-            return initialData;
-        }
-        const db = JSON.parse(fs.readFileSync(DB_FILE, 'utf8'));
-        if (!db.history) db.history = { center_profit: [], teacher_salary: [] };
-        if (typeof db.center_profit !== 'number') db.center_profit = 0;
-        return db;
-    } catch (e) { return { students: [], teachers: [], attendance: [], center_profit: 0, history: { center_profit: [], teacher_salary: [] } }; }
+function filterStudents() {
+    const query = document.getElementById('searchStudent').value.toLowerCase();
+    renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
+}
+function renderStudents(students) {
+    const tbody = document.getElementById('studentsTableBody');
+    if (!tbody) return; tbody.innerHTML = '';
+    students.forEach(s => {
+        const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
+        const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
+        const tObj = allTeachers.find(t => t.id === s.teacherId);
+        const displayName = tObj ? `${tObj.name} - ${s.groupName}` : 'Guruhsiz';
+
+        tbody.innerHTML += `
+            <tr class="${isDebtor}">
+                <td><strong>${s.name}</strong></td>
+                <td>${s.phone}</td>
+                <td><span class="status-badge" style="background:rgba(129,140,248,0.15); color:#818cf8;">${displayName}</span></td>
+                <td>${s.fee.toLocaleString()} so'm</td>
+                <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
+                <td>
+                    <div class="inline-form">
+                        <input type="number" id="pay_${s.id}" placeholder="Summa" style="width:110px;">
+                        <button class="btn" onclick="makePayment('${s.id}')">To'lash</button>
+                    </div>
+                </td>
+                <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteStudent('${s.id}')">O'chirish</button></td>
+            </tr>`;
+    });
 }
 
-function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
+function renderAttendance(attendance) {
+    const tbody = document.getElementById('attendanceTableBody');
+    if (!tbody) return; tbody.innerHTML = '';
+    attendance.slice().reverse().forEach(a => {
+        const badge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
+        tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.studentName}</td><td>${a.teacherName}</td><td>${badge}</td></tr>`;
+    });
+}
 
-// --- HAR MINUTDA DARS TUGASHINI POYLASH VA OTA-ONAGA AVTOMATIK XABAR YO'LLASH ---
-schedule.scheduleJob('* * * * *', function() {
-    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
-    const currentTimeStr = now.toTimeString().substring(0, 5);
-    const currentDayIndex = now.getDay();
-    const daysUz = { 0: "yakshanba", 1: "dushanba", 2: "seshanba", 3: "chorshanba", 4: "payshanba", 5: "juma", 6: "shanba" };
-    const todayName = daysUz[currentDayIndex];
-    const db = readDB();
+function renderTeachers(teachers) {
+    const tbody = document.getElementById('teachersTableBody');
+    if (!tbody) return; tbody.innerHTML = '';
+    teachers.forEach(t => {
+        tbody.innerHTML += `
+            <tr>
+                <td><strong>${t.name}</strong></td>
+                <td>${t.subject}</td>
+                <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td>
+                <td><span class="status-badge status-paid">${t.salary.toLocaleString()} so'm</span></td>
+                <td><code>${t.login} / ${t.password}</code></td>
+                <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteTeacher('${t.id}')">O'chirish</button></td>
+            </tr>`;
+    });
+}
+
+// 📦 O'TGAN 3 OYLIK MOLIYAVIY ARXIV JADVALINI CHIZISH FUNKSIYASI
+function renderFinancialArchive(history) {
+    const centerTbody = document.getElementById('centerArchiveTableBody');
+    const teacherTbody = document.getElementById('teacherArchiveTableBody');
     
-    db.teachers.forEach(teacher => {
-        const teacherDaysString = teacher.days.join(' ').toLowerCase();
-        if (teacherDaysString.includes(todayName) && teacher.timeEnd === currentTimeStr) {
-            const groupStudents = db.students.filter(s => s.teacherId === teacher.id);
-            groupStudents.forEach(student => {
-                if (bot && student.parentChatId) {
-                    try {
-                        const finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi <b>${teacher.subject}</b> darsi tugadi va barcha o'quvchilar uyiga ketdi. 🚀\n\n✍️ Savollar bo'lsa: @sobirov_cybersecurity`;
-                        bot.sendMessage(student.parentChatId, finishMessage, { parse_mode: 'HTML' });
-                    } catch (err) { console.log(err.message); }
-                }
+    if (centerTbody) {
+        if (!history.center_profit || history.center_profit.length === 0) {
+            centerTbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#64748b;">Hozircha arxivlangan foyda yo'q.</td></tr>`;
+        } else {
+            centerTbody.innerHTML = '';
+            history.center_profit.slice().reverse().forEach(item => {
+                centerTbody.innerHTML += `<tr><td><span class="time-badge">${item.date}</span></td><td><strong style="color:#22c55e;">+${item.amount.toLocaleString()} so'm</strong></td></tr>`;
             });
         }
-    });
-});
-// --- HAR OYNING 1-SANASIDA ARXIVLASH TAYMERI (Muzlatish va Nollash) ---
-schedule.scheduleJob('0 0 1 * *', function() {
-    const db = readDB();
-    const currentTashkentDate = getTashkentDate();
-    const currentMonthStr = currentTashkentDate.substring(0, 7);
-
-    db.history.center_profit.push({ date: currentMonthStr, amount: db.center_profit || 0 });
-
-    db.teachers.forEach(t => {
-        db.history.teacher_salary.push({ date: currentMonthStr, teacherName: t.name, subject: t.subject, salary: t.salary || 0 });
-        t.salary = 0; 
-    });
-
-    db.center_profit = 0; 
-
-    if (db.history.center_profit.length > 3) db.history.center_profit.shift();
-    
-    const maxTeacherRecords = db.teachers.length * 3;
-    while (db.history.teacher_salary.length > maxTeacherRecords && maxTeacherRecords > 0) {
-        db.history.teacher_salary.shift();
     }
 
-    writeDB(db);
-    console.log("📊 Yangi oy balansi nollanib, arxiv muvaffaqiyatli saqlandi!");
-});
-
-// --- CRM API ENDPOINTS ---
-app.post('/api/login', (req, res) => {
-    const { login, password } = req.body;
-    const db = readDB();
-    if (login === 'admin' && password === 'admin123') return res.json({ success: true, role: 'admin' });
-    const teacher = db.teachers.find(t => t.login === login && t.password === password);
-    if (teacher) return res.json({ success: true, role: 'teacher', teacherId: teacher.id });
-    res.status(401).json({ success: false, message: "Login yoki parol xato!" });
-});
-
-app.post('/api/students', (req, res) => {
-    const { name, phone, birthYear, fee, parentChatId, teacherId, groupName } = req.body;
-    const db = readDB();
-    const newStudent = { id: Date.now().toString(), name, phone, birthYear, fee: parseInt(fee), balance: 0, parentChatId: parentChatId || null, teacherId, groupName: groupName || "Asosiy" };
-    db.students.push(newStudent);
-    writeDB(db);
-    res.json({ success: true, student: newStudent });
-});
-
-app.post('/api/students/pay', (req, res) => {
-    const { studentId, amount } = req.body;
-    const db = readDB();
-    const student = db.students.find(s => s.id === studentId);
-    if (!student) return res.status(404).json({ success: false });
-    student.balance += parseInt(amount);
-    writeDB(db);
-    res.json({ success: true });
-});
-app.delete('/api/students/:id', (req, res) => {
-    const db = readDB();
-    db.students = db.students.filter(s => s.id !== req.params.id);
-    writeDB(db);
-    res.json({ success: true });
-});
-
-app.post('/api/teachers', (req, res) => {
-    const { name, subject, timeStart, timeEnd, days, login, password } = req.body;
-    const db = readDB();
-    const newTeacher = { id: Date.now().toString(), name, subject, timeStart, timeEnd, days, login, password, salary: 0 };
-    db.teachers.push(newTeacher);
-    writeDB(db);
-    res.json({ success: true });
-});
-
-app.delete('/api/teachers/:id', (req, res) => {
-    const db = readDB();
-    db.teachers = db.teachers.filter(t => t.id !== req.params.id);
-    writeDB(db);
-    res.json({ success: true });
-});
-
-app.post('/api/attendance', (req, res) => {
-    const { teacherId, studentId, status } = req.body;
-    const db = readDB();
-    const student = db.students.find(s => s.id === studentId);
-    const teacher = db.teachers.find(t => t.id === teacherId);
-    if (!student || !teacher) return res.status(404).json({ success: false });
-
-    const perLessonFee = Math.round(student.fee / 12);
-    student.balance -= perLessonFee;
-    const halfFee = Math.round(perLessonFee / 2);
-    teacher.salary += halfFee;
-    db.center_profit += halfFee;
-    
-    db.attendance.push({ 
-        date: getTashkentDate(), 
-        studentId: student.id, 
-        studentName: student.name,
-        teacherId: teacherId,
-        teacherName: teacher.name,
-        groupName: student.groupName,
-        status: status 
-    });
-    writeDB(db);
-
-    if (bot && student.parentChatId) {
-        try {
-            const statusText = status === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
-            bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
-        } catch (e) {}
+    if (teacherTbody) {
+        if (!history.teacher_salary || history.teacher_salary.length === 0) {
+            teacherTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">Hozircha arxivlangan oyliklar yo'q.</td></tr>`;
+        } else {
+            teacherTbody.innerHTML = '';
+            history.teacher_salary.slice().reverse().forEach(item => {
+                teacherTbody.innerHTML += `<tr><td><span class="time-badge">${item.date}</span></td><td><strong>${item.teacherName}</strong></td><td>${item.subject}</td><td><span class="status-badge status-paid">${item.salary.toLocaleString()} so'm</span></td></tr>`;
+            });
+        }
     }
-    res.json({ success: true });
-});
+}
+    async function saveStudent(e) {
+    if(e) e.preventDefault();
+    const name = document.getElementById('studName').value;
+    const phone = document.getElementById('studPhone').value;
+    const birthYear = document.getElementById('studBirth').value;
+    const fee = document.getElementById('studFee').value;
+    const teacherId = document.getElementById('studTeacher').value;
+    const parentChatId = document.getElementById('parentChatId').value;
+    const mode = document.getElementById('groupModeSelect').value;
+    let groupName = mode === 'select' ? document.getElementById('studGroupSelect').value : document.getElementById('studNewGroupInput').value.trim();
 
-app.delete('/api/clear/:type', (req, res) => {
-    const db = readDB();
-    if (req.params.type === 'all') { db.students = []; db.teachers = []; db.attendance = []; db.center_profit = 0; db.history = { center_profit: [], teacher_salary: [] }; }
-    else if (req.params.type === 'attendance') db.attendance = [];
-    writeDB(db);
-    res.json({ success: true });
-});
+    if (!name || !phone || !birthYear || !fee || !teacherId || !groupName) return alert("Ma'lumotlarni to'liq kiriting!");
 
-app.get('/api/data', (req, res) => {
-    const db = readDB();
-    const todayStr = getTashkentDate();
-    const updatedStudents = db.students.map(student => {
-        const hasAttendedToday = db.attendance.some(att => att.date === todayStr && att.studentId === student.id && att.groupName === student.groupName);
-        return { ...student, attendedToday: hasAttendedToday };
+    const response = await fetch(`${API_URL}/students`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
     });
-    res.json({ students: updatedStudents, teachers: db.teachers, attendance: db.attendance, center_profit: db.center_profit, history: db.history });
-});
+    if (response.ok) { alert("O'quvchi saqlandi!"); document.getElementById('studentForm').reset(); document.getElementById('groupSelectionContainer').style.display='none'; loadDashboardData(); }
+}
 
-app.get('/', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));
-app.get('/admin.html', (req, res) => res.sendFile(path.join(publicPath, 'admin.html')));
-app.get('/ustoz.html', (react, res) => res.sendFile(path.join(publicPath, 'ustoz.html')));
+async function saveTeacher(e) {
+    if(e) e.preventDefault();
+    const name = document.getElementById('teachName').value;
+    const subject = document.getElementById('teachSubject').value;
+    const timeStart = document.getElementById('teachTimeStart').value;
+    const timeEnd = document.getElementById('teachTimeEnd').value;
+    const login = document.getElementById('teachLogin').value;
+    const password = document.getElementById('teachPass').value;
+    const checked = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
+    const days = []; checked.forEach(b => days.push(b.value));
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda faol!`));
+    if (!name || !subject || !timeStart || !timeEnd || !login || !password || days.length === 0) return alert("Ma'lumotlarni to'liq kiriting!");
+
+    const response = await fetch(`${API_URL}/teachers`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
+    });
+    if (response.ok) { alert("O'qituvchi saqlandi!"); document.getElementById('teacherForm').reset(); loadDashboardData(); }
+}
+
+async function makePayment(studentId) {
+    const amt = document.getElementById(`pay_${studentId}`).value;
+    if (!amt || amt <= 0) return alert("To'g'ri summa kiriting!");
+    const response = await fetch(`${API_URL}/students/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentId, amount: amt }) });
+    if (response.ok) loadDashboardData();
+}
+
+window.deleteStudent = async function(id) { if (confirm("O'quvchi o'chirilsinmi?")) { await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' }); loadDashboardData(); } }
+window.deleteTeacher = async function(id) { if (confirm("O'qituvchi o'chirilsinmi?")) { await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); loadDashboardData(); } }
+async function clearData(type) { if (confirm("Tozalansinmi?")) { await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); loadDashboardData(); } }
+
+async function loadTeacherDashboard() {
+    const currentTeacherId = localStorage.getItem('teacherId');
+    if (!currentTeacherId) return;
+    try {
+        const response = await fetch(`${API_URL}/data`);
+        const data = await response.json();
+        const teacher = data.teachers.find(t => t.id === currentTeacherId);
+        if (!teacher) { logout(); return; }
+
+        document.getElementById('teacherNameHeader').innerText = teacher.name;
+        document.getElementById('teacherSubject').innerText = teacher.subject;
+        document.getElementById('teacherDays').innerText = teacher.days.join(', ');
+        document.getElementById('teacherTime').innerText = `${teacher.timeStart} - ${teacher.timeEnd}`;
+        document.getElementById('teacherSalary').innerText = `${teacher.salary.toLocaleString()} so'm`;
+
+        const isLessonTime = checkLessonTime(teacher);
+        const filteredStudents = (data.students || []).filter(s => s.teacherId === currentTeacherId);
+        renderTeacherStudents(filteredStudents, isLessonTime, currentTeacherId);
+    } catch (err) { console.error(err); }
+}
+
+function checkLessonTime(teacher) {
+    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
+    const currentDayIndex = now.getDay();
+    const currentTimeStr = now.toTimeString().substring(0, 5);
+    const teacherDaysString = teacher.days.join(' ').toLowerCase();
+    
+    const daysUz = { 1: "dushanba", 2: "seshanba", 3: "chorshanba", 4: "payshanba", 5: "juma", 6: "shanba", 0: "yakshanba" };
+    const todayName = daysUz[currentDayIndex];
+    const hasLessonToday = teacherDaysString.includes(todayName);
+    const noticeDiv = document.getElementById('timeStatusNotice');
+    if (!noticeDiv) return false;
+
+    if (!hasLessonToday) { noticeDiv.innerHTML = `⚠️ Bugun dars kuningiz emas.`; noticeDiv.style.color = '#f87171'; return false; }
+    if (currentTimeStr >= teacher.timeStart && currentTimeStr <= teacher.timeEnd) {
+        noticeDiv.innerHTML = `✅ Dars vaqti faol. Davomat qilishingiz mumkin.`; noticeDiv.style.color = '#4ade80'; return true;
+    } else { noticeDiv.innerHTML = `🔒 Dars vaqti emas.`; noticeDiv.style.color = '#eab308'; return false; }
+}
+
+function renderTeacherStudents(students, isLessonTime, teacherId) {
+    const container = document.getElementById('teacherGroupsContainer');
+    if (!container) return; container.innerHTML = '';
+    if (students.length === 0) { container.innerHTML = `<div class="card glass-container" style="text-align:center;color:#64748b;">O'quvchilar yo'q.</div>`; return; }
+    
+    const groups = {};
+    students.forEach(s => { const gName = s.groupName || "Asosiy Guruh"; if (!groups[gName]) groups[gName] = []; groups[gName].push(s); });
+
+    for (const groupName in groups) {
+        const groupStudents = groups[groupName];
+        const groupCard = document.createElement('div');
+        groupCard.className = 'card glass-container'; groupCard.style.maxWidth = '100%'; groupCard.style.marginBottom = '30px';
+        groupCard.innerHTML = `<h3 class="group-title">📦 Guruh: ${groupName} (${groupStudents.length} ta o'quvchi)</h3>`;
+        const tableResponsive = document.createElement('div'); tableResponsive.className = 'table-responsive';
+        const table = document.createElement('table');
+        table.innerHTML = `<thead><tr><th>Ism Familya</th><th>Telefon raqam</th><th>Tug'ilgan yili</th><th>O'quvchi Balansi</th><th>Davomat</th></tr></thead>`;
+        const tbody = document.createElement('tbody');
+
+        groupStudents.forEach(s => {
+            const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
+            const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
+            const isButtonActive = isLessonTime && !s.attendedToday;
+            const disabledAttr = isButtonActive ? '' : 'disabled';
+            const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
+
+            const attendanceCellContent = s.attendedToday 
+                ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
+                : `<div style="display: flex; gap: 10px;">
+                        <button ${disabledAttr} class="btn btn-success ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'keldi', '${teacherId}')">Keldi</button>
+                        <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi', '${teacherId}')">Kelmadi</button>
+                   </div>`;
+
+            tbody.innerHTML += `<tr class="${isDebtor}"><td>export strong<strong>${s.name}</strong></td><td>${s.phone}</td><td>${s.birthYear}-yil</td><td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td><td>${attendanceCellContent}</td></tr>`;
+        });
+        table.appendChild(tbody); tableResponsive.appendChild(table); groupCard.appendChild(tableResponsive); container.appendChild(groupCard);
+    }
+}
+
+async function submitAttendance(studentId, status, teacherId) {
+    if (!confirm("Davomat saqlansinmi?")) return;
+    try {
+        const response = await fetch(`${API_URL}/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teacherId, studentId, status }) });
+        if (response.ok) { alert("Davomat saqlandi va qulflandi!"); await loadTeacherDashboard(); }
+    } catch (err) { alert("Server bilan aloqa uzildi!"); }
+}
+
+window.onload = function() {
+    if (document.getElementById('studentsTableBody')) {
+        loadDashboardData();
+        document.getElementById('studentForm').addEventListener('submit', saveStudent);
+        document.getElementById('teacherForm').addEventListener('submit', saveTeacher);
+    }
+    if (document.getElementById('teacherGroupsContainer')) { loadTeacherDashboard(); }
+};
