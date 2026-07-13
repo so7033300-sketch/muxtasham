@@ -11,6 +11,8 @@
         .search-box { width: 300px; margin-bottom: 0; }
         .danger-btn { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
         .danger-btn:hover { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4); }
+        .excel-btn { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2) !important; width: auto !important; padding: 10px 20px !important; }
+        .excel-btn:hover { background: linear-gradient(135deg, #059669 0%, #065f46 100%) !important; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4) !important; transform: translateY(-2px); }
         .inline-form { display: flex; gap: 10px; align-items: center; }
         .inline-form input { padding: 8px 12px; font-size: 13px; }
         .inline-form .btn { padding: 8px 15px; font-size: 13px; width: auto; }
@@ -23,12 +25,17 @@
 </head>
 <body>
     <div class="dashboard-container">
+        <!-- Header -->
         <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
             <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
             <div style="font-size: 16px; font-weight: 500;">
                 Markaz sof foydasi: <span class="status-badge status-paid" id="centerProfitDisplay" style="font-size: 16px; padding: 8px 16px;">0 so'm</span>
             </div>
-            <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <!-- 🔥 YANGI EXCEL YUKLASH TUGMASI -->
+                <button class="btn excel-btn" onclick="downloadExcelReport()">📥 Excel Hisobot</button>
+                <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
+            </div>
         </div>
         <div class="grid-2">
             <!-- 1. Yangi O'quvchi Qo'shish Oynasi -->
