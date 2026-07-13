@@ -14,7 +14,7 @@ app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
 // --- TELEGRAM BOT SOZLAMASI ---
-const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
+const BOT_TOKEN = '8812254760:AAHwgPOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
@@ -54,7 +54,7 @@ function readDB() {
 }
 
 function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
-// --- HAR MINUTDA DARS TUGASHINI POYLASH TAYMERI (ALGORITM TO'LIQ TUZATILDI) ---
+// --- HAR MINUTDA DARS TUGASHINI POYLASH TAYMERI ---
 schedule.scheduleJob('* * * * *', function() {
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
     const currentTimeStr = now.toTimeString().substring(0, 5);
@@ -73,7 +73,6 @@ schedule.scheduleJob('* * * * *', function() {
             groupStudents.forEach(student => {
                 if (bot && student.parentChatId) {
                     
-                    // JIDDIY TUZATISH: Bazadan faqat bugungi sana, shu o'quvchi va SHU USTOZGA tegishli yozuv qidiriladi!
                     const todayAttendance = db.attendance.find(att => 
                         att.date === todayDateStr && 
                         String(att.studentId) === String(student.id) && 
@@ -81,18 +80,18 @@ schedule.scheduleJob('* * * * *', function() {
                     );
                     
                     let finishMessage = ``;
+                    let currentStatus = todayAttendance && todayAttendance.status 
+                        ? String(todayAttendance.status).toLowerCase().trim() 
+                        : '';
                     
-                    // Agar o'quvchi darsga kelgan bo'lsa (yoki keldi deb belgilangan bo'lsa)
-                    if (todayAttendance && todayAttendance.status === 'keldi') {
+                    if (currentStatus === 'keldi') {
                         finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi <b>${teacher.subject}</b> darsi tugadi va barcha o'quvchilar uyiga ketdi. 🚀\n\nSavollar bo'lsa: @sobirov_cybersecurity`;
                     } 
-                    // Agar o'quvchi darsga kelmagan bo'lsa (kelmadi deb belgilangan bo'lsa)
-                    else if (todayAttendance && todayAttendance.status === 'kelmadi') {
+                    else if (currentStatus === 'kelmadi') {
                         finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, bugungi <b>${teacher.subject}</b> darsi tugadi. Farzandingiz <b>${student.name}</b> bugungi darsda ❌ <b>umuman qatnashmadi</b>.`;
                     } 
-                    // Agar mabodo ustoz davomat qilishni unutib qoldirgan bo'lsa
                     else {
-                        finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi darsi yakunlandi.`;
+                        finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi <b>${teacher.subject}</b> darsi yakunlandi.`;
                     }
                     
                     try {
@@ -172,12 +171,16 @@ app.delete('/api/teachers/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// 🔥 KAFOLATLANGAN TO'G'RI JONLI DAVOMAT INTEGRATSIYASI (CHALKASHLIK ILDIZI BILAN YO'QOTILDI)
 app.post('/api/attendance', (req, res) => {
     const { teacherId, studentId, status } = req.body;
     const db = readDB();
     const student = db.students.find(s => s.id === studentId);
     const teacher = db.teachers.find(t => t.id === teacherId);
     if (!student || !teacher) return res.status(404).json({ success: false });
+
+    // Keldi yoki kelmadi deb belgilangan qat'iy toza qiymatni bazaga yozamiz
+    const cleanStatus = String(status).toLowerCase().trim();
 
     const perLessonFee = Math.round(student.fee / 12);
     student.balance -= perLessonFee;
@@ -192,13 +195,19 @@ app.post('/api/attendance', (req, res) => {
         teacherId: teacherId,
         teacherName: teacher.name,
         groupName: student.groupName,
-        status: status 
+        status: cleanStatus 
     });
     writeDB(db);
 
     if (bot && student.parentChatId) {
         try {
-            const statusText = status === '' ? "keldi✅." : "kelmadi❌.";
+            // MATN SHU YERDA UZIL-KESIL TO'G'RILANDI: Agar 'keldi' bo'lsa faqat tasdiq xabari, aks holda rad xabari!
+            let statusText = "";
+            if (cleanStatus === 'keldi') {
+                statusText = "✅ darsga keldi.";
+            } else {
+                statusText = "❌ darsga kelmadi.";
+            }
             bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
         } catch (e) {}
     }
@@ -224,7 +233,7 @@ app.get('/api/data', (req, res) => {
 });
 
 app.get('/', (req, res) => res.sendFile(path.join(publicPath, 'index.html')));
-app.get('/admin.html', (react, res) => res.sendFile(path.join(publicPath, 'admin.html')));
+app.get('/admin.html', (req, res) => res.sendFile(path.join(publicPath, 'admin.html')));
 app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.html')));
 
 const PORT = process.env.PORT || 10000;
