@@ -14,7 +14,7 @@ app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
 // --- TELEGRAM BOT SOZLAMASI ---
-const BOT_TOKEN = '8812254760:AAHwgPOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
+const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
 if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
