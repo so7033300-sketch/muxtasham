@@ -46,6 +46,7 @@ async function loadDashboardData() {
         if (document.getElementById('centerProfitDisplay')) document.getElementById('centerProfitDisplay').innerText = `${(data.center_profit || 0).toLocaleString()} so'm`;
     } catch (err) { console.error(err); }
 }
+
 window.onTeacherSelected = function() {
     const teacherId = document.getElementById('studTeacher').value;
     const container = document.getElementById('groupSelectionContainer');
@@ -82,6 +83,24 @@ window.toggleGroupMode = function() {
 function filterStudents() {
     const query = document.getElementById('searchStudent').value.toLowerCase();
     renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
+}
+
+window.downloadExcelReport = function() {
+    if (allStudents.length === 0) return alert("Yuklash uchun o'quvchilar ro'yxati bo'sh!");
+    let csvContent = "\uFEFFIsm Familya;Telefon raqami;Tug'ilgan yili;Ustoz va Guruh;Oylik To'lov;Balans\n";
+    allStudents.forEach(s => {
+        const tObj = allTeachers.find(t => t.id === s.teacherId);
+        const groupInfo = tObj ? `${tObj.name} (${s.groupName})` : 'Guruhsiz';
+        csvContent += `${s.name};${s.phone};${s.birthYear}-yil;${groupInfo};${s.fee} so'm;${s.balance} so'm\n`;
+    });
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const dateStr = new Date().toISOString().substring(0, 10);
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", `Muxtasham_CRM_Hisobot_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 function renderStudents(students) {
     const tbody = document.getElementById('studentsTableBody');
