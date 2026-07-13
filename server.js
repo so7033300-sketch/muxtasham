@@ -13,7 +13,7 @@ const publicPath = path.join(__dirname, 'public');
 app.use(express.static(publicPath));
 const DB_FILE = path.join(__dirname, 'database.json');
 
-// --- TELEGRAM BOT SOZLAMASI ---
+// --- TELEGRAM BOT SOZLAMASI (OTA-ONA SHAXSIY KABINETI QO'SHILDI) ---
 const BOT_TOKEN = '8812254760:AAHwgpOASA8J66YaPIeMCs5E_k9uH_pFs58'; 
 let bot = null;
 
@@ -25,10 +25,58 @@ if (BOT_TOKEN && BOT_TOKEN.includes(':')) {
         bot.onText(/\/start/, (msg) => {
             const chatId = msg.chat.id;
             const firstName = msg.from.first_name || "Foydalanuvchi";
+            
             const welcomeMessage = `👋 Assalomu alaykum, ${firstName}!\n\n<b>"Muxtasham L/C"</b> bildirishnoma tizimiga xush kelibsiz.\n\n📌 Sizning shaxsiy Chat ID raqamingiz:\n<code>${chatId}</code>\n\n👉 Raqam ustiga bosib nusxalang va pastdagi tugma orqali farzandingizning <b>Ism-Familiyasi</b> hamda <b>Qaysi ustozda</b> o'qishini qo'shib adminga jo'nating.`;
+            
+            // Ota-ona uchun maxsus "Balansni tekshirish" pastki klaviatura tugmasi
+            const replyKeyboard = {
+                keyboard: [[{ text: "🗂 Farzandim balansi va davomati" }]],
+                resize_keyboard: true,
+                one_time_keyboard: false
+            };
+            
+            // Shaxsiy profil tugmasi
             const inlineKeyboard = { inline_keyboard: [[{ text: "💬 ID va Ma'lumotlarni adminga jo'natish", url: "https://t.me/sobirov_cybersecurity" }]] };
-            bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', reply_markup: inlineKeyboard });
+            
+            bot.sendMessage(chatId, welcomeMessage, { parse_mode: 'HTML', reply_markup: replyKeyboard });
+            bot.sendMessage(chatId, "🔗 Adminga o'tish uchun quyidagi tugmadan foydalaning:", { reply_markup: inlineKeyboard });
         });
+
+        // --- JONLI JAVOB: Ota-ona tugmani bosganda shaxsiy kabinet hisobotini chiqarish ---
+        bot.on('message', (msg) => {
+            if (msg.text === "🗂 Farzandim balansi va davomati") {
+                const chatId = msg.chat.id;
+                const db = readDB();
+                
+                // Bazadan shu ota-onaga biriktirilgan barcha o'quvchilarni qidiramiz
+                const myStudents = db.students.filter(s => String(s.parentChatId) === String(chatId));
+                
+                if (myStudents.length === 0) {
+                    return bot.sendMessage(chatId, "⚠️ Kechirasiz, ushbu Telegram ID raqamga biror bir o'quvchi biriktirilmagan. Iltimos, ID raqamingizni adminga bering.");
+                }
+                
+                let reportMessage = `🔍 <b>Jonli Shaxsiy Kabinet Hisoboti:</b>\n\n`;
+                
+                myStudents.forEach((student, index) => {
+                    const teacher = db.teachers.find(t => t.id === student.teacherId);
+                    const subjectName = teacher ? teacher.subject : "Noma'lum";
+                    const balanceStatus = student.balance >= 0 ? "✅ To'langan" : "❌ Qarzdorlik";
+                    
+                    // Oxirgi davomat holatini topish
+                    const lastAtt = db.attendance.filter(att => String(att.studentId) === String(student.id)).pop();
+                    const lastAttText = lastAtt ? (lastAtt.status === 'keldi' ? "✅ Keldi" : "❌ Kelmadi") : "Belgilanmagan";
+
+                    reportMessage += `${index + 1}. 👤 <b>O'quvchi:</b> ${student.name}\n` +
+                                     `📚 <b>Fan:</b> ${subjectName} (${student.groupName})\n` +
+                                     `💰 <b>Joriy balans:</b> ${student.balance.toLocaleString()} so'm (${balanceStatus})\n` +
+                                     `📑 <b>Oxirgi dars holati:</b> ${lastAttText}\n\n`;
+                });
+                
+                reportMessage += `✍️ <i>Ma'lumotlar real vaqt rejimida yangilanadi.</i>`;
+                bot.sendMessage(chatId, reportMessage, { parse_mode: 'HTML' });
+            }
+        });
+
     } catch (e) { console.log(e.message); }
 }
 
@@ -52,8 +100,6 @@ function readDB() {
         return db;
     } catch (e) { return { students: [], teachers: [], attendance: [], center_profit: 0, history: { center_profit: [], teacher_salary: [] } }; }
 }
-
-function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
 // --- HAR MINUTDA DARS TUGASHINI POYLASH TAYMERI ---
 schedule.scheduleJob('* * * * *', function() {
     const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
@@ -66,13 +112,11 @@ schedule.scheduleJob('* * * * *', function() {
     
     db.teachers.forEach(teacher => {
         const teacherDaysString = teacher.days.join(' ').toLowerCase();
-        
         if (teacherDaysString.includes(todayName) && teacher.timeEnd === currentTimeStr) {
             const groupStudents = db.students.filter(s => s.teacherId === teacher.id);
             
             groupStudents.forEach(student => {
                 if (bot && student.parentChatId) {
-                    
                     const todayAttendance = db.attendance.find(att => 
                         att.date === todayDateStr && 
                         String(att.studentId) === String(student.id) && 
@@ -80,9 +124,7 @@ schedule.scheduleJob('* * * * *', function() {
                     );
                     
                     let finishMessage = ``;
-                    let currentStatus = todayAttendance && todayAttendance.status 
-                        ? String(todayAttendance.status).toLowerCase().trim() 
-                        : '';
+                    let currentStatus = todayAttendance && todayAttendance.status ? String(todayAttendance.status).toLowerCase().trim() : '';
                     
                     if (currentStatus === 'keldi') {
                         finishMessage = `🔔 <b>Dars yakunlandi!</b>\n\nHurmatli ota-ona, farzandingiz <b>${student.name}</b>ning bugungi <b>${teacher.subject}</b> darsi tugadi va barcha o'quvchilar uyiga ketdi. 🚀\n\nSavollar bo'lsa: @sobirov_cybersecurity`;
@@ -171,17 +213,14 @@ app.delete('/api/teachers/:id', (req, res) => {
     res.json({ success: true });
 });
 
-// 🔥 KAFOLATLANGAN TO'G'RI JONLI DAVOMAT INTEGRATSIYASI (CHALKASHLIK ILDIZI BILAN YO'QOTILDI)
 app.post('/api/attendance', (req, res) => {
     const { teacherId, studentId, status } = req.body;
     const db = readDB();
     const student = db.students.find(s => s.id === studentId);
     const teacher = db.teachers.find(t => t.id === teacherId);
     if (!student || !teacher) return res.status(404).json({ success: false });
-
-    // Keldi yoki kelmadi deb belgilangan qat'iy toza qiymatni bazaga yozamiz
+    
     const cleanStatus = String(status).toLowerCase().trim();
-
     const perLessonFee = Math.round(student.fee / 12);
     student.balance -= perLessonFee;
     const halfFee = Math.round(perLessonFee / 2);
@@ -201,13 +240,7 @@ app.post('/api/attendance', (req, res) => {
 
     if (bot && student.parentChatId) {
         try {
-            // MATN SHU YERDA UZIL-KESIL TO'G'RILANDI: Agar 'keldi' bo'lsa faqat tasdiq xabari, aks holda rad xabari!
-            let statusText = "";
-            if (cleanStatus === 'keldi') {
-                statusText = "✅ darsga keldi.";
-            } else {
-                statusText = "❌ darsga kelmadi.";
-            }
+            const statusText = cleanStatus === 'keldi' ? "✅ darsga keldi." : "❌ darsga kelmadi.";
             bot.sendMessage(student.parentChatId, `Hurmatli ota-ona, farzandingiz ${student.name} bugun ${teacher.subject} darsiga ${statusText}`);
         } catch (e) {}
     }
@@ -238,3 +271,5 @@ app.get('/ustoz.html', (req, res) => res.sendFile(path.join(publicPath, 'ustoz.h
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, '0.0.0.0', () => console.log(`Server Renderda ${PORT}-portda faol!`));
+
+function writeDB(data) { fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf8'); }
