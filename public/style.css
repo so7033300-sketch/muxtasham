@@ -3,39 +3,40 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
 body {
-    background: radial-gradient(circle at 50% 50%, #0a0a14 0%, #040408 100%);
+    /* Qorong'u ko'zga qulay to'q fon */
+    background: radial-gradient(circle at 30% 50%, #0a0a14 0%, #040408 100%);
     color: #ffffff;
     min-height: 100vh;
     display: flex;
-    flex-direction: column; /* Elementlar markazda chiroyli joylashishi uchun */
+    flex-direction: row; /* Elementlarni yonma-yon chiroyli joylashtirish uchun */
     justify-content: center;
     align-items: center;
-    padding: 20px;
+    padding: 40px;
+    gap: 50px;
     overflow-x: hidden;
     position: relative;
     transition: background 0.4s ease;
 }
 
 body.lamp-on {
-    background: radial-gradient(circle at 50% 50%, #161530 0%, #09081a 100%);
+    background: radial-gradient(circle at 30% 50%, #161530 0%, #09081a 100%);
 }
 
-/* --- SIZ KO'RSATGAN INTERFEYS: EXACT CENTERED LAMP --- */
+/* --- SIZ KO'RSATGAN CHAP TOMONDAGI JONLI CHIROQ BLOKI --- */
 .lamp-container {
-    position: relative; /* Mutlaq tepadan formaning ustiga aniq tushirildi */
-    width: 100%;
-    max-width: 400px;
+    position: relative;
     display: flex;
     justify-content: center;
     pointer-events: none;
     z-index: 10;
-    margin-bottom: -45px; /* Chiroq va formani bir-biriga mukammal zanjirband qiladi */
+    width: 140px;
+    height: 220px;
 }
 
 .lamp {
     position: relative;
     width: 140px;
-    height: 140px;
+    height: 220px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -54,12 +55,12 @@ body.lamp-on {
 /* Mexanik osilib turgan chiroq ipi */
 .lamp-string {
     width: 3px;
-    height: 55px;
+    height: 65px;
     background: #475569;
     position: relative;
     z-index: 13;
     cursor: pointer;
-    pointer-events: auto; /* Tortish rejimi faol */
+    pointer-events: auto; /* Click mantiqi faol */
     transition: transform 0.1s ease;
 }
 .lamp-string::after {
@@ -76,14 +77,15 @@ body.lamp-on {
 .lamp-string:active {
     transform: translateY(4px);
 }
-/* Chiroq nuri - exact conic spotlight */
+/* Chiroq nuri - exact spotlight tracking */
 .lamp-light {
     position: absolute;
     top: 50px;
-    width: 500px;
-    height: 550px;
-    background: conic-gradient(from 140deg at 50% 0%, rgba(253, 224, 71, 0.15) 0deg, rgba(253, 224, 71, 0) 80deg);
-    filter: blur(18px);
+    width: 600px;
+    height: 600px;
+    /* Konusli nur yo'nalishi endi o'ng tomonga qarab yoritadi */
+    background: conic-gradient(from 110deg at 50% 0%, rgba(253, 224, 71, 0.14) 0deg, rgba(253, 224, 71, 0) 90deg);
+    filter: blur(20px);
     z-index: 5;
     opacity: 0;
     transform: scale(0.95);
@@ -97,30 +99,26 @@ body.lamp-on .lamp-light {
 }
 
 @keyframes lampGlow {
-    0% { opacity: 0.8; filter: blur(14px); }
-    100% { opacity: 1; filter: blur(20px); }
+    0% { opacity: 0.8; filter: blur(16px); }
+    100% { opacity: 1; filter: blur(22px); }
 }
 
-/* --- ASOSIY CRM PANEL KONTEYNERLARI (SHISHA STIllARI) --- */
-.glass-container {
+/* --- PREMIUM LOGIN OYNASI (CHIROQ O'CHIQligida RASYMDAGIDEK KO'RINMAYDI) --- */
+.login-form.glass-container {
+    width: 100%;
+    max-width: 400px;
+    padding: 40px;
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 20px;
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    width: 100%;
-    padding: 40px;
-    transition: all 0.3s ease;
-}
-
-/* Siz ko'rsatgan qizil doiradagi mukammal shakl */
-.login-form.glass-container {
-    max-width: 400px;
     z-index: 2;
     position: relative;
+    
+    /* 100% Qorong'ulik effekti */
     opacity: 0.01;
-    filter: brightness(5%);
+    filter: brightness(2%);
     transform: scale(0.97);
     pointer-events: none;
     transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
@@ -137,23 +135,9 @@ body.lamp-on .login-form.glass-container {
     pointer-events: auto;
 }
 
-.dashboard-container {
-    width: 100%;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 10px;
-    z-index: 10;
-}
-
-.card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 16px;
-    padding: 25px;
-    margin-bottom: 25px;
-    backdrop-filter: blur(10px);
-}
-
+.dashboard-container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 10px; z-index: 10; }
+.glass-container { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+.card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 25px; margin-bottom: 25px; backdrop-filter: blur(10px); }
 h2, h3 { color: #ffffff; margin-bottom: 25px; font-weight: 600; letter-spacing: 0.5px; text-align: left; }
 h2 { font-size: 28px; }
 h3 { font-size: 20px; border-left: 4px solid #38bdf8; padding-left: 12px; }
@@ -239,12 +223,11 @@ tr:hover { background: rgba(255, 255, 255, 0.01); }
 .time-badge { background: rgba(167, 139, 250, 0.15); color: #c084fc; padding: 4px 10px; border-radius: 8px; font-size: 12px; }
 .debtor-row { background: rgba(239, 68, 68, 0.04) !important; }
 
-/* --- TELEFON REJIMLARIMIZ --- */
-@media (max-width: 1024px) {
-    .grid-2 { grid-template-columns: 1fr; gap: 20px; }
-}
+/* TELEFON ENIGA MOSLASHUV */
+@media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; gap: 20px; } }
 @media (max-width: 768px) {
-    body { padding: 10px; }
+    body { flex-direction: column; padding: 20px 10px; gap: 20px; }
+    .lamp-container { margin-bottom: 0; }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
     .card { padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     .flex-header { flex-direction: column !important; gap: 15px; text-align: center; padding: 20px 15px !important; }
@@ -255,12 +238,9 @@ tr:hover { background: rgba(255, 255, 255, 0.01); }
     .inline-form .btn { width: 100% !important; padding: 10px; }
     td div { flex-direction: row; width: 100%; gap: 5px; }
     td .btn { padding: 8px 12px; font-size: 13px; }
-    h2 { font-size: 22px; }
+    h2 { font-size: 22px; text-align: center; }
     h3 { font-size: 17px; }
     th, td { padding: 12px 10px; font-size: 13px; }
-    .lamp-light { width: 320px; }
+    .lamp-light { width: 320px; top: 30px; background: conic-gradient(from 140deg at 50% 0%, rgba(253, 224, 71, 0.14) 0deg, rgba(253, 224, 71, 0) 80deg); }
 }
-@media (max-width: 480px) {
-    .status-badge { padding: 4px 8px; font-size: 11px; }
-    input, select, .btn { padding: 12px 15px; font-size: 14px; }
-}
+@media (max-width: 480px) { .status-badge { padding: 4px 8px; font-size: 11px; } input, select, .btn { padding: 12px 15px; font-size: 14px; } }
