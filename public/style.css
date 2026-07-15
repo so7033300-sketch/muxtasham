@@ -11,7 +11,7 @@ body {
     justify-content: center;
     align-items: center;
     padding: 40px;
-    gap: 80px;
+    gap: 20px; /* Chiroq va formani yaqinlashtirish uchun gap kamaytirildi */
     overflow-x: hidden;
     position: relative;
     transition: background 0.4s ease;
@@ -30,7 +30,7 @@ body.lamp-on {
     flex-direction: column;
     align-items: center;
     z-index: 10;
-    /* Lampa va uning nuri fonda juda yengil sal-pal qimirlab turadi */
+    margin-right: -120px; /* 🔥 Chiroq stolining oxirgi qismi login ustiga chiqishi uchun o'ngga surildi */
     animation: lampSlightSwing 5s infinite ease-in-out alternate;
     transform-origin: top center;
 }
@@ -42,7 +42,7 @@ body.lamp-on {
 
 .lamp {
     position: absolute;
-    top: 150px; /* Zanjir uzunligi uchun joy */
+    top: 150px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -50,18 +50,17 @@ body.lamp-on {
     width: 100%;
 }
 
-/* 🔥 MUTLAQ TUZATISH: Ekranning eng yuqori chetidan boshlab 2 QATOR parallel baquvvat temir zanjir chizildi */
+/* Ekranning eng yuqori chetidan boshlab 2 QATOR parallel baquvvat temir zanjir */
 .lamp-container::before {
     content: '';
     position: absolute;
-    top: -150px; /* 🔥 Eng yuqori chetgacha (shiftgacha) 100% yetib boradi */
-    height: 300px; /* Chiroq qapqog'igacha to'g'ri tushadi */
-    width: 24px; /* 🔥 Ikki qator zanjir uchun eni kengaytirildi */
-    /* 🔥 Chap va o'ng tomondan tushuvchi 2 qator chiroyli bo'g'imli zanjir effekti */
+    top: -150px; 
+    height: 300px; 
+    width: 24px; 
     background: 
         repeating-linear-gradient(to bottom, #475569 0px, #475569 8px, #1e293b 8px, #1e293b 12px) left,
         repeating-linear-gradient(to bottom, #475569 0px, #475569 8px, #1e293b 8px, #1e293b 12px) right;
-    background-size: 4px 100%; /* Har bir zanjir qatorining qalinligi */
+    background-size: 4px 100%; 
     background-repeat: no-repeat;
     opacity: 0.85;
     z-index: 11;
@@ -168,7 +167,7 @@ body.lamp-on .lamp-light {
     transform: scale(1);
 }
 
-/* --- ASOSIY CRM LOGIN FORMASI (SHISHA EFFEKTI) --- */
+/* --- 🔥 SIZ CHIZGANDek: PASTROQQA SURILGAN LOGIN FORMASI --- */
 .login-form.glass-container {
     width: 100%;
     max-width: 400px;
@@ -180,6 +179,9 @@ body.lamp-on .lamp-light {
     border-radius: 20px;
     z-index: 2;
     position: relative;
+    margin-top: 140px; /* 🔥 Login qismi rasmda chizilganidek sezilarli darajada pastga tushirildi */
+    
+    /* Chiroq o'chiqligidagi mutlaq qorong'ulik */
     opacity: 0.01;
     filter: brightness(2%);
     transform: scale(0.97);
@@ -197,13 +199,13 @@ body.lamp-on .login-form.glass-container {
     transform: scale(1);
     pointer-events: auto;
 }
+
 .dashboard-container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 10px; z-index: 10; }
 .glass-container { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
 .card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 25px; margin-bottom: 25px; backdrop-filter: blur(10px); }
 h2, h3 { color: #ffffff; margin-bottom: 25px; font-weight: 600; letter-spacing: 0.5px; text-align: left; }
 h2 { font-size: 28px; }
 h3 { font-size: 20px; border-left: 4px solid #38bdf8; padding-left: 12px; }
-
 /* INPUT VA SELECT ELEMENTLARI */
 .input-group { position: relative; margin-bottom: 20px; width: 100%; }
 .form-group { margin-bottom: 25px; text-align: left; }
@@ -280,10 +282,11 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
 /* TELEFON ENIGA MOSLASHUV */
 @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; gap: 20px; } }
 @media (max-width: 768px) {
-    body { flex-direction: column; padding: 20px 10px; gap: 40px; justify-content: flex-start; }
-    .lamp-container { height: 350px; margin-bottom: -50px; transform: scale(0.85); animation: none !important; }
+    body { flex-direction: column; padding: 20px 10px; gap: 20px; justify-content: flex-start; }
+    .lamp-container { height: 350px; margin-bottom: -50px; transform: scale(0.85); animation: none !important; margin-right: 0 !important; }
     .lamp-string { animation: none !important; }
     .lamp-container::before { display: none !important; }
+    .login-form.glass-container { margin-top: 0 !important; }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
     .card { padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     .flex-header { flex-direction: column !important; gap: 15px; text-align: center; padding: 20px 15px !important; }
