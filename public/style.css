@@ -3,120 +3,141 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
 body {
-    /* Qorong'u ko'zga qulay to'q fon */
-    background: radial-gradient(circle at 30% 50%, #0a0a14 0%, #040408 100%);
+    background: radial-gradient(circle at 30% 50%, #06060c 0%, #020205 100%);
     color: #ffffff;
     min-height: 100vh;
     display: flex;
-    flex-direction: row; /* Elementlarni yonma-yon chiroyli joylashtirish uchun */
+    flex-direction: row;
     justify-content: center;
     align-items: center;
     padding: 40px;
-    gap: 50px;
+    gap: 80px;
     overflow-x: hidden;
     position: relative;
     transition: background 0.4s ease;
 }
 
 body.lamp-on {
-    background: radial-gradient(circle at 30% 50%, #161530 0%, #09081a 100%);
+    background: radial-gradient(circle at 30% 50%, #121124 0%, #060512 100%);
 }
 
-/* --- SIZ KO'RSATGAN CHAP TOMONDAGI JONLI CHIROQ BLOKI --- */
+/* --- RASMDAGI UZUN OYOQLI TORSHER CHIROG'I --- */
 .lamp-container {
     position: relative;
-    display: flex;
-    justify-content: center;
-    pointer-events: none;
-    z-index: 10;
-    width: 140px;
-    height: 220px;
-}
-
-.lamp {
-    position: relative;
-    width: 140px;
-    height: 220px;
+    width: 200px;
+    height: 450px; /* Chiroqning bo'yi rasmda turgandek uzun qilindi */
     display: flex;
     flex-direction: column;
     align-items: center;
+    pointer-events: none;
+    z-index: 10;
 }
 
+.lamp {
+    position: absolute;
+    bottom: 0; /* Poldan o'sib chiqishi uchun */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+}
+
+/* Chiroqning tepasidagi yarim doira qopqog'i */
 .lamp-shade {
-    width: 110px;
-    height: 55px;
-    background: linear-gradient(135deg, #cbd5e1 0%, #64748b 100%);
-    border-radius: 60px 60px 0 0;
-    position: relative;
+    width: 120px;
+    height: 50px;
+    background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
+    border-radius: 8px 8px 0 0;
+    position: absolute;
+    top: 120px; /* Chiroq tepasi */
     z-index: 12;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.6);
 }
 
-/* Mexanik osilib turgan chiroq ipi */
+/* Rasmda ko'rinib turgan chiroqning uzun ingichka temir oyog'i (Floor Stand) */
+.lamp::before {
+    content: '';
+    position: absolute;
+    top: 170px;
+    bottom: 10px;
+    width: 4px;
+    background: linear-gradient(to bottom, #475569, #0f172a);
+    z-index: 11;
+}
+
+/* Chiroq oyog'ining eng tagidagi og'ir dumaloq tirgagi (Base) */
+.lamp::after {
+    content: '';
+    position: absolute;
+    bottom: 5px;
+    width: 100px;
+    height: 8px;
+    background: #1e293b;
+    border-radius: 4px;
+    z-index: 11;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.8);
+}
+
+/* Chiroq ichidan osilib tushgan mexanik sariq ip (Tugma) */
 .lamp-string {
-    width: 3px;
-    height: 65px;
-    background: #475569;
-    position: relative;
-    z-index: 13;
+    width: 2px;
+    height: 45px;
+    background: #64748b;
+    position: absolute;
+    top: 170px;
+    left: calc(50% + 25px); /* Qopqoq ichidan chetroqdan tushadi */
+    z-index: 14;
     cursor: pointer;
-    pointer-events: auto; /* Click mantiqi faol */
+    pointer-events: auto;
     transition: transform 0.1s ease;
 }
 .lamp-string::after {
     content: '';
     position: absolute;
-    bottom: -10px;
+    bottom: -12px;
     left: -5px;
-    width: 13px;
-    height: 13px;
-    background: #f59e0b;
+    width: 12px;
+    height: 12px;
+    background: #fbbf24;
     border-radius: 50%;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
+    box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
 }
-.lamp-string:active {
-    transform: translateY(4px);
-}
-/* Chiroq nuri - exact spotlight tracking */
+.lamp-string:active { transform: translateY(3px); }
+/* --- RASMDAGI TO'G'RI CHIZIQLI UCHBURCHAK SPOTLIGHT --- */
 .lamp-light {
     position: absolute;
-    top: 50px;
-    width: 600px;
-    height: 600px;
-    /* Konusli nur yo'nalishi endi o'ng tomonga qarab yoritadi */
-    background: conic-gradient(from 110deg at 50% 0%, rgba(253, 224, 71, 0.14) 0deg, rgba(253, 224, 71, 0) 90deg);
-    filter: blur(20px);
+    top: 170px;
+    width: 550px;
+    height: 500px;
+    /* Rasmda ko'rinib turgan ikki cheti qat'iy kesilgan toza nur effekti */
+    background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg);
+    filter: blur(10px); /* Chetlari rasmda turgandek aniqroq bo'lishi uchun blur kamaytirildi */
     z-index: 5;
     opacity: 0;
     transform: scale(0.95);
-    transition: opacity 0.4s ease, transform 0.4s ease;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 body.lamp-on .lamp-light {
     opacity: 1;
     transform: scale(1);
-    animation: lampGlow 3s infinite alternate;
 }
 
-@keyframes lampGlow {
-    0% { opacity: 0.8; filter: blur(16px); }
-    100% { opacity: 1; filter: blur(22px); }
-}
-
-/* --- PREMIUM LOGIN OYNASI (CHIROQ O'CHIQligida RASYMDAGIDEK KO'RINMAYDI) --- */
+/* --- ASOSIY CRM LOGIN FORMASI (SHISHA EFFEKTI) --- */
 .login-form.glass-container {
     width: 100%;
     max-width: 400px;
     padding: 40px;
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.02);
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: 20px;
     z-index: 2;
     position: relative;
     
-    /* 100% Qorong'ulik effekti */
+    /* Chiroq o'chiqligidagi mutlaq qorong'ulik */
     opacity: 0.01;
     filter: brightness(2%);
     transform: scale(0.97);
@@ -130,7 +151,7 @@ body.lamp-on .login-form.glass-container {
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 25px 65px rgba(0, 0, 0, 0.65);
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
     transform: scale(1);
     pointer-events: auto;
 }
@@ -164,8 +185,8 @@ input:focus, select:focus {
     box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
 }
 .login-form input:focus {
-    border-color: #fef08a;
-    box-shadow: 0 0 15px rgba(253, 224, 71, 0.2);
+    border-color: #fbbf24;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.2);
 }
 
 /* PREMIUM TUGMALAR */
@@ -185,12 +206,11 @@ input:focus, select:focus {
 .btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
-    background: linear-gradient(135deg, #7dd3fc 0%, #075985 100%);
 }
 .login-btn {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(135deg, #fef08a 0%, #ca8a04 100%);
+    background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
     border: none;
     border-radius: 12px;
     color: #000000;
@@ -198,23 +218,21 @@ input:focus, select:focus {
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 20px rgba(234, 179, 8, 0.3);
+    box-shadow: 0 4px 20px rgba(217, 119, 6, 0.3);
     margin-top: 10px;
 }
 .login-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(234, 179, 8, 0.5);
+    box-shadow: 0 8px 30px rgba(217, 119, 6, 0.5);
 }
 .btn-disabled { background: #334155 !important; color: #94a3b8 !important; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; }
 
 /* GRID VA JADVALLAR */
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin-bottom: 25px; }
-
 .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; background: rgba(0, 0, 0, 0.2); }
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 600px; }
 th, td { padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
 th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
-tr:hover { background: rgba(255, 255, 255, 0.01); }
 
 /* STATUS BADGELARI */
 .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block; }
@@ -226,21 +244,15 @@ tr:hover { background: rgba(255, 255, 255, 0.01); }
 /* TELEFON ENIGA MOSLASHUV */
 @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; gap: 20px; } }
 @media (max-width: 768px) {
-    body { flex-direction: column; padding: 20px 10px; gap: 20px; }
-    .lamp-container { margin-bottom: 0; }
+    body { flex-direction: column; padding: 20px 10px; gap: 40px; justify-content: flex-start; }
+    .lamp-container { height: 320px; margin-bottom: -100px; transform: scale(0.8); }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
     .card { padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     .flex-header { flex-direction: column !important; gap: 15px; text-align: center; padding: 20px 15px !important; }
-    .flex-header h2 { text-align: center; font-size: 22px; }
-    .search-box { width: 100% !important; }
     .inline-form { flex-direction: column; width: 100%; gap: 5px; }
-    .inline-form input { width: 100% !important; }
-    .inline-form .btn { width: 100% !important; padding: 10px; }
     td div { flex-direction: row; width: 100%; gap: 5px; }
-    td .btn { padding: 8px 12px; font-size: 13px; }
-    h2 { font-size: 22px; text-align: center; }
-    h3 { font-size: 17px; }
+    h2 { font-size: 24px; text-align: center; }
     th, td { padding: 12px 10px; font-size: 13px; }
-    .lamp-light { width: 320px; top: 30px; background: conic-gradient(from 140deg at 50% 0%, rgba(253, 224, 71, 0.14) 0deg, rgba(253, 224, 71, 0) 80deg); }
+    .lamp-light { width: 340px; top: 160px; background: conic-gradient(from 130deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 100deg); }
 }
-@media (max-width: 480px) { .status-badge { padding: 4px 8px; font-size: 11px; } input, select, .btn { padding: 12px 15px; font-size: 14px; } }
+@media (max-width: 480px) { input, select, .btn { padding: 12px 15px; font-size: 14px; } }
