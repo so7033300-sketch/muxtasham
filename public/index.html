@@ -3,30 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduManage CRM - Tizimga Kirish</title>
+    <title>EduManage CRM - Kirish</title>
     <link rel="stylesheet" href="/style.css">
 </head>
-<body>
+<body class="lamp-on"> <!-- Boshlanishiga chiroq yoniq holatda bo'ladi -->
 
-    <div class="glass-container">
-        <h2>EduManage CRM</h2>
-        <h3 style="font-size: 14px; margin-top: -15px; color: #94a3b8; -webkit-text-fill-color: initial;">O'quv Markazi Boshqaruv Tizimi</h3>
-        
-        <form id="loginForm" onsubmit="event.preventDefault();">
-            <div class="input-group">
-                <input type="text" id="loginInput" placeholder="Loginni kiriting" required>
-            </div>
-            
-            <div class="input-group">
-                <input type="password" id="passwordInput" placeholder="Parolni kiriting" required>
-            </div>
-            
-            <button type="button" class="btn" onclick="executeLogin()">Tizimga Kirish</button>
-        </form>
-        
-        <div id="errorMessage" style="color: #f87171; text-align: center; margin-top: 15px; font-size: 14px; display: none;"></div>
+    <!-- Animatsiyali Chiroq Atrof-muhiti -->
+    <div class="lamp-container">
+        <div class="lamp">
+            <div class="lamp-shade"></div>
+            <!-- Chiroqni o'chirib-yoqadigan osilib turgan ip (Tugma) -->
+            <div class="lamp-string" onclick="toggleLamp()"></div>
+            <div class="lamp-light"></div>
+        </div>
     </div>
 
+    <!-- Premium Login Oynasi (Chiroq o'chsa avtomatik yashirinadi) -->
+    <div class="login-form glass-container">
+        <h2>Welcome</h2>
+        <div id="errorMessage" class="status-badge status-debt" style="display: none; width: 100%; margin-bottom: 20px; text-align: center;"></div>
+        
+        <form onsubmit="event.preventDefault(); executeLogin();">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="loginInput" placeholder="Enter name" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="passwordInput" placeholder="Enter Password" required>
+            </div>
+            
+            <button type="submit" class="login-btn">Sign In</button>
+        </form>
+    </div>
+
+    <!-- Chiroqni o'chirib-yoquvchi qisqa JS mantiqi -->
+    <script>
+        function toggleLamp() {
+            document.body.classList.toggle('lamp-on');
+        }
+    </script>
     <script src="/script.js"></script>
 </body>
 </html>
