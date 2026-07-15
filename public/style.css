@@ -24,7 +24,7 @@ body.lamp-on {
 .lamp-container {
     position: relative;
     width: 100%;
-    max-width: 400px;
+    max-width: 400px; /* Login formasi bilan kengligi bir xil qilindi */
     height: 160px; 
     display: flex;
     flex-direction: column;
@@ -44,7 +44,7 @@ body.lamp-on {
     position: absolute;
     top: 0;
     left: 50%;
-    transform: translateX(-50%); /* 🔥 Qat'iy markazlashtirildi */
+    transform: translateX(-50%);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -58,7 +58,7 @@ body.lamp-on {
     position: absolute;
     top: -200px; 
     left: 50%;
-    transform: translateX(-50%); /* 🔥 Zanjir roppa-rosa o'rtaga ulandi */
+    transform: translateX(-50%);
     height: 250px; 
     width: 24px; 
     background: 
@@ -80,7 +80,7 @@ body.lamp-on {
     position: absolute;
     top: 50px; 
     left: 50%;
-    transform: translateX(-50%); /* 🔥 Qalpoq siljishi 100% yo'qotildi */
+    transform: translateX(-50%);
     z-index: 12;
     box-shadow: 0 4px 15px rgba(0,0,0,0.6);
 }
@@ -91,7 +91,7 @@ body.lamp-on {
     background: #64748b;
     position: absolute;
     top: 66px; 
-    left: 50%; /* 🔥 Ip endi chetdan emas, qalpoqning aniq o'rtasidan tushadi */
+    left: 50%;
     transform: translateX(-50%);
     z-index: 14;
     cursor: pointer;
@@ -110,7 +110,7 @@ body.lamp-on {
     position: absolute;
     bottom: -14px;
     left: 50%;
-    transform: translateX(-50%); /* 🔥 Sariq sharcha ham milimetriga moslandi */
+    transform: translateX(-50%);
     width: 14px;
     height: 14px;
     background: #fbbf24;
@@ -119,16 +119,17 @@ body.lamp-on {
 }
 .lamp-string:active { transform: translateX(-50%) translateY(4px); }
 
-/* 🔥 MUTLAQ SIMMETRIK NUR: Endi teng ikkala tomonga ideal uchburchak formatda quyiladi */
+/* 🔥 MUTLAQ YECHIM: Nur kengligi login formasi bilan bir xil (100%) qilindi, endi qiyshayish imkonsiz! */
 .lamp-light {
     position: absolute;
     top: 66px;
     left: 50%;
-    transform: translateX(-50%) scale(0.95); /* Nur markazi 100% o'rtaga mixlandi */
-    width: 650px;
+    transform: translateX(-50%) scale(0.95);
+    width: 100%; /* Formadan chiqib ketmaydi */
     height: 600px;
-    background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg);
-    filter: blur(12px);
+    /* 180 graduslik to'g'ri simmetrik konus nur yo'nalishi */
+    background: conic-gradient(from 130deg at 50% 0%, rgba(251, 191, 36, 0.15) 0deg, rgba(251, 191, 36, 0) 100deg);
+    filter: blur(14px);
     z-index: 5;
     opacity: 0;
     transition: opacity 0.3s ease, transform 0.3s ease;
@@ -137,7 +138,7 @@ body.lamp-on {
 
 body.lamp-on .lamp-light {
     opacity: 1;
-    transform: translateX(-50%) scale(1);
+    transform: translateX(-50%) scale(1.1); /* Formani to'liq teng yoritishi uchun biroz kattalashtirildi */
 }
 
 /* --- ASOSIY CRM LOGIN FORMASI (SHISHA EFFEKTI) --- */
@@ -263,6 +264,6 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
     td div { flex-direction: row; width: 100%; gap: 5px; }
     h2 { font-size: 24px; text-align: center; }
     th, td { padding: 12px 10px; font-size: 13px; }
-    .lamp-light { width: 340px; top: 16px; background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg); }
+    .lamp-light { width: 100%; top: 16px; background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg); }
 }
 @media (max-width: 480px) { input, select, .btn { padding: 12px 15px; font-size: 14px; } }
