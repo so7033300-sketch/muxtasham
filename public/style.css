@@ -3,7 +3,8 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
 body {
-    background: radial-gradient(circle at 50% 50%, #06060c 0%, #020205 100%);
+    /* Ko'zga juda qulay, yumshoq to'q premium fon */
+    background: radial-gradient(circle at 50% 50%, #121124 0%, #060512 100%);
     color: #ffffff;
     min-height: 100vh;
     display: flex;
@@ -13,14 +14,9 @@ body {
     padding: 20px;
     overflow-x: hidden;
     position: relative;
-    transition: background 0.4s ease;
 }
 
-body.lamp-on {
-    background: radial-gradient(circle at 50% 50%, #121124 0%, #060512 100%);
-}
-
-/* --- TEPADAN OSILIB TURUVCHI SILLIQ CHIROQ BLOKI --- */
+/* --- TEPADAN OSILIB TURUVCHI DEKORATIV CHIROQ BLOKI --- */
 .lamp-container {
     position: relative;
     width: 100%;
@@ -84,7 +80,7 @@ body.lamp-on {
     z-index: 12;
     box-shadow: 0 4px 15px rgba(0,0,0,0.6);
 }
-/* Erkin silkinib turadigan simli ip */
+/* Erkin silkinib turadigan bezak simli ip va uning oltin sharchasi */
 .lamp-string {
     width: 2px;
     height: 95px;
@@ -94,8 +90,6 @@ body.lamp-on {
     left: 50%;
     transform: translateX(-50%);
     z-index: 14;
-    cursor: pointer;
-    pointer-events: auto;
     animation: stringWobble 3s infinite ease-in-out alternate;
     transform-origin: top center;
 }
@@ -117,56 +111,24 @@ body.lamp-on {
     border-radius: 50%;
     box-shadow: 0 0 15px rgba(251, 191, 36, 0.9);
 }
-.lamp-string:active { transform: translateX(-50%) translateY(4px); }
 
-/* 🔥 MUTLAQ TUZATISH: Nur radiusi atrofga keng tarqalishi uchun burchak va o'lchamlar sezilarli kattalashtirildi */
-.lamp-light {
-    position: absolute;
-    top: 66px;
-    left: 50%;
-    transform: translateX(-50%) scale(0.9);
-    width: 800px; /* 🔥 Torayib qolmasligi uchun umumiy nur maydoni kengaytirildi */
-    height: 700px;
-    /* 🔥 Nur burchagi 'from 145deg' va ochilishi '90deg' qilinib, teng va juda keng tarqaladigan holatga keltirildi */
-    background: conic-gradient(from 135deg at 50% 0%, rgba(251, 191, 36, 0.16) 0deg, rgba(251, 191, 36, 0) 90deg);
-    filter: blur(20px); /* Keng nur tabiatiga mos yumshoq tarqalish */
-    z-index: 5;
-    opacity: 0;
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    pointer-events: none;
-}
+/* 🔥 NUr EFFEKTI BUTUNLAY OLIB TASHALDI (.lamp-light o'chirildi) */
 
-body.lamp-on .lamp-light {
-    opacity: 1;
-    transform: translateX(-50%) scale(1);
-}
-
-/* --- ASOSIY CRM LOGIN FORMASI (SHISHA EFFEKTI) --- */
+/* --- 🔥 PREMIUM LOGIN FORMASI: Endi chiroq o'chib-yonishiga bog'liq bo'lmasdan har doim yorqin va ochiq turadi --- */
 .login-form.glass-container {
     width: 100%;
     max-width: 400px;
     padding: 40px;
     background: rgba(255, 255, 255, 0.02);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 20px;
-    z-index: 2;
-    position: relative;
-    opacity: 0.01;
-    filter: brightness(2%);
-    transform: scale(0.97);
-    pointer-events: none;
-    transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-body.lamp-on .login-form.glass-container {
-    opacity: 1;
-    filter: brightness(100%);
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
     box-shadow: 0 30px 70px rgba(0, 0, 0, 0.7);
+    z-index: 2;
+    position: relative;
+    opacity: 1;
+    filter: brightness(100%);
     transform: scale(1);
     pointer-events: auto;
 }
@@ -253,7 +215,7 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
 /* TELEFON ENIGA MOSLASHUV */
 @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; gap: 20px; } }
 @media (max-width: 768px) {
-    body { flex-direction: column; padding: 20px 10px; gap: 20px; justify-content: flex-start; }
+    body { flex-direction: column; padding: 20px 10px; gap: 40px; justify-content: flex-start; }
     .lamp-container { height: 200px; margin-bottom: 10px; transform: scale(0.85); animation: none !important; }
     .lamp-string { animation: none !important; }
     .lamp-container::before { display: none !important; }
@@ -264,6 +226,5 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
     td div { flex-direction: row; width: 100%; gap: 5px; }
     h2 { font-size: 24px; text-align: center; }
     th, td { padding: 12px 10px; font-size: 13px; }
-    .lamp-light { width: 100%; top: 16px; background: conic-gradient(from 135deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg); }
 }
 @media (max-width: 480px) { input, select, .btn { padding: 12px 15px; font-size: 14px; } }
