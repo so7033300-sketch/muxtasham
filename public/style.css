@@ -7,11 +7,11 @@ body {
     color: #ffffff;
     min-height: 100vh;
     display: flex;
-    flex-direction: row;
+    /* 🔥 MUTLAQ TUZATISH: Elementlar endi yonma-yon emas, tepadagi chiroq va pastdagi login ustma-ust tushadi */
+    flex-direction: column; 
     justify-content: center;
     align-items: center;
-    padding: 40px;
-    gap: 20px; /* Chiroq va formani yaqinlashtirish uchun gap kamaytirildi */
+    padding: 20px;
     overflow-x: hidden;
     position: relative;
     transition: background 0.4s ease;
@@ -21,16 +21,17 @@ body.lamp-on {
     background: radial-gradient(circle at 50% 50%, #121124 0%, #060512 100%);
 }
 
-/* --- ZANJIR BILAN TEPADAN OSILIB TURUVCHI JONLI CHIROQ --- */
+/* --- 🔥 SIZ SO'RAGANDEK: LOGINNING TEPASIDA MUKAMMAL TURUVCHI CHIROQ BLOKI --- */
 .lamp-container {
     position: relative;
     width: 250px;
-    height: 500px;
+    height: 340px; /* Bo'yi login bilan chiroyli uchrashishi uchun moslandi */
     display: flex;
     flex-direction: column;
     align-items: center;
     z-index: 10;
-    margin-right: -120px; /* 🔥 Chiroq stolining oxirgi qismi login ustiga chiqishi uchun o'ngga surildi */
+    margin-bottom: -50px; /* 🔥 Chiroq stolini login formasining ustiga aniq mindirish uchun minusli chegara */
+    margin-right: 0 !important; /* Yon tomondagi siljishlar butunlay nollatildi */
     animation: lampSlightSwing 5s infinite ease-in-out alternate;
     transform-origin: top center;
 }
@@ -42,20 +43,20 @@ body.lamp-on {
 
 .lamp {
     position: absolute;
-    top: 150px;
+    top: 0; /* Zanjir va qopqoq mutlaqo markaziy chiziqda */
     display: flex;
     flex-direction: column;
     align-items: center;
-    height: 350px;
+    height: 100%;
     width: 100%;
 }
 
-/* Ekranning eng yuqori chetidan boshlab 2 QATOR parallel baquvvat temir zanjir */
+/* Shiftgacha cho'zilgan 2 qatorli parallel baquvvat zanjir */
 .lamp-container::before {
     content: '';
     position: absolute;
-    top: -150px; 
-    height: 300px; 
+    top: -200px; /* Ekranning eng yuqori chetigacha uzilmay yetib boradi */
+    height: 250px; 
     width: 24px; 
     background: 
         repeating-linear-gradient(to bottom, #475569 0px, #475569 8px, #1e293b 8px, #1e293b 12px) left,
@@ -67,14 +68,14 @@ body.lamp-on {
     filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.6));
 }
 
-/* Nafis va ingichka qopqoq */
+/* Nafis ingichka qopqoq */
 .lamp-shade {
     width: 130px;
     height: 16px;
     background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
     border-radius: 4px 4px 0 0;
     position: absolute;
-    top: 0;
+    top: 50px; /* Zanjirdan keyingi boshlanish joyi */
     z-index: 12;
     box-shadow: 0 4px 15px rgba(0,0,0,0.6);
 }
@@ -83,8 +84,8 @@ body.lamp-on {
 .lamp::before {
     content: '';
     position: absolute;
-    top: 16px;
-    height: 269px;
+    top: 66px;
+    height: 219px;
     width: 4px;
     background: linear-gradient(to bottom, #475569, #1e293b);
     z-index: 11;
@@ -101,13 +102,13 @@ body.lamp-on {
     border-radius: 4px;
     z-index: 11;
 }
-/* Uzun va havoda lampaga mos ravishda sal-pal ko'proq o'ynab turadigan simli ip */
+/* Uzun va havoda erkin silkinib turadigan simli ip */
 .lamp-string {
     width: 2px;
     height: 95px;
     background: #64748b;
     position: absolute;
-    top: 16px;
+    top: 66px;
     left: calc(50% + 15px);
     z-index: 14;
     cursor: pointer;
@@ -138,7 +139,7 @@ body.lamp-on {
 .lamp-container::after {
     content: '';
     position: absolute;
-    top: 435px;
+    top: 285px; /* Lampa tagiga aniq joylashtirildi */
     width: 200px;
     height: 12px;
     background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
@@ -147,12 +148,12 @@ body.lamp-on {
     box-shadow: 0 10px 25px rgba(0,0,0,0.6);
 }
 
-/* --- TENG IKKI TOMONGA TUSHUVCHI TOZA NUR --- */
+/* Chiroq nuri - endi tepadagi chiroqdan to'g'ridan-to'g'ri pastdagi login ustiga tushadi */
 .lamp-light {
     position: absolute;
-    top: 16px;
+    top: 66px;
     width: 600px;
-    height: 500px;
+    height: 600px;
     background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg);
     filter: blur(12px);
     z-index: 5;
@@ -167,7 +168,7 @@ body.lamp-on .lamp-light {
     transform: scale(1);
 }
 
-/* --- 🔥 SIZ CHIZGANDek: PASTROQQA SURILGAN LOGIN FORMASI --- */
+/* --- PREMIUM LOGIN FORMASI (CHIROQNING TAGIDA MUKAMMAL ZANJIRLANGAN) --- */
 .login-form.glass-container {
     width: 100%;
     max-width: 400px;
@@ -179,9 +180,9 @@ body.lamp-on .lamp-light {
     border-radius: 20px;
     z-index: 2;
     position: relative;
-    margin-top: 140px; /* 🔥 Login qismi rasmda chizilganidek sezilarli darajada pastga tushirildi */
+    margin-top: 0 !important; /* Ortiqcha siljish masofalari tozalandi */
     
-    /* Chiroq o'chiqligidagi mutlaq qorong'ulik */
+    /* Kirgandagi qat'iy qorong'ulik */
     opacity: 0.01;
     filter: brightness(2%);
     transform: scale(0.97);
@@ -283,10 +284,9 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
 @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; gap: 20px; } }
 @media (max-width: 768px) {
     body { flex-direction: column; padding: 20px 10px; gap: 20px; justify-content: flex-start; }
-    .lamp-container { height: 350px; margin-bottom: -50px; transform: scale(0.85); animation: none !important; margin-right: 0 !important; }
+    .lamp-container { height: 350px; margin-bottom: -50px; transform: scale(0.85); animation: none !important; }
     .lamp-string { animation: none !important; }
     .lamp-container::before { display: none !important; }
-    .login-form.glass-container { margin-top: 0 !important; }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
     .card { padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     .flex-header { flex-direction: column !important; gap: 15px; text-align: center; padding: 20px 15px !important; }
