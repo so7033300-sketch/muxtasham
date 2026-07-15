@@ -3,7 +3,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
 body {
-    background: radial-gradient(circle at 30% 50%, #06060c 0%, #020205 100%);
+    background: radial-gradient(circle at 50% 50%, #06060c 0%, #020205 100%);
     color: #ffffff;
     min-height: 100vh;
     display: flex;
@@ -18,24 +18,25 @@ body {
 }
 
 body.lamp-on {
-    background: radial-gradient(circle at 30% 50%, #121124 0%, #060512 100%);
+    background: radial-gradient(circle at 50% 50%, #121124 0%, #060512 100%);
 }
 
-/* --- RASMDAGI UZUN OYOQLI TORSHER CHIROG'I --- */
+/* --- CHIROQNI TEPAROQQA KO'TARISH VA POZITSIYASI --- */
 .lamp-container {
     position: relative;
     width: 200px;
-    height: 450px; /* Chiroqning bo'yi rasmda turgandek uzun qilindi */
+    height: 480px; /* Bo'yi biroz balandlatildi */
     display: flex;
     flex-direction: column;
     align-items: center;
     pointer-events: none;
     z-index: 10;
+    margin-top: -60px; /* 🔥 Chiroq rasmga qaraganda teparoqqa ko'tarildi */
 }
 
 .lamp {
     position: absolute;
-    bottom: 0; /* Poldan o'sib chiqishi uchun */
+    bottom: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -43,30 +44,27 @@ body.lamp-on {
     width: 100%;
 }
 
-/* Chiroqning tepasidagi yarim doira qopqog'i */
 .lamp-shade {
     width: 120px;
     height: 50px;
     background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
     border-radius: 8px 8px 0 0;
     position: absolute;
-    top: 120px; /* Chiroq tepasi */
+    top: 50px; /* Tepaga surildi */
     z-index: 12;
     box-shadow: 0 4px 15px rgba(0,0,0,0.6);
 }
 
-/* Rasmda ko'rinib turgan chiroqning uzun ingichka temir oyog'i (Floor Stand) */
 .lamp::before {
     content: '';
     position: absolute;
-    top: 170px;
+    top: 100px;
     bottom: 10px;
     width: 4px;
     background: linear-gradient(to bottom, #475569, #0f172a);
     z-index: 11;
 }
 
-/* Chiroq oyog'ining eng tagidagi og'ir dumaloq tirgagi (Base) */
 .lamp::after {
     content: '';
     position: absolute;
@@ -79,14 +77,13 @@ body.lamp-on {
     box-shadow: 0 4px 10px rgba(0,0,0,0.8);
 }
 
-/* Chiroq ichidan osilib tushgan mexanik sariq ip (Tugma) */
 .lamp-string {
     width: 2px;
     height: 45px;
     background: #64748b;
     position: absolute;
-    top: 170px;
-    left: calc(50% + 25px); /* Qopqoq ichidan chetroqdan tushadi */
+    top: 100px;
+    left: calc(50% + 25px);
     z-index: 14;
     cursor: pointer;
     pointer-events: auto;
@@ -104,15 +101,15 @@ body.lamp-on {
     box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
 }
 .lamp-string:active { transform: translateY(3px); }
-/* --- RASMDAGI TO'G'RI CHIZIQLI UCHBURCHAK SPOTLIGHT --- */
+/* --- NUR ENdi TENG IKKI TOMONGA UCHBURCHAK BO'LIB TUSHADI --- */
 .lamp-light {
     position: absolute;
-    top: 170px;
-    width: 550px;
+    top: 100px;
+    width: 600px;
     height: 500px;
-    /* Rasmda ko'rinib turgan ikki cheti qat'iy kesilgan toza nur effekti */
+    /* 🔥 Markazlashtirilgan gradient nur: teng ikki tomonga 180 gradusda bir xil ochiladi */
     background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg);
-    filter: blur(10px); /* Chetlari rasmda turgandek aniqroq bo'lishi uchun blur kamaytirildi */
+    filter: blur(12px);
     z-index: 5;
     opacity: 0;
     transform: scale(0.95);
@@ -124,7 +121,7 @@ body.lamp-on .lamp-light {
     transform: scale(1);
 }
 
-/* --- ASOSIY CRM LOGIN FORMASI (SHISHA EFFEKTI) --- */
+/* --- ASOSIY CRM LOGIN FORMASI --- */
 .login-form.glass-container {
     width: 100%;
     max-width: 400px;
@@ -136,8 +133,6 @@ body.lamp-on .lamp-light {
     border-radius: 20px;
     z-index: 2;
     position: relative;
-    
-    /* Chiroq o'chiqligidagi mutlaq qorong'ulik */
     opacity: 0.01;
     filter: brightness(2%);
     transform: scale(0.97);
@@ -203,10 +198,7 @@ input:focus, select:focus {
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(56, 189, 248, 0.2);
 }
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
-}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4); }
 .login-btn {
     width: 100%;
     padding: 15px;
@@ -221,10 +213,7 @@ input:focus, select:focus {
     box-shadow: 0 4px 20px rgba(217, 119, 6, 0.3);
     margin-top: 10px;
 }
-.login-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(217, 119, 6, 0.5);
-}
+.login-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(217, 119, 6, 0.5); }
 .btn-disabled { background: #334155 !important; color: #94a3b8 !important; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; }
 
 /* GRID VA JADVALLAR */
@@ -245,7 +234,7 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
 @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; gap: 20px; } }
 @media (max-width: 768px) {
     body { flex-direction: column; padding: 20px 10px; gap: 40px; justify-content: flex-start; }
-    .lamp-container { height: 320px; margin-bottom: -100px; transform: scale(0.8); }
+    .lamp-container { height: 320px; margin-bottom: -100px; transform: scale(0.8); margin-top: 0; }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
     .card { padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     .flex-header { flex-direction: column !important; gap: 15px; text-align: center; padding: 20px 15px !important; }
@@ -253,6 +242,6 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
     td div { flex-direction: row; width: 100%; gap: 5px; }
     h2 { font-size: 24px; text-align: center; }
     th, td { padding: 12px 10px; font-size: 13px; }
-    .lamp-light { width: 340px; top: 160px; background: conic-gradient(from 130deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 100deg); }
+    .lamp-light { width: 340px; top: 90px; background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg); }
 }
 @media (max-width: 480px) { input, select, .btn { padding: 12px 15px; font-size: 14px; } }
