@@ -3,10 +3,11 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
 
 body {
-    background: #050508; /* Chiroq o'chgandagi fon */
+    background: radial-gradient(circle at 50% 50%, #0a0a14 0%, #040408 100%);
     color: #ffffff;
     min-height: 100vh;
     display: flex;
+    flex-direction: column; /* Elementlar markazda chiroyli joylashishi uchun */
     justify-content: center;
     align-items: center;
     padding: 20px;
@@ -15,82 +16,78 @@ body {
     transition: background 0.4s ease;
 }
 
-/* Chiroq yonganda login foni biroz yorishadi */
 body.lamp-on {
-    background: #0f0e17;
+    background: radial-gradient(circle at 50% 50%, #161530 0%, #09081a 100%);
 }
 
-/* --- PREMIUM INTERFEYS: CHIROQ VA NUR ANIMATSIYASI --- */
+/* --- SIZ KO'RSATGAN INTERFEYS: EXACT CENTERED LAMP --- */
 .lamp-container {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    position: relative; /* Mutlaq tepadan formaning ustiga aniq tushirildi */
     width: 100%;
-    height: 100vh;
+    max-width: 400px;
     display: flex;
     justify-content: center;
     pointer-events: none;
-    z-index: 1;
+    z-index: 10;
+    margin-bottom: -45px; /* Chiroq va formani bir-biriga mukammal zanjirband qiladi */
 }
 
 .lamp {
     position: relative;
-    width: 120px;
-    height: 220px;
+    width: 140px;
+    height: 140px;
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
 .lamp-shade {
-    width: 100px;
-    height: 60px;
-    background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%);
-    border-radius: 50px 50px 0 0;
+    width: 110px;
+    height: 55px;
+    background: linear-gradient(135deg, #cbd5e1 0%, #64748b 100%);
+    border-radius: 60px 60px 0 0;
     position: relative;
-    z-index: 3;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    z-index: 12;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.7);
 }
 
-/* Chiroqning bosiluvchi mexanik ipi */
+/* Mexanik osilib turgan chiroq ipi */
 .lamp-string {
     width: 3px;
-    height: 70px;
-    background: #64748b;
+    height: 55px;
+    background: #475569;
     position: relative;
-    z-index: 4;
+    z-index: 13;
     cursor: pointer;
-    pointer-events: auto;
+    pointer-events: auto; /* Tortish rejimi faol */
     transition: transform 0.1s ease;
 }
 .lamp-string::after {
     content: '';
     position: absolute;
-    bottom: -8px;
-    left: -4px;
-    width: 11px;
-    height: 11px;
+    bottom: -10px;
+    left: -5px;
+    width: 13px;
+    height: 13px;
     background: #f59e0b;
     border-radius: 50%;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.6);
 }
 .lamp-string:active {
     transform: translateY(4px);
 }
-
-/* Chiroq nuri */
+/* Chiroq nuri - exact conic spotlight */
 .lamp-light {
     position: absolute;
     top: 50px;
-    width: 450px;
-    height: 650px;
-    background: conic-gradient(from 145deg at 50% 0%, rgba(254, 240, 138, 0.18) 0deg, rgba(254, 240, 138, 0) 70deg);
-    filter: blur(12px);
-    z-index: 2;
+    width: 500px;
+    height: 550px;
+    background: conic-gradient(from 140deg at 50% 0%, rgba(253, 224, 71, 0.15) 0deg, rgba(253, 224, 71, 0) 80deg);
+    filter: blur(18px);
+    z-index: 5;
     opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: scale(0.95);
+    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 body.lamp-on .lamp-light {
@@ -100,11 +97,11 @@ body.lamp-on .lamp-light {
 }
 
 @keyframes lampGlow {
-    0% { opacity: 0.85; filter: blur(10px); }
-    100% { opacity: 1; filter: blur(14px); }
+    0% { opacity: 0.8; filter: blur(14px); }
+    100% { opacity: 1; filter: blur(20px); }
 }
 
-/* --- ASOSIY CRM PANEL KONTEYNERLARI (ADMIN VA USTOZ SHISHA STILLARI) --- */
+/* --- ASOSIY CRM PANEL KONTEYNERLARI (SHISHA STIllARI) --- */
 .glass-container {
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(12px);
@@ -117,14 +114,14 @@ body.lamp-on .lamp-light {
     transition: all 0.3s ease;
 }
 
-/* Login formasi uchun maxsus animatsiya (Chiroq o'chsa ko'rinmaydi) */
+/* Siz ko'rsatgan qizil doiradagi mukammal shakl */
 .login-form.glass-container {
     max-width: 400px;
-    z-index: 5;
+    z-index: 2;
     position: relative;
-    opacity: 0.02;
-    filter: brightness(10%);
-    transform: scale(0.98);
+    opacity: 0.01;
+    filter: brightness(5%);
+    transform: scale(0.97);
     pointer-events: none;
     transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease, box-shadow 0.4s ease;
 }
@@ -135,7 +132,7 @@ body.lamp-on .login-form.glass-container {
     backdrop-filter: blur(25px);
     -webkit-backdrop-filter: blur(25px);
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 25px 65px rgba(0, 0, 0, 0.65);
     transform: scale(1);
     pointer-events: auto;
 }
@@ -160,7 +157,6 @@ body.lamp-on .login-form.glass-container {
 h2, h3 { color: #ffffff; margin-bottom: 25px; font-weight: 600; letter-spacing: 0.5px; text-align: left; }
 h2 { font-size: 28px; }
 h3 { font-size: 20px; border-left: 4px solid #38bdf8; padding-left: 12px; }
-
 /* INPUT VA SELECT ELEMENTLARI */
 .input-group { position: relative; margin-bottom: 20px; width: 100%; }
 .form-group { margin-bottom: 25px; text-align: left; }
@@ -185,10 +181,10 @@ input:focus, select:focus {
 }
 .login-form input:focus {
     border-color: #fef08a;
-    box-shadow: 0 0 15px rgba(254, 240, 138, 0.2);
+    box-shadow: 0 0 15px rgba(253, 224, 71, 0.2);
 }
 
-/* PREMIUM TUGMALAR (LOGIN TUGMASI BILAN) */
+/* PREMIUM TUGMALAR */
 .btn {
     width: 100%;
     padding: 14px;
@@ -227,7 +223,7 @@ input:focus, select:focus {
 }
 .btn-disabled { background: #334155 !important; color: #94a3b8 !important; cursor: not-allowed !important; transform: none !important; box-shadow: none !important; }
 
-/* GRID VA RESPONSIVE JADVALLAR */
+/* GRID VA JADVALLAR */
 .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin-bottom: 25px; }
 
 .table-responsive { width: 100%; overflow-x: auto; border-radius: 12px; background: rgba(0, 0, 0, 0.2); }
@@ -243,11 +239,10 @@ tr:hover { background: rgba(255, 255, 255, 0.01); }
 .time-badge { background: rgba(167, 139, 250, 0.15); color: #c084fc; padding: 4px 10px; border-radius: 8px; font-size: 12px; }
 .debtor-row { background: rgba(239, 68, 68, 0.04) !important; }
 
-/* --- 100% SMARTFON VA PLANSHETLAR MEDIA REJIMLARI --- */
+/* --- TELEFON REJIMLARIMIZ --- */
 @media (max-width: 1024px) {
     .grid-2 { grid-template-columns: 1fr; gap: 20px; }
 }
-
 @media (max-width: 768px) {
     body { padding: 10px; }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
@@ -265,7 +260,6 @@ tr:hover { background: rgba(255, 255, 255, 0.01); }
     th, td { padding: 12px 10px; font-size: 13px; }
     .lamp-light { width: 320px; }
 }
-
 @media (max-width: 480px) {
     .status-badge { padding: 4px 8px; font-size: 11px; }
     input, select, .btn { padding: 12px 15px; font-size: 14px; }
