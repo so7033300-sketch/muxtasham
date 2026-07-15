@@ -6,21 +6,21 @@
     <title>EduManage CRM - Kirish</title>
     <link rel="stylesheet" href="/style.css">
 </head>
-<body class="lamp-on"> <!-- Boshlanishiga chiroq yoniq holatda bo'ladi -->
+<body> <!-- 🔥 Tizim ochilganda chiroq majburiy 100% o'chiq va qorong'u rejimda yuklanadi -->
 
     <!-- Animatsiyali Chiroq Atrof-muhiti -->
     <div class="lamp-container">
         <div class="lamp">
             <div class="lamp-shade"></div>
-            <!-- Chiroqni o'chirib-yoqadigan osilib turgan ip (Tugma) -->
+            <!-- Chiroqni o'chirib-yoqadigan osilib turgan ip -->
             <div class="lamp-string" onclick="toggleLamp()"></div>
             <div class="lamp-light"></div>
         </div>
     </div>
 
-    <!-- Premium Login Oynasi (Chiroq o'chsa avtomatik yashirinadi) -->
+    <!-- Premium Login Oynasi -->
     <div class="login-form glass-container">
-        <h2>Welcome</h2>
+        <h2>Welcome to EduManage CRM</h2>
         <div id="errorMessage" class="status-badge status-debt" style="display: none; width: 100%; margin-bottom: 20px; text-align: center;"></div>
         
         <form onsubmit="event.preventDefault(); executeLogin();">
@@ -38,11 +38,16 @@
         </form>
     </div>
 
-    <!-- Chiroqni o'chirib-yoquvchi qisqa JS mantiqi -->
+    <!-- Brauzer xotirasini qulflovchi va chiroqni boshqaruvchi silliq JS mantiqi -->
     <script>
         function toggleLamp() {
             document.body.classList.toggle('lamp-on');
         }
+        
+        // Majburiy xavfsizlik qoidasi: Sayt yangilanganda keshni tozalab, chiroqni o'chirib qo'yadi
+        window.addEventListener('DOMContentLoaded', () => {
+            document.body.classList.remove('lamp-on');
+        });
     </script>
     <script src="/script.js"></script>
 </body>
