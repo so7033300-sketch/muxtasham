@@ -21,7 +21,7 @@ body.lamp-on {
     background: radial-gradient(circle at 50% 50%, #121124 0%, #060512 100%);
 }
 
-/* --- RASMDAGI UZUN OYOQLI STOL USTIDAGI JONLI CHIROQ --- */
+/* --- ZANJIR BILAN ENg TEPADAN OSILIB TURUVCHI JONLI CHIROQ --- */
 .lamp-container {
     position: relative;
     width: 250px;
@@ -30,19 +30,19 @@ body.lamp-on {
     flex-direction: column;
     align-items: center;
     z-index: 10;
-    /* CHIROQ TAYANCHI VA NUR BILAN BIRGA SEKIN TEBRANIB TURADI */
-    animation: lampSwing 4s infinite ease-in-out alternate;
+    /* Lampa va uning nuri fonda juda yengil, nafis sal-pal qimirlab turadi */
+    animation: lampSlightSwing 5s infinite ease-in-out alternate;
     transform-origin: top center;
 }
 
-@keyframes lampSwing {
-    0% { transform: rotate(-3deg); }
-    100% { transform: rotate(3deg); }
+@keyframes lampSlightSwing {
+    0% { transform: rotate(-1.5deg); }
+    100% { transform: rotate(1.5deg); }
 }
 
 .lamp {
     position: absolute;
-    top: 50px;
+    top: 150px; /* Zanjir uchun tepadan joy ochildi */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -50,10 +50,29 @@ body.lamp-on {
     width: 100%;
 }
 
-/* 🔥 SIZ SO'RAGANDEK: Tepa qalpoq qismi realistik darajada nafis va ingichka qilindi */
+/* ENg TEPADAN (SHIFTdan) Lampa QAPQOG'IGACHA TUSHADIGAN CHIROYLI ZANJIR EFFEKTI */
+.lamp-container::before {
+    content: '🔗';
+    font-size: 16px;
+    letter-spacing: -2px;
+    color: #475569;
+    text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    position: absolute;
+    top: -40px;
+    height: 190px;
+    width: 20px;
+    text-align: center;
+    word-break: break-all;
+    overflow: hidden;
+    line-height: 12px;
+    opacity: 0.7;
+    z-index: 11;
+}
+
+/* Nafis va ingichka qopqoq */
 .lamp-shade {
     width: 130px;
-    height: 16px; /* Qalinligi butunlay ingichkalashtirildi */
+    height: 16px;
     background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
     border-radius: 4px 4px 0 0;
     position: absolute;
@@ -66,7 +85,7 @@ body.lamp-on {
 .lamp::before {
     content: '';
     position: absolute;
-    top: 16px; /* Ingichka qalpoq ostidan boshlanadi */
+    top: 16px;
     height: 269px;
     width: 4px;
     background: linear-gradient(to bottom, #475569, #1e293b);
@@ -84,20 +103,18 @@ body.lamp-on {
     border-radius: 4px;
     z-index: 11;
 }
-
-/* 🔥 SIZ CHIZGANDek: Yoqib-o'chiradigan haqiqiy osilib, o'ynab turadigan simli ip */
+/* Uzun va havoda lampaga mos ravishda sal-pal ko'proq o'ynab turadigan simli ip */
 .lamp-string {
     width: 2px;
-    height: 60px;
+    height: 95px;
     background: #64748b;
     position: absolute;
-    top: 16px; /* Qalpoqning pastki qismidan chiqadi */
-    left: calc(50% + 15px); /* To'g'ri o'rtaga, o'qning yoniga mukammal ko'chirildi */
+    top: 16px;
+    left: calc(50% + 15px);
     z-index: 14;
     cursor: pointer;
     pointer-events: auto;
-    /* Ip mustaqil o'ynab, tebranib turishi uchun unikal animatsiya */
-    animation: stringWobble 2.5s infinite ease-in-out alternate;
+    animation: stringWobble 3s infinite ease-in-out alternate;
     transform-origin: top center;
 }
 
@@ -123,7 +140,7 @@ body.lamp-on {
 .lamp-container::after {
     content: '';
     position: absolute;
-    top: 335px;
+    top: 435px;
     width: 200px;
     height: 12px;
     background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
@@ -132,7 +149,7 @@ body.lamp-on {
     box-shadow: 0 10px 25px rgba(0,0,0,0.6);
 }
 
-/* --- TENG IKKI TOMONGA UCHBURCHAK BO'LIB TUSHUVCHI TOZA NUR --- */
+/* --- TENG IKKI TOMONGA TUSHUVCHI TOZA NUR --- */
 .lamp-light {
     position: absolute;
     top: 16px;
@@ -181,7 +198,6 @@ body.lamp-on .login-form.glass-container {
     transform: scale(1);
     pointer-events: auto;
 }
-
 .dashboard-container { width: 100%; max-width: 1400px; margin: 0 auto; padding: 10px; z-index: 10; }
 .glass-container { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.07); border-radius: 20px; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
 .card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 25px; margin-bottom: 25px; backdrop-filter: blur(10px); }
@@ -254,7 +270,6 @@ input:focus, select:focus {
 table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; min-width: 600px; }
 th, td { padding: 16px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
 th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
-tr:hover { background: rgba(255, 255, 255, 0.01); }
 
 /* STATUS BADGELARI */
 .status-badge { padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; display: inline-block; }
@@ -269,6 +284,7 @@ tr:hover { background: rgba(255, 255, 255, 0.01); }
     body { flex-direction: column; padding: 20px 10px; gap: 40px; justify-content: flex-start; }
     .lamp-container { height: 350px; margin-bottom: -50px; transform: scale(0.85); animation: none !important; }
     .lamp-string { animation: none !important; }
+    .lamp-container::before { display: none !important; }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
     .card { padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     .flex-header { flex-direction: column !important; gap: 15px; text-align: center; padding: 20px 15px !important; }
