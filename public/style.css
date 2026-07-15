@@ -24,7 +24,7 @@ body.lamp-on {
 .lamp-container {
     position: relative;
     width: 100%;
-    max-width: 400px; /* Login formasi bilan kengligi bir xil qilindi */
+    max-width: 400px;
     height: 160px; 
     display: flex;
     flex-direction: column;
@@ -119,17 +119,17 @@ body.lamp-on {
 }
 .lamp-string:active { transform: translateX(-50%) translateY(4px); }
 
-/* 🔥 MUTLAQ YECHIM: Nur kengligi login formasi bilan bir xil (100%) qilindi, endi qiyshayish imkonsiz! */
+/* 🔥 MUTLAQ TUZATISH: Nur radiusi atrofga keng tarqalishi uchun burchak va o'lchamlar sezilarli kattalashtirildi */
 .lamp-light {
     position: absolute;
     top: 66px;
     left: 50%;
-    transform: translateX(-50%) scale(0.95);
-    width: 100%; /* Formadan chiqib ketmaydi */
-    height: 600px;
-    /* 180 graduslik to'g'ri simmetrik konus nur yo'nalishi */
-    background: conic-gradient(from 130deg at 50% 0%, rgba(251, 191, 36, 0.15) 0deg, rgba(251, 191, 36, 0) 100deg);
-    filter: blur(14px);
+    transform: translateX(-50%) scale(0.9);
+    width: 800px; /* 🔥 Torayib qolmasligi uchun umumiy nur maydoni kengaytirildi */
+    height: 700px;
+    /* 🔥 Nur burchagi 'from 145deg' va ochilishi '90deg' qilinib, teng va juda keng tarqaladigan holatga keltirildi */
+    background: conic-gradient(from 135deg at 50% 0%, rgba(251, 191, 36, 0.16) 0deg, rgba(251, 191, 36, 0) 90deg);
+    filter: blur(20px); /* Keng nur tabiatiga mos yumshoq tarqalish */
     z-index: 5;
     opacity: 0;
     transition: opacity 0.3s ease, transform 0.3s ease;
@@ -138,7 +138,7 @@ body.lamp-on {
 
 body.lamp-on .lamp-light {
     opacity: 1;
-    transform: translateX(-50%) scale(1.1); /* Formani to'liq teng yoritishi uchun biroz kattalashtirildi */
+    transform: translateX(-50%) scale(1);
 }
 
 /* --- ASOSIY CRM LOGIN FORMASI (SHISHA EFFEKTI) --- */
@@ -264,6 +264,6 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
     td div { flex-direction: row; width: 100%; gap: 5px; }
     h2 { font-size: 24px; text-align: center; }
     th, td { padding: 12px 10px; font-size: 13px; }
-    .lamp-light { width: 100%; top: 16px; background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg); }
+    .lamp-light { width: 100%; top: 16px; background: conic-gradient(from 135deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg); }
 }
 @media (max-width: 480px) { input, select, .btn { padding: 12px 15px; font-size: 14px; } }
