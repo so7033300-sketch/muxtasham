@@ -21,7 +21,7 @@ body.lamp-on {
     background: radial-gradient(circle at 50% 50%, #121124 0%, #060512 100%);
 }
 
-/* --- ZANJIR BILAN ENg TEPADAN OSILIB TURUVCHI JONLI CHIROQ --- */
+/* --- ZANJIR BILAN TEPADAN OSILIB TURUVCHI JONLI CHIROQ --- */
 .lamp-container {
     position: relative;
     width: 250px;
@@ -30,7 +30,7 @@ body.lamp-on {
     flex-direction: column;
     align-items: center;
     z-index: 10;
-    /* Lampa va uning nuri fonda juda yengil, nafis sal-pal qimirlab turadi */
+    /* Lampa va uning nuri fonda juda yengil sal-pal qimirlab turadi */
     animation: lampSlightSwing 5s infinite ease-in-out alternate;
     transform-origin: top center;
 }
@@ -42,7 +42,7 @@ body.lamp-on {
 
 .lamp {
     position: absolute;
-    top: 150px; /* Zanjir uchun tepadan joy ochildi */
+    top: 150px; /* Zanjir uzunligi uchun joy */
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -50,22 +50,24 @@ body.lamp-on {
     width: 100%;
 }
 
-/* ENg TEPADAN (SHIFTdan) Lampa QAPQOG'IGACHA TUSHADIGAN CHIROYLI ZANJIR EFFEKTI */
+/* 🔥 MUTLAQ TUZATISH: Endi zanjir emoji emas, CSSda chizilgan haqiqiy uzilmas zanjir chizig'i */
 .lamp-container::before {
-    content: '🔗';
-    font-size: 16px;
-    letter-spacing: -2px;
-    color: #475569;
-    text-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    content: '';
     position: absolute;
-    top: -40px;
-    height: 190px;
-    width: 20px;
-    text-align: center;
-    word-break: break-all;
-    overflow: hidden;
-    line-height: 12px;
-    opacity: 0.7;
+    top: -50px; /* Ekranning eng tepasidan boshlanadi */
+    height: 200px; /* Chiroq qapqog'igacha to'g'ri tushadi */
+    width: 4px;
+    /* Zanjir bo'g'imlarini eslatuvchi maxsus nuqtali gradient chiziq */
+    background: repeating-linear-gradient(
+        to bottom,
+        #475569 0px,
+        #475569 8px,
+        #1e293b 8px,
+        #1e293b 12px
+    );
+    border-radius: 2px;
+    box-shadow: 2px 4px 10px rgba(0, 0, 0, 0.5);
+    opacity: 0.8;
     z-index: 11;
 }
 
