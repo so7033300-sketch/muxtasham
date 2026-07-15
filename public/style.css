@@ -30,7 +30,7 @@ body.lamp-on {
     flex-direction: column;
     align-items: center;
     z-index: 10;
-    /* UYOG'O-BUYOG'A SEKIN YURIB (TEBRANIB) TURUVCHE ANIMATSIYA */
+    /* CHIROQ TAYANCHI VA NUR BILAN BIRGA SEKIN TEBRANIB TURADI */
     animation: lampSwing 4s infinite ease-in-out alternate;
     transform-origin: top center;
 }
@@ -50,9 +50,10 @@ body.lamp-on {
     width: 100%;
 }
 
+/* 🔥 SIZ SO'RAGANDEK: Tepa qalpoq qismi realistik darajada nafis va ingichka qilindi */
 .lamp-shade {
     width: 130px;
-    height: 35px;
+    height: 16px; /* Qalinligi butunlay ingichkalashtirildi */
     background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
     border-radius: 4px 4px 0 0;
     position: absolute;
@@ -65,8 +66,8 @@ body.lamp-on {
 .lamp::before {
     content: '';
     position: absolute;
-    top: 35px;
-    height: 250px;
+    top: 16px; /* Ingichka qalpoq ostidan boshlanadi */
+    height: 269px;
     width: 4px;
     background: linear-gradient(to bottom, #475569, #1e293b);
     z-index: 11;
@@ -84,29 +85,37 @@ body.lamp-on {
     z-index: 11;
 }
 
-/* OSILIB TURGAN YOQIB-OCHIRADIGAN IP (TUGMA) */
+/* 🔥 SIZ CHIZGANDek: Yoqib-o'chiradigan haqiqiy osilib, o'ynab turadigan simli ip */
 .lamp-string {
     width: 2px;
-    height: 55px;
+    height: 60px;
     background: #64748b;
     position: absolute;
-    top: 35px;
-    left: calc(50% + 28px);
+    top: 16px; /* Qalpoqning pastki qismidan chiqadi */
+    left: calc(50% + 15px); /* To'g'ri o'rtaga, o'qning yoniga mukammal ko'chirildi */
     z-index: 14;
     cursor: pointer;
     pointer-events: auto;
-    transition: transform 0.1s ease;
+    /* Ip mustaqil o'ynab, tebranib turishi uchun unikal animatsiya */
+    animation: stringWobble 2.5s infinite ease-in-out alternate;
+    transform-origin: top center;
 }
+
+@keyframes stringWobble {
+    0% { transform: rotate(-5deg); }
+    100% { transform: rotate(7deg); }
+}
+
 .lamp-string::after {
     content: '';
     position: absolute;
-    bottom: -15px;
+    bottom: -14px;
     left: -6px;
     width: 14px;
     height: 14px;
     background: #fbbf24;
     border-radius: 50%;
-    box-shadow: 0 0 12px rgba(251, 191, 36, 0.8);
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.9);
 }
 .lamp-string:active { transform: translateY(4px); }
 
@@ -123,10 +132,10 @@ body.lamp-on {
     box-shadow: 0 10px 25px rgba(0,0,0,0.6);
 }
 
-/* --- TENG IKKI TOMONGA UCHBURCHAK BO'LIB Harakatlanuvchi NUR --- */
+/* --- TENG IKKI TOMONGA UCHBURCHAK BO'LIB TUSHUVCHI TOZA NUR --- */
 .lamp-light {
     position: absolute;
-    top: 35px;
+    top: 16px;
     width: 600px;
     height: 500px;
     background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg);
@@ -259,6 +268,7 @@ tr:hover { background: rgba(255, 255, 255, 0.01); }
 @media (max-width: 768px) {
     body { flex-direction: column; padding: 20px 10px; gap: 40px; justify-content: flex-start; }
     .lamp-container { height: 350px; margin-bottom: -50px; transform: scale(0.85); animation: none !important; }
+    .lamp-string { animation: none !important; }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
     .card { padding: 15px; border-radius: 12px; margin-bottom: 15px; }
     .flex-header { flex-direction: column !important; gap: 15px; text-align: center; padding: 20px 15px !important; }
@@ -266,6 +276,6 @@ tr:hover { background: rgba(255, 255, 255, 0.01); }
     td div { flex-direction: row; width: 100%; gap: 5px; }
     h2 { font-size: 24px; text-align: center; }
     th, td { padding: 12px 10px; font-size: 13px; }
-    .lamp-light { width: 340px; top: 35px; background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg); }
+    .lamp-light { width: 340px; top: 16px; background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg); }
 }
 @media (max-width: 480px) { input, select, .btn { padding: 12px 15px; font-size: 14px; } }
