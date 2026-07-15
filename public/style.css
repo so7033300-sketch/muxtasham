@@ -7,7 +7,6 @@ body {
     color: #ffffff;
     min-height: 100vh;
     display: flex;
-    /* 🔥 MUTLAQ TUZATISH: Elementlar endi yonma-yon emas, tepadagi chiroq va pastdagi login ustma-ust tushadi */
     flex-direction: column; 
     justify-content: center;
     align-items: center;
@@ -21,17 +20,16 @@ body.lamp-on {
     background: radial-gradient(circle at 50% 50%, #121124 0%, #060512 100%);
 }
 
-/* --- 🔥 SIZ SO'RAGANDEK: LOGINNING TEPASIDA MUKAMMAL TURUVCHI CHIROQ BLOKI --- */
+/* --- TEPADAN OSILIB TURUVCHI SILLIQ CHIROQ BLOKI --- */
 .lamp-container {
     position: relative;
     width: 250px;
-    height: 340px; /* Bo'yi login bilan chiroyli uchrashishi uchun moslandi */
+    height: 160px; /* Boʻyalgan uzun oyoqlari olib tashlangani uchun blok boʻyi qisqartirildi */
     display: flex;
     flex-direction: column;
     align-items: center;
     z-index: 10;
-    margin-bottom: -50px; /* 🔥 Chiroq stolini login formasining ustiga aniq mindirish uchun minusli chegara */
-    margin-right: 0 !important; /* Yon tomondagi siljishlar butunlay nollatildi */
+    margin-bottom: 15px; /* Login formasi bilan orasidagi ideal masofa */
     animation: lampSlightSwing 5s infinite ease-in-out alternate;
     transform-origin: top center;
 }
@@ -43,7 +41,7 @@ body.lamp-on {
 
 .lamp {
     position: absolute;
-    top: 0; /* Zanjir va qopqoq mutlaqo markaziy chiziqda */
+    top: 0;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -51,11 +49,11 @@ body.lamp-on {
     width: 100%;
 }
 
-/* Shiftgacha cho'zilgan 2 qatorli parallel baquvvat zanjir */
+/* Ekranning eng yuqori chetidan boshlab tushuvchi 2 QATOR parallel baquvvat zanjir */
 .lamp-container::before {
     content: '';
     position: absolute;
-    top: -200px; /* Ekranning eng yuqori chetigacha uzilmay yetib boradi */
+    top: -200px; 
     height: 250px; 
     width: 24px; 
     background: 
@@ -68,48 +66,28 @@ body.lamp-on {
     filter: drop-shadow(4px 4px 8px rgba(0, 0, 0, 0.6));
 }
 
-/* Nafis ingichka qopqoq */
+/* 🔥 SIZ SOʻRAGANDEK: Faqat nafis ingichka qopqoq qismining oʻzi qoldi */
 .lamp-shade {
     width: 130px;
     height: 16px;
     background: linear-gradient(135deg, #475569 0%, #1e293b 100%);
     border-radius: 4px 4px 0 0;
     position: absolute;
-    top: 50px; /* Zanjirdan keyingi boshlanish joyi */
+    top: 50px; 
     z-index: 12;
     box-shadow: 0 4px 15px rgba(0,0,0,0.6);
 }
 
-/* Chiroq o'qi (Temir tayog'i) */
-.lamp::before {
-    content: '';
-    position: absolute;
-    top: 66px;
-    height: 219px;
-    width: 4px;
-    background: linear-gradient(to bottom, #475569, #1e293b);
-    z-index: 11;
-}
+/* 🔥 SIZ SOʻRAGANDEK: Boʻyalgan uzun oʻqi (.lamp::before) va poydevori (.lamp::after/stol) butunlay oʻchirib tashlandi */
 
-/* Chiroq tagligi */
-.lamp::after {
-    content: '';
-    position: absolute;
-    top: 280px;
-    width: 90px;
-    height: 6px;
-    background: #1e293b;
-    border-radius: 4px;
-    z-index: 11;
-}
-/* Uzun va havoda erkin silkinib turadigan simli ip */
+/* Havoda erkin silkinib turadigan uzun simli ip */
 .lamp-string {
     width: 2px;
     height: 95px;
     background: #64748b;
     position: absolute;
-    top: 66px;
-    left: calc(50% + 15px);
+    top: 66px; /* Qalpoq ostidan aniq osiladi */
+    left: calc(50% + 15px); 
     z-index: 14;
     cursor: pointer;
     pointer-events: auto;
@@ -135,25 +113,13 @@ body.lamp-on {
 }
 .lamp-string:active { transform: translateY(4px); }
 
-/* CHIROQ TURGAN STOL PLATFORMASI */
-.lamp-container::after {
-    content: '';
-    position: absolute;
-    top: 285px; /* Lampa tagiga aniq joylashtirildi */
-    width: 200px;
-    height: 12px;
-    background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
-    border-radius: 4px;
-    z-index: 9;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.6);
-}
-
-/* Chiroq nuri - endi tepadagi chiroqdan to'g'ridan-to'g'ri pastdagi login ustiga tushadi */
+/* 🔥 SIZ SOʻRAGANDEK: TENG IKKI TOMONGA MUKAMMAL TAQSIMLANUVCHI TOZA NUR EFFEKTI */
 .lamp-light {
     position: absolute;
     top: 66px;
-    width: 600px;
+    width: 650px;
     height: 600px;
+    /* Nur endi simmetrik ravishda toʻgʻridan-toʻgʻri pastdagi login oynasining ustiga tekis quyiladi */
     background: conic-gradient(from 125deg at 50% 0%, rgba(251, 191, 36, 0.14) 0deg, rgba(251, 191, 36, 0) 110deg);
     filter: blur(12px);
     z-index: 5;
@@ -168,7 +134,7 @@ body.lamp-on .lamp-light {
     transform: scale(1);
 }
 
-/* --- PREMIUM LOGIN FORMASI (CHIROQNING TAGIDA MUKAMMAL ZANJIRLANGAN) --- */
+/* --- ASOSIY CRM LOGIN FORMASI (SHISHA EFFEKTI) --- */
 .login-form.glass-container {
     width: 100%;
     max-width: 400px;
@@ -180,9 +146,8 @@ body.lamp-on .lamp-light {
     border-radius: 20px;
     z-index: 2;
     position: relative;
-    margin-top: 0 !important; /* Ortiqcha siljish masofalari tozalandi */
     
-    /* Kirgandagi qat'iy qorong'ulik */
+    /* Kirgandagi toza qorong'ulik */
     opacity: 0.01;
     filter: brightness(2%);
     transform: scale(0.97);
@@ -207,6 +172,7 @@ body.lamp-on .login-form.glass-container {
 h2, h3 { color: #ffffff; margin-bottom: 25px; font-weight: 600; letter-spacing: 0.5px; text-align: left; }
 h2 { font-size: 28px; }
 h3 { font-size: 20px; border-left: 4px solid #38bdf8; padding-left: 12px; }
+
 /* INPUT VA SELECT ELEMENTLARI */
 .input-group { position: relative; margin-bottom: 20px; width: 100%; }
 .form-group { margin-bottom: 25px; text-align: left; }
@@ -284,7 +250,7 @@ th { background: rgba(255, 255, 255, 0.03); color: #38bdf8; font-weight: 500; te
 @media (max-width: 1024px) { .grid-2 { grid-template-columns: 1fr; gap: 20px; } }
 @media (max-width: 768px) {
     body { flex-direction: column; padding: 20px 10px; gap: 20px; justify-content: flex-start; }
-    .lamp-container { height: 350px; margin-bottom: -50px; transform: scale(0.85); animation: none !important; }
+    .lamp-container { height: 200px; margin-bottom: 10px; transform: scale(0.85); animation: none !important; }
     .lamp-string { animation: none !important; }
     .lamp-container::before { display: none !important; }
     .glass-container { padding: 25px 20px; border-radius: 16px; }
