@@ -1,328 +1,534 @@
-const API_URL = '/api';
-let allStudents = [], allTeachers = [];
+/* =========================================================================
+   SMART QR-ATTENDANCE CRM — script.js
+   Bitta fayl ham index.html, ham admin.html uchun ishlaydi (feature-detection)
+   ========================================================================= */
 
-window.executeLogin = async function() {
-    const login = document.getElementById('loginInput').value;
-    const password = document.getElementById('passwordInput').value;
-    const errorDiv = document.getElementById('errorMessage');
-    if(!login || !password) return alert("Iltimos, login va parolni to'liq kiriting!");
-    
-    try {
-        const response = await fetch(`${API_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ login, password })
-        });
-        const data = await response.json();
-        if (data.success) {
-            if (data.role === 'admin') window.location.href = '/admin.html';
-            else if (data.role === 'teacher') {
-                localStorage.setItem('teacherId', data.teacherId);
-                window.location.href = '/ustoz.html';
-            }
-        } else { errorDiv.style.display = 'block'; errorDiv.innerText = data.message; }
-    } catch (err) { errorDiv.style.display = 'block'; errorDiv.innerText = "Server xatosi!"; }
+/* -------------------------------------------------------------------------
+   0. UMUMIY YORDAMCHI FUNKSIYALAR
+   ------------------------------------------------------------------------- */
+
+function fmtMoney(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString('ru-RU').replace(/,/g, ' ') + " so'm";
 }
 
-window.logout = function() { localStorage.clear(); window.location.href = '/index.html'; }
-
-async function loadDashboardData() {
-    try {
-        const response = await fetch(`${API_URL}/data`);
-        const data = await response.json();
-        allStudents = data.students || [];
-        allTeachers = data.teachers || [];
-        
-        const teacherSelect = document.getElementById('studTeacher');
-        if (teacherSelect) {
-            teacherSelect.innerHTML = '<option value="" disabled selected>Qaysi o\'qituvchiga qo\'shish...</option>';
-            allTeachers.forEach(t => { teacherSelect.innerHTML += `<option value="${t.id}">${t.name} (${t.subject})</option>`; });
-        }
-        renderStudents(allStudents);
-        renderAttendance(data.attendance || []);
-        renderTeachers(allTeachers);
-        renderFinancialArchive(data.history || { center_profit: [], teacher_salary: [] });
-
-        if (document.getElementById('centerProfitDisplay')) document.getElementById('centerProfitDisplay').innerText = `${(data.center_profit || 0).toLocaleString()} so'm`;
-    } catch (err) { console.error(err); }
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
-window.onTeacherSelected = function() {
-    const teacherId = document.getElementById('studTeacher').value;
-    const container = document.getElementById('groupSelectionContainer');
-    const groupSelect = document.getElementById('studGroupSelect');
-    if (!teacherId) return;
-    container.style.display = 'block';
+async function apiGet(url) {
+  const res = await fetch(url);
+  return res.json();
+}
 
-    const teacherGroups = [];
-    allStudents.forEach(s => {
-        if (s.teacherId === teacherId && s.groupName && s.groupName !== "undefined" && !teacherGroups.includes(s.groupName)) {
-            teacherGroups.push(s.groupName);
-        }
-    });
+async function apiSend(url, method, body) {
+  const res = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined
+  });
+  const data = await res.json().catch(() => ({ success: false, message: 'Server javobini o\'qib bo\'lmadi.' }));
+  return { ok: res.ok, data };
+}
 
-    groupSelect.innerHTML = '';
-    if (teacherGroups.length === 0) {
-        groupSelect.innerHTML = '<option value="" disabled selected>Mavjud guruh yo\'q, yangi oching</option>';
-        document.getElementById('groupModeSelect').value = 'create';
-        toggleGroupMode();
+function showToast(message, type = 'ok') {
+  const area = document.getElementById('toast-area');
+  if (!area) return;
+  const el = document.createElement('div');
+  el.className = `glass toast ${type === 'ok' ? 'ok' : 'err'}`;
+  el.textContent = message;
+  area.appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+
+/* -------------------------------------------------------------------------
+   1. OSMA CHIROQ ZANJIRINI CHIZISH (2 qator, parallel)
+   ------------------------------------------------------------------------- */
+
+function renderLights() {
+  const rows = [
+    { id: 'bulbs-row1', count: 26, path: (x) => 6 + 40 * Math.sin((x / 1200) * Math.PI * 1.4) },
+    { id: 'bulbs-row2', count: 22, path: (x) => 14 + 46 * Math.sin((x / 1200) * Math.PI * 1.4 + 0.4) }
+  ];
+  rows.forEach(row => {
+    const g = document.getElementById(row.id);
+    if (!g) return;
+    let html = '';
+    for (let i = 0; i < row.count; i++) {
+      const x = (i / (row.count - 1)) * 1200;
+      const y = row.path(x);
+      html += `<circle class="bulb" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4.2"></circle>`;
+    }
+    g.innerHTML = html;
+  });
+}
+renderLights();
+
+/* -------------------------------------------------------------------------
+   2. "BIP" OVOZI — Web Audio API orqali (tashqi fayl kerak emas)
+   ------------------------------------------------------------------------- */
+
+let audioCtx = null;
+function playBeep(success = true) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = success ? 1046.5 : 300; // muvaffaqiyat: baland "bip", xato: past ton
+    gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.35, audioCtx.currentTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (success ? 0.16 : 0.28));
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + (success ? 0.18 : 0.3));
+  } catch (e) {
+    console.warn('Audio ijro etilmadi:', e.message);
+  }
+}
+
+/* =========================================================================
+   3. BOSH SAHIFA (index.html) MANTIQI
+   ========================================================================= */
+
+async function loadOverviewPage() {
+  const totalEl = document.getElementById('ov-total');
+  if (!totalEl) return; // bu sahifa emas
+
+  const { data } = await apiSend('/api/overview', 'GET');
+  if (!data.success) return;
+
+  document.getElementById('ov-total').textContent = data.students.length;
+  document.getElementById('ov-came').textContent = data.stats.kelgan;
+  document.getElementById('ov-missed').textContent = data.stats.kelmagan;
+  document.getElementById('ov-profit').textContent = fmtMoney(data.center_profit);
+
+  const feedBody = document.getElementById('overview-feed-body');
+  if (data.attendanceToday.length === 0) {
+    feedBody.innerHTML = '<tr><td colspan="4" class="empty-state">Bugun hali davomat yo\'q.</td></tr>';
+  } else {
+    feedBody.innerHTML = data.attendanceToday.map(a => {
+      const student = data.students.find(s => s.id === a.studentId);
+      return `<tr>
+        <td>${escapeHtml(a.studentName)}</td>
+        <td>${escapeHtml(student ? student.group : '')}</td>
+        <td><span class="badge ${a.status}">${a.status}</span></td>
+        <td>${escapeHtml(a.time)}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  renderHistoryTable(data.history);
+}
+
+function renderHistoryTable(history) {
+  const table = document.getElementById('history-table');
+  if (!table) return;
+  const tbody = table.querySelector('tbody');
+  if (!history || history.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-state">Arxiv bo\'sh.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = history.slice().reverse().map(h => {
+    const totalSalary = Object.values(h.teacher_salary || {}).reduce((sum, t) => sum + (t.salary || 0), 0);
+    return `<tr>
+      <td>${escapeHtml(h.month)}</td>
+      <td>${fmtMoney(h.center_profit)}</td>
+      <td>${fmtMoney(totalSalary)}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* =========================================================================
+   4. ADMIN PANEL (admin.html) MANTIQI
+   ========================================================================= */
+
+let ADMIN_STATE = { students: [], teachers: [] };
+
+async function loadAdminData() {
+  const totalEl = document.getElementById('stat-total');
+  if (!totalEl) return; // bu admin sahifa emas
+
+  const { data } = await apiSend('/api/overview', 'GET');
+  if (!data.success) {
+    showToast('Ma\'lumotlarni yuklashda xatolik.', 'err');
+    return;
+  }
+
+  ADMIN_STATE.students = data.students;
+  ADMIN_STATE.teachers = data.teachers;
+
+  document.getElementById('stat-total').textContent = data.students.length;
+  document.getElementById('stat-came').textContent = data.stats.kelgan;
+  document.getElementById('stat-missed').textContent = data.stats.kelmagan;
+  document.getElementById('stat-profit').textContent = fmtMoney(data.center_profit);
+
+  renderTeacherSelects();
+  renderStudentsTable();
+  renderTeachersTable();
+  renderLiveFeed(data.attendanceToday);
+  renderHistoryTable(data.history);
+}
+
+function teacherName(teacherId) {
+  const t = ADMIN_STATE.teachers.find(t => t.id === teacherId);
+  return t ? t.name : '—';
+}
+
+function renderTeacherSelects() {
+  const selects = [document.getElementById('f-teacher'), document.getElementById('e-teacher')];
+  selects.forEach(sel => {
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— O\'qituvchi tanlang —</option>' +
+      ADMIN_STATE.teachers.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
+    if (current) sel.value = current;
+  });
+}
+
+function renderStudentsTable() {
+  const body = document.getElementById('students-table-body');
+  if (!body) return;
+  if (ADMIN_STATE.students.length === 0) {
+    body.innerHTML = '<tr><td colspan="8" class="empty-state">Hali o\'quvchi qo\'shilmagan.</td></tr>';
+    return;
+  }
+  body.innerHTML = ADMIN_STATE.students.map(s => `
+    <tr>
+      <td>${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.group)}</td>
+      <td>${escapeHtml(teacherName(s.teacherId))}</td>
+      <td>${fmtMoney(s.fee)}</td>
+      <td>${fmtMoney(s.balance)}</td>
+      <td>${escapeHtml(s.studQrCode) || '—'}</td>
+      <td>${escapeHtml(s.lessonStart) || '—'} – ${escapeHtml(s.lessonEnd) || '—'}</td>
+      <td>
+        <button class="btn sm" onclick="openEditModal('${s.id}')">✏️ Tahrirlash</button>
+        <button class="btn sm danger" onclick="deleteStudent('${s.id}')">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function renderTeachersTable() {
+  const body = document.getElementById('teachers-table-body');
+  if (!body) return;
+  if (ADMIN_STATE.teachers.length === 0) {
+    body.innerHTML = '<tr><td colspan="3" class="empty-state">Hali o\'qituvchi qo\'shilmagan.</td></tr>';
+    return;
+  }
+  body.innerHTML = ADMIN_STATE.teachers.map(t => `
+    <tr>
+      <td>${escapeHtml(t.name)}</td>
+      <td>${fmtMoney(t.salary)}</td>
+      <td><button class="btn sm danger" onclick="deleteTeacher('${t.id}')">🗑 O'chirish</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderLiveFeed(attendanceToday) {
+  const body = document.getElementById('live-feed-body');
+  if (!body) return;
+  if (!attendanceToday || attendanceToday.length === 0) {
+    body.innerHTML = '<tr><td colspan="3" class="empty-state">Hali skaner qilinmadi.</td></tr>';
+    return;
+  }
+  body.innerHTML = attendanceToday.map(a => `
+    <tr>
+      <td>${escapeHtml(a.studentName)}</td>
+      <td><span class="badge ${a.status}">${a.status}</span></td>
+      <td>${escapeHtml(a.time)}</td>
+    </tr>
+  `).join('');
+}
+
+function prependLiveFeedRow(record) {
+  const body = document.getElementById('live-feed-body');
+  if (!body) return;
+  const emptyRow = body.querySelector('.empty-state');
+  if (emptyRow) emptyRow.closest('tr').remove();
+
+  const tr = document.createElement('tr');
+  tr.className = 'row-in';
+  tr.innerHTML = `
+    <td>${escapeHtml(record.studentName)}</td>
+    <td><span class="badge ${record.status}">${record.status}</span></td>
+    <td>${escapeHtml(record.time)}</td>
+  `;
+  body.insertBefore(tr, body.firstChild);
+}
+
+function pulseCard(id) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  card.classList.remove('pulse');
+  // reflow trigger to restart animation
+  void card.offsetWidth;
+  card.classList.add('pulse');
+}
+
+/* -------------------------------------------------------------------------
+   4.1 QR-DAVOMATNI YUBORISH (sahifa yangilanmasdan)
+   ------------------------------------------------------------------------- */
+
+let SCAN_LOCK = false;
+
+async function submitAttendance(rawCode) {
+  const code = String(rawCode || '').trim();
+  if (!code) return;
+  if (SCAN_LOCK) return; // ketma-ket tasodifiy qayta yuborishning oldini olish
+  SCAN_LOCK = true;
+  setTimeout(() => { SCAN_LOCK = false; }, 900);
+
+  const { ok, data } = await apiSend('/api/attendance/qr', 'POST', { code });
+
+  if (ok && data.success) {
+    playBeep(true);
+    prependLiveFeedRow(data.record);
+    document.getElementById('stat-came').textContent = data.stats.kelgan;
+    document.getElementById('stat-missed').textContent = data.stats.kelmagan;
+    pulseCard('card-came');
+    showToast(`✅ ${data.student.name} — davomatga olindi (${data.record.time})`, 'ok');
+
+    // Fon jadvalini ham (o'quvchi balansi o'zgargani uchun) yangilaymiz
+    const idx = ADMIN_STATE.students.findIndex(s => s.id === data.student.id);
+    if (idx !== -1) {
+      ADMIN_STATE.students[idx].balance = data.student.balance;
+      renderStudentsTable();
+    }
+  } else {
+    playBeep(false);
+    showToast(`⚠️ ${data.message || 'Xatolik yuz berdi'}`, 'err');
+  }
+}
+
+function initManualScanInput() {
+  const input = document.getElementById('manualQrInput');
+  if (!input) return;
+
+  // Skaner apparati "Enter" bosadi — shu bilan avtomatik yuboriladi
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      submitAttendance(input.value);
+      input.value = '';
+    }
+  });
+
+  // Fokusni doimo shu inputda ushlab turamiz (apparat klaviaturadek ishlaydi)
+  const refocus = () => {
+    if (document.activeElement !== input && !document.querySelector('.modal-overlay.open')) {
+      input.focus();
+    }
+  };
+  setInterval(refocus, 1200);
+  input.focus();
+}
+
+/* -------------------------------------------------------------------------
+   4.2 KAMERA ORQALI QR-SKANER (html5-qrcode kutubxonasi)
+   ------------------------------------------------------------------------- */
+
+function initCameraScanner() {
+  const readerEl = document.getElementById('qr-reader');
+  if (!readerEl || typeof Html5Qrcode === 'undefined') return;
+
+  const html5QrCode = new Html5Qrcode('qr-reader');
+  let isScanning = false;
+
+  Html5Qrcode.getCameras().then(cameras => {
+    if (!cameras || cameras.length === 0) {
+      readerEl.innerHTML = '<div class="empty-state">Kamera topilmadi — qo\'lda/apparat orqali kiriting.</div>';
+      return;
+    }
+    const cameraId = cameras[0].id;
+    html5QrCode.start(
+      cameraId,
+      { fps: 10, qrbox: { width: 230, height: 230 } },
+      (decodedText) => {
+        if (SCAN_LOCK) return;
+        submitAttendance(decodedText);
+      },
+      () => { /* har bir frame skan qilinmasa jim o'tkaziladi */ }
+    ).then(() => { isScanning = true; })
+      .catch(err => {
+        console.warn('Kamera ishga tushmadi:', err);
+        readerEl.innerHTML = '<div class="empty-state">Kamerani ishga tushirib bo\'lmadi. Qo\'lda/apparat orqali kiritishdan foydalaning.</div>';
+      });
+  }).catch(err => {
+    console.warn('Kameralar ro\'yxatini olishda xatolik:', err);
+    readerEl.innerHTML = '<div class="empty-state">Kameraga ruxsat berilmadi. Qo\'lda/apparat orqali kiritishdan foydalaning.</div>';
+  });
+}
+
+/* -------------------------------------------------------------------------
+   4.3 O'QUVCHI QO'SHISH / TAHRIRLASH / O'CHIRISH
+   ------------------------------------------------------------------------- */
+
+function initAddStudentForm() {
+  const form = document.getElementById('addStudentForm');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const payload = {
+      name: document.getElementById('f-name').value.trim(),
+      group: document.getElementById('f-group').value.trim(),
+      teacherId: document.getElementById('f-teacher').value || null,
+      fee: Number(document.getElementById('f-fee').value),
+      studQrCode: document.getElementById('f-qrcode').value.trim(),
+      lessonStart: document.getElementById('f-lesson-start').value,
+      lessonEnd: document.getElementById('f-lesson-end').value,
+      parentChatId: document.getElementById('f-parent-chat').value.trim()
+    };
+
+    const { ok, data } = await apiSend('/api/students', 'POST', payload);
+    if (ok && data.success) {
+      showToast(`✅ ${data.student.name} ro'yxatga qo'shildi.`, 'ok');
+      form.reset();
+      loadAdminData();
     } else {
-        groupSelect.innerHTML = '<option value="" disabled selected>Guruhni tanlang...</option>';
-        teacherGroups.forEach(g => { groupSelect.innerHTML += `<option value="${g}">${g}</option>`; });
-        document.getElementById('groupModeSelect').value = 'select';
-        toggleGroupMode();
+      showToast(`⚠️ ${data.message || 'Qo\'shishda xatolik.'}`, 'err');
     }
+  });
 }
 
-window.toggleGroupMode = function() {
-    const mode = document.getElementById('groupModeSelect').value;
-    document.getElementById('existingGroupWrapper').style.display = mode === 'select' ? 'block' : 'none';
-    document.getElementById('newGroupWrapper').style.display = mode === 'create' ? 'block' : 'none';
+function openEditModal(studentId) {
+  const student = ADMIN_STATE.students.find(s => s.id === studentId);
+  if (!student) return;
+
+  document.getElementById('e-id').value = student.id;
+  document.getElementById('e-name').value = student.name || '';
+  document.getElementById('e-group').value = student.group || '';
+  document.getElementById('e-teacher').value = student.teacherId || '';
+  document.getElementById('e-fee').value = student.fee || 0;
+  document.getElementById('e-balance').value = student.balance || 0;
+  document.getElementById('e-qrcode').value = student.studQrCode || '';
+  document.getElementById('e-lesson-start').value = student.lessonStart || '';
+  document.getElementById('e-lesson-end').value = student.lessonEnd || '';
+  document.getElementById('e-parent-chat').value = student.parentChatId || '';
+
+  document.getElementById('editModal').classList.add('open');
 }
 
-function filterStudents() {
-    const query = document.getElementById('searchStudent').value.toLowerCase();
-    renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(query)));
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
 }
 
-window.downloadExcelReport = function() {
-    if (allStudents.length === 0) return alert("Yuklash uchun o'quvchilar ro'yxati bo'sh!");
-    let csvContent = "\uFEFFIsm Familya;Telefon raqami;Tug'ilgan yili;Ustoz va Guruh;Oylik To'lov;Balans\n";
-    allStudents.forEach(s => {
-        const tObj = allTeachers.find(t => t.id === s.teacherId);
-        const groupInfo = tObj ? `${tObj.name} (${s.groupName})` : 'Guruhsiz';
-        csvContent += `${s.name};${s.phone};${s.birthYear}-yil;${groupInfo};${s.fee} so'm;${s.balance} so'm\n`;
-    });
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    const dateStr = new Date().toISOString().substring(0, 10);
-    link.href = URL.createObjectURL(blob);
-    link.setAttribute("download", `Muxtasham_CRM_Hisobot_${dateStr}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-function renderStudents(students) {
-    const tbody = document.getElementById('studentsTableBody');
-    if (!tbody) return; tbody.innerHTML = '';
-    students.forEach(s => {
-        const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
-        const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-        const tObj = allTeachers.find(t => t.id === s.teacherId);
-        const displayName = tObj ? `${tObj.name} - ${s.groupName}` : 'Guruhsiz';
+function initEditModal() {
+  const form = document.getElementById('editStudentForm');
+  if (!form) return;
 
-        tbody.innerHTML += `
-            <tr class="${isDebtor}">
-                <td><strong>${s.name}</strong></td>
-                <td>${s.phone}</td>
-                <td><span class="status-badge" style="background:rgba(129,140,248,0.15); color:#818cf8;">${displayName}</span></td>
-                <td>${s.fee.toLocaleString()} so'm</td>
-                <td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td>
-                <td>
-                    <div class="inline-form">
-                        <input type="number" id="pay_${s.id}" placeholder="Summa" style="width:110px;">
-                        <button class="btn" onclick="makePayment('${s.id}')">To'lash</button>
-                    </div>
-                </td>
-                <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteStudent('${s.id}')">O'chirish</button></td>
-            </tr>`;
-    });
-}
+  document.getElementById('closeModalBtn').addEventListener('click', closeEditModal);
+  document.getElementById('cancelEditBtn').addEventListener('click', closeEditModal);
+  document.getElementById('editModal').addEventListener('click', (e) => {
+    if (e.target.id === 'editModal') closeEditModal();
+  });
 
-function renderAttendance(attendance) {
-    const tbody = document.getElementById('attendanceTableBody');
-    if (!tbody) return; tbody.innerHTML = '';
-    attendance.slice().reverse().forEach(a => {
-        const badge = a.status === 'keldi' ? '<span class="status-badge status-paid">Keldi</span>' : '<span class="status-badge status-debt">Kelmadi</span>';
-        tbody.innerHTML += `<tr><td>${a.date}</td><td>${a.studentName}</td><td>${a.teacherName}</td><td>${badge}</td></tr>`;
-    });
-}
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('e-id').value;
+    const payload = {
+      name: document.getElementById('e-name').value.trim(),
+      group: document.getElementById('e-group').value.trim(),
+      teacherId: document.getElementById('e-teacher').value || null,
+      fee: Number(document.getElementById('e-fee').value),
+      balance: Number(document.getElementById('e-balance').value),
+      studQrCode: document.getElementById('e-qrcode').value.trim(),
+      lessonStart: document.getElementById('e-lesson-start').value,
+      lessonEnd: document.getElementById('e-lesson-end').value,
+      parentChatId: document.getElementById('e-parent-chat').value.trim()
+    };
 
-function renderTeachers(teachers) {
-    const tbody = document.getElementById('teachersTableBody');
-    if (!tbody) return; tbody.innerHTML = '';
-    teachers.forEach(t => {
-        tbody.innerHTML += `
-            <tr>
-                <td><strong>${t.name}</strong></td>
-                <td>${t.subject}</td>
-                <td>${t.days.join(', ')} (${t.timeStart}-${t.timeEnd})</td>
-                <td><span class="status-badge status-paid">${t.salary.toLocaleString()} so'm</span></td>
-                <td><code>${t.login} / ${t.password}</code></td>
-                <td><button class="btn danger-btn" style="padding:6px 12px; font-size:12px; width:auto;" onclick="deleteTeacher('${t.id}')">O'chirish</button></td>
-            </tr>`;
-    });
-}
-
-function renderFinancialArchive(history) {
-    const centerTbody = document.getElementById('centerArchiveTableBody');
-    const teacherTbody = document.getElementById('teacherArchiveTableBody');
-    
-    if (centerTbody) {
-        if (!history.center_profit || history.center_profit.length === 0) {
-            centerTbody.innerHTML = `<tr><td colspan="2" style="text-align:center; color:#64748b;">Hozircha arxivlangan foyda yo'q.</td></tr>`;
-        } else {
-            centerTbody.innerHTML = '';
-            history.center_profit.slice().reverse().forEach(item => {
-                centerTbody.innerHTML += `<tr><td><span class="time-badge">${item.date}</span></td><td><strong style="color:#22c55e;">+${item.amount.toLocaleString()} so'm</strong></td></tr>`;
-            });
-        }
+    const { ok, data } = await apiSend(`/api/students/${id}`, 'PUT', payload);
+    if (ok && data.success) {
+      showToast(`✅ ${data.student.name} ma'lumotlari yangilandi.`, 'ok');
+      closeEditModal();
+      loadAdminData();
+    } else {
+      showToast(`⚠️ ${data.message || 'Saqlashda xatolik.'}`, 'err');
     }
+  });
+}
 
-    if (teacherTbody) {
-        if (!history.teacher_salary || history.teacher_salary.length === 0) {
-            teacherTbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#64748b;">Hozircha arxivlangan oyliklar yo'q.</td></tr>`;
-        } else {
-            teacherTbody.innerHTML = '';
-            history.teacher_salary.slice().reverse().forEach(item => {
-                teacherTbody.innerHTML += `<tr><td><span class="time-badge">${item.date}</span></td><td><strong>${item.teacherName}</strong></td><td>${item.subject}</td><td><span class="status-badge status-paid">${item.salary.toLocaleString()} so'm</span></td></tr>`;
-            });
-        }
+async function deleteStudent(id) {
+  if (!confirm('O\'quvchini ro\'yxatdan o\'chirishni tasdiqlaysizmi?')) return;
+  const { ok, data } = await apiSend(`/api/students/${id}`, 'DELETE');
+  if (ok && data.success) {
+    showToast('O\'quvchi o\'chirildi.', 'ok');
+    loadAdminData();
+  } else {
+    showToast(`⚠️ ${data.message || 'O\'chirishda xatolik.'}`, 'err');
+  }
+}
+
+/* -------------------------------------------------------------------------
+   4.4 O'QITUVCHI QO'SHISH / O'CHIRISH
+   ------------------------------------------------------------------------- */
+
+function initAddTeacherForm() {
+  const form = document.getElementById('addTeacherForm');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const nameInput = document.getElementById('f-teacher-name');
+    const name = nameInput.value.trim();
+    if (!name) return;
+
+    const { ok, data } = await apiSend('/api/teachers', 'POST', { name });
+    if (ok && data.success) {
+      showToast(`✅ ${data.teacher.name} o'qituvchilar ro'yxatiga qo'shildi.`, 'ok');
+      nameInput.value = '';
+      loadAdminData();
+    } else {
+      showToast(`⚠️ ${data.message || 'Qo\'shishda xatolik.'}`, 'err');
     }
-}
-async function saveStudent(e) {
-    if(e) e.preventDefault();
-    const name = document.getElementById('studName').value;
-    const phone = document.getElementById('studPhone').value;
-    const birthYear = document.getElementById('studBirth').value;
-    const fee = document.getElementById('studFee').value;
-    const teacherId = document.getElementById('studTeacher').value;
-    const parentChatId = document.getElementById('parentChatId').value;
-    const mode = document.getElementById('groupModeSelect').value;
-    let groupName = mode === 'select' ? document.getElementById('studGroupSelect').value : document.getElementById('studNewGroupInput').value.trim();
-
-    if (!name || !phone || !birthYear || !fee || !teacherId || !groupName) return alert("Ma'lumotlarni to'liq kiriting!");
-
-    const response = await fetch(`${API_URL}/students`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, phone, birthYear, fee, parentChatId, teacherId, groupName })
-    });
-    if (response.ok) { alert("O'quvchi saqlandi!"); document.getElementById('studentForm').reset(); document.getElementById('groupSelectionContainer').style.display='none'; loadDashboardData(); }
+  });
 }
 
-async function saveTeacher(e) {
-    if(e) e.preventDefault();
-    const name = document.getElementById('teachName').value;
-    const subject = document.getElementById('teachSubject').value;
-    const timeStart = document.getElementById('teachTimeStart').value;
-    const timeEnd = document.getElementById('teachTimeEnd').value;
-    const login = document.getElementById('teachLogin').value;
-    const password = document.getElementById('teachPass').value;
-    const checked = document.querySelectorAll('input[name="teachDaysCheck"]:checked');
-    const days = []; checked.forEach(b => days.push(b.value));
-
-    if (!name || !subject || !timeStart || !timeEnd || !login || !password || days.length === 0) return alert("Ma'lumotlarni to'liq kiriting!");
-
-    const response = await fetch(`${API_URL}/teachers`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, subject, timeStart, timeEnd, days, login, password })
-    });
-    if (response.ok) { alert("O'qituvchi saqlandi!"); document.getElementById('teacherForm').reset(); loadDashboardData(); }
+async function deleteTeacher(id) {
+  if (!confirm('O\'qituvchini o\'chirishni tasdiqlaysizmi?')) return;
+  const { ok, data } = await apiSend(`/api/teachers/${id}`, 'DELETE');
+  if (ok && data.success) {
+    showToast('O\'qituvchi o\'chirildi.', 'ok');
+    loadAdminData();
+  } else {
+    showToast(`⚠️ ${data.message || 'O\'chirishda xatolik.'}`, 'err');
+  }
 }
 
-async function makePayment(studentId) {
-    const amt = document.getElementById(`pay_${studentId}`).value;
-    if (!amt || amt <= 0) return alert("To'g'ri summa kiriting!");
-    const response = await fetch(`${API_URL}/students/pay`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ studentId, amount: amt }) });
-    if (response.ok) loadDashboardData();
+/* -------------------------------------------------------------------------
+   4.5 DAVRIY YANGILANISH (boshqa qurilmadan ham skaner bo'lishi mumkin)
+   ------------------------------------------------------------------------- */
+
+function initPeriodicRefresh() {
+  const isAdmin = !!document.getElementById('stat-total');
+  const isOverview = !!document.getElementById('ov-total');
+  if (isAdmin) setInterval(loadAdminData, 15000);
+  if (isOverview) setInterval(loadOverviewPage, 15000);
 }
 
-window.deleteStudent = async function(id) { if (confirm("O'quvchi o'chirilsinmi?")) { await fetch(`${API_URL}/students/${id}`, { method: 'DELETE' }); loadDashboardData(); } }
-window.deleteTeacher = async function(id) { if (confirm("O'qituvchi o'chirilsinmi?")) { await fetch(`${API_URL}/teachers/${id}`, { method: 'DELETE' }); loadDashboardData(); } }
-async function clearData(type) { if (confirm("Tozalansinmi?")) { await fetch(`${API_URL}/clear/${type}`, { method: 'DELETE' }); loadDashboardData(); } }
+/* =========================================================================
+   5. ISHGA TUSHIRISH
+   ========================================================================= */
 
-async function loadTeacherDashboard() {
-    const currentTeacherId = localStorage.getItem('teacherId');
-    if (!currentTeacherId) return;
-    try {
-        const response = await fetch(`${API_URL}/data`);
-        const data = await response.json();
-        const teacher = data.teachers.find(t => t.id === currentTeacherId);
-        if (!teacher) { logout(); return; }
+document.addEventListener('DOMContentLoaded', () => {
+  // Bosh sahifa
+  loadOverviewPage();
 
-        document.getElementById('teacherNameHeader').innerText = teacher.name;
-        document.getElementById('teacherSubject').innerText = teacher.subject;
-        document.getElementById('teacherDays').innerText = teacher.days.join(', ');
-        document.getElementById('teacherTime').innerText = `${teacher.timeStart} - ${teacher.timeEnd}`;
-        document.getElementById('teacherSalary').innerText = `${teacher.salary.toLocaleString()} so'm`;
-
-        const isLessonTime = checkLessonTime(teacher);
-        const filteredStudents = (data.students || []).filter(s => s.teacherId === currentTeacherId);
-        renderTeacherStudents(filteredStudents, isLessonTime, currentTeacherId);
-    } catch (err) { console.error(err); }
-}
-
-function checkLessonTime(teacher) {
-    const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Tashkent"}));
-    const currentDayIndex = now.getDay();
-    const currentTimeStr = now.toTimeString().substring(0, 5);
-    const teacherDaysString = teacher.days.join(' ').toLowerCase();
-    
-    const daysUz = { 1: "dushanba", 2: "seshanba", 3: "chorshanba", 4: "payshanba", 5: "juma", 6: "shanba", 0: "yakshanba" };
-    const todayName = daysUz[currentDayIndex];
-    const hasLessonToday = teacherDaysString.includes(todayName);
-    const noticeDiv = document.getElementById('timeStatusNotice');
-    if (!noticeDiv) return false;
-
-    if (!hasLessonToday) { noticeDiv.innerHTML = `⚠️ Bugun dars kuningiz emas.`; noticeDiv.style.color = '#f87171'; return false; }
-    if (currentTimeStr >= teacher.timeStart && currentTimeStr <= teacher.timeEnd) {
-        noticeDiv.innerHTML = `✅ Dars vaqti faol. Davomat qilishingiz mumkin.`; noticeDiv.style.color = '#4ade80'; return true;
-    } else { noticeDiv.innerHTML = `🔒 Dars vaqti emas.`; noticeDiv.style.color = '#eab308'; return false; }
-}
-
-function renderTeacherStudents(students, isLessonTime, teacherId) {
-    const container = document.getElementById('teacherGroupsContainer');
-    if (!container) return; container.innerHTML = '';
-    if (students.length === 0) { container.innerHTML = `<div class="card glass-container" style="text-align:center;color:#64748b;">O'quvchilar yo'q.</div>`; return; }
-    
-    const groups = {};
-    students.forEach(s => { const gName = s.groupName || "Asosiy Guruh"; if (!groups[gName]) groups[gName] = []; groups[gName].push(s); });
-
-    for (const groupName in groups) {
-        const groupStudents = groups[groupName];
-        const groupCard = document.createElement('div');
-        groupCard.className = 'card glass-container'; groupCard.style.maxWidth = '100%'; groupCard.style.marginBottom = '30px';
-        groupCard.innerHTML = `<h3>📦 Guruh: ${groupName} (${groupStudents.length} ta o'quvchi)</h3>`;
-        const tableResponsive = document.createElement('div'); tableResponsive.className = 'table-responsive';
-        const table = document.createElement('table');
-        table.innerHTML = `<thead><tr><th>Ism Familya</th><th>Telefon raqam</th><th>Tug'ilgan yili</th><th>O'quvchi Balansi</th><th>Davomat</th></tr></thead>`;
-        const tbody = document.createElement('tbody');
-
-        groupStudents.forEach(s => {
-            const isDebtor = s.balance <= -150000 ? 'debtor-row' : '';
-            const balanceClass = s.balance >= 0 ? 'status-paid' : 'status-debt';
-            const isButtonActive = isLessonTime && !s.attendedToday;
-            const disabledAttr = isButtonActive ? '' : 'disabled';
-            const btnClassExtension = isButtonActive ? '' : 'btn-disabled';
-
-            const attendanceCellContent = s.attendedToday 
-                ? `<span class="status-badge status-paid" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600;">🔒 Belgilandi</span>`
-                : `<div style="display: flex; gap: 10px;">
-                        <button ${disabledAttr} class="btn btn-success ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'keldi', '${teacherId}')">Keldi</button>
-                        <button ${disabledAttr} class="btn btn-danger-action ${btnClassExtension}" onclick="submitAttendance('${s.id}', 'kelmadi', '${teacherId}')">Kelmadi</button>
-                   </div>`;
-
-            tbody.innerHTML += `<tr class="${isDebtor}"><td><strong>${s.name}</strong></td><td>${s.phone}</td><td>${s.birthYear}-yil</td><td><span class="status-badge ${balanceClass}">${s.balance.toLocaleString()} so'm</span></td><td>${attendanceCellContent}</td></tr>`;
-        });
-        table.appendChild(tbody); tableResponsive.appendChild(table); groupCard.appendChild(tableResponsive); container.appendChild(groupCard);
-    }
-}
-
-async function submitAttendance(studentId, status, teacherId) {
-    if (!confirm("Davomat saqlansinmi?")) return;
-    try {
-        const response = await fetch(`${API_URL}/attendance`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ teacherId, studentId, status }) });
-        if (response.ok) { alert("Davomat saqlandi va qulflandi!"); await loadTeacherDashboard(); }
-    } catch (err) { alert("Server bilan aloqa uzildi!"); }
-}
-
-window.onload = function() {
-    if (document.getElementById('studentsTableBody')) {
-        loadDashboardData();
-        document.getElementById('studentForm').addEventListener('submit', saveStudent);
-        document.getElementById('teacherForm').addEventListener('submit', saveTeacher);
-    }
-    if (document.getElementById('teacherGroupsContainer')) { loadTeacherDashboard(); }
-};
+  // Admin panel
+  loadAdminData().then(() => {
+    initCameraScanner();
+  });
+  initManualScanInput();
+  initAddStudentForm();
+  initEditModal();
+  initAddTeacherForm();
+  initPeriodicRefresh();
+});
