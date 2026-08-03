@@ -1,6 +1,8 @@
 /* =========================================================================
    SMART QR-ATTENDANCE CRM — server.js
    Express backend + node-schedule taymerlari + Telegram bildirishnomalari
+   + Telegram BOT: /start orqali ota-onaga ID beriladi, "Holatim" tugmasi
+   bilan bugungi davomat va balansni ko'rish mumkin.
    ========================================================================= */
 
 const express = require('express');
@@ -14,6 +16,7 @@ const DB_FILE = path.join(__dirname, 'database.json');
 const TIMEZONE = 'Asia/Tashkent';
 
 // Telegram bot tokeni environment orqali beriladi (Render -> Environment Variables)
+// MUHIM: tokenni hech qachon kodga yoki chatga yozmang — faqat .env / Render Environment orqali!
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
@@ -106,24 +109,27 @@ function currentMinutes() {
 }
 
 /* =========================================================================
-   3. TELEGRAM BILDIRISHNOMA FUNKSIYASI
+   3. TELEGRAM BILDIRISHNOMA FUNKSIYASI (chiquvchi xabarlar)
    ========================================================================= */
 
-async function sendTelegramMessage(chatId, text) {
+async function sendTelegramMessage(chatId, text, replyMarkup) {
   if (!chatId) return; // parentChatId kiritilmagan bo'lsa, jim o'tkazib yuboramiz
   if (!TELEGRAM_BOT_TOKEN) {
     console.warn('TELEGRAM_BOT_TOKEN sozlanmagan — xabar yuborilmadi:', text);
     return;
   }
   try {
+    const body = {
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'HTML'
+    };
+    if (replyMarkup) body.reply_markup = replyMarkup;
+
     const res = await fetch(`${TELEGRAM_API}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: text,
-        parse_mode: 'HTML'
-      })
+      body: JSON.stringify(body)
     });
     const data = await res.json();
     if (!data.ok) {
@@ -131,6 +137,122 @@ async function sendTelegramMessage(chatId, text) {
     }
   } catch (err) {
     console.error('Telegram fetch xatoligi:', err.message);
+  }
+}
+
+/* =========================================================================
+   3B. TELEGRAM BOT — KIRUVCHI XABARLARNI QABUL QILISH (long polling)
+   Ota-ona /start bosadi -> bot unga Telegram Chat ID'sini yuboradi.
+   Admin shu ID'ni o'quvchi profilidagi "parentChatId" maydoniga yozadi.
+   Shundan keyin ota-ona "📊 Holatim" tugmasi orqali bugungi davomat holati
+   va joriy balansini istalgan vaqtda ko'rishi mumkin.
+   ========================================================================= */
+
+const STATUS_BUTTON_TEXT = '📊 Holatim';
+
+function statusKeyboard() {
+  return {
+    keyboard: [[{ text: STATUS_BUTTON_TEXT }]],
+    resize_keyboard: true
+  };
+}
+
+// Telegram HTML parse_mode uchun maxsus belgilarni xavfsizlantiradi
+function escapeTgHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+function fmtMoneyTg(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString('ru-RU').replace(/,/g, ' ') + " so'm";
+}
+
+async function sendStatusToParent(chatId) {
+  const db = readDB();
+  const children = db.students.filter(s => String(s.parentChatId) === String(chatId));
+
+  if (children.length === 0) {
+    await sendTelegramMessage(
+      chatId,
+      `Hozircha Telegram ID'ingiz hech qaysi o'quvchi profiliga ulanmagan.\n\nSizning ID raqamingiz: <b>${chatId}</b>\n\nShu raqamni farzandingiz o'qiydigan markaz administratoriga bering — u buni tizimga kiritgandan so'ng, shu yerdan holatni kuzatishingiz mumkin bo'ladi.`
+    );
+    return;
+  }
+
+  const today = todayDateStr();
+  const blocks = children.map(s => {
+    const att = db.attendance.find(a => a.studentId === s.id && a.date === today);
+    let statusLine = '⏳ Bugungi davomat hali belgilanmagan';
+    if (att) statusLine = att.status === 'keldi' ? `✅ Keldi (soat ${escapeTgHtml(att.time)})` : '❌ Kelmadi';
+
+    return `👤 <b>${escapeTgHtml(s.name)}</b>\nGuruh: ${escapeTgHtml(s.group || '—')}\nBugun: ${statusLine}\nJoriy balans: ${fmtMoneyTg(s.balance)}`;
+  });
+
+  await sendTelegramMessage(chatId, blocks.join('\n\n'), statusKeyboard());
+}
+
+async function handleTelegramUpdate(update) {
+  const msg = update.message;
+  if (!msg || !msg.text) return;
+  const chatId = msg.chat.id;
+  const text = msg.text.trim();
+
+  if (text === '/start') {
+    await sendTelegramMessage(
+      chatId,
+      `Assalomu alaykum! 👋\n\nSizning Telegram ID raqamingiz: <b>${chatId}</b>\n\nUshbu ID raqamni farzandingiz o'qiydigan markaz administratoriga bering. U sizni farzandingiz profiliga ulaganidan so'ng, "${STATUS_BUTTON_TEXT}" tugmasi orqali bugun darsga kelgan-kelmaganini va joriy balansni istalgan vaqtda ko'rishingiz mumkin bo'ladi.`,
+      statusKeyboard()
+    );
+    return;
+  }
+
+  if (text === STATUS_BUTTON_TEXT || text.toLowerCase() === '/holat' || text.toLowerCase() === '/status') {
+    await sendStatusToParent(chatId);
+    return;
+  }
+
+  await sendTelegramMessage(
+    chatId,
+    `Buyruqni tushunmadim 🙂\n\nHolatni ko'rish uchun "${STATUS_BUTTON_TEXT}" tugmasini bosing.`,
+    statusKeyboard()
+  );
+}
+
+let telegramOffset = 0;
+let telegramPollingActive = false;
+
+async function pollTelegramUpdates() {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.warn('TELEGRAM_BOT_TOKEN sozlanmagan — Telegram bot ishga tushmadi.');
+    return;
+  }
+  if (telegramPollingActive) return; // ikki marta parallel ishga tushishning oldini olamiz
+  telegramPollingActive = true;
+
+  try {
+    const res = await fetch(`${TELEGRAM_API}/getUpdates?offset=${telegramOffset}&timeout=25`);
+    const data = await res.json();
+    if (data.ok && Array.isArray(data.result)) {
+      for (const update of data.result) {
+        telegramOffset = update.update_id + 1;
+        try {
+          await handleTelegramUpdate(update);
+        } catch (innerErr) {
+          console.error('Telegram update qayta ishlashda xatolik:', innerErr.message);
+        }
+      }
+    } else if (!data.ok) {
+      console.error('Telegram getUpdates javobi xato:', data.description);
+    }
+  } catch (err) {
+    console.error('Telegram getUpdates so\'rovida xatolik:', err.message);
+  } finally {
+    telegramPollingActive = false;
+    setTimeout(pollTelegramUpdates, 1000);
   }
 }
 
@@ -381,7 +503,8 @@ app.post('/api/attendance/qr', async (req, res) => {
   // Ota-onaga zumda Telegram xabar (asinxron, javobni kutmasdan yuboramiz)
   sendTelegramMessage(
     student.parentChatId,
-    `Hurmatli ota-ona, farzandingiz ${student.name} bugun soat ${time} da darsga yetib keldi. ✅`
+    `Hurmatli ota-ona, farzandingiz ${student.name} bugun soat ${time} da darsga yetib keldi. ✅\n\nJoriy balans: ${fmtMoneyTg(student.balance)}`,
+    statusKeyboard()
   );
 
   const stats = computeTodayStats(db);
@@ -452,7 +575,8 @@ schedule.scheduleJob('* * * * *', async () => {
 
       sendTelegramMessage(
         student.parentChatId,
-        `Hurmatli ota-ona, bugungi dars yakunlandi. Farzandingiz ${student.name} darsga KELMADI. ❌`
+        `Hurmatli ota-ona, bugungi dars yakunlandi. Farzandingiz ${student.name} darsga KELMADI. ❌\n\nJoriy balans: ${fmtMoneyTg(student.balance)}`,
+        statusKeyboard()
       );
     }
   }
@@ -509,4 +633,5 @@ if (!fs.existsSync(DB_FILE)) {
 
 app.listen(PORT, () => {
   console.log(`Smart QR-Attendance CRM server ${PORT}-portda ishga tushdi.`);
+  pollTelegramUpdates(); // Telegram botni ishga tushiramiz (agar token bo'lsa)
 });
