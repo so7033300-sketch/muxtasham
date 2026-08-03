@@ -181,14 +181,53 @@ function teacherName(teacherId) {
 }
 
 function renderTeacherSelects() {
-  const selects = [document.getElementById('f-teacher'), document.getElementById('e-teacher')];
-  selects.forEach(sel => {
-    if (!sel) return;
-    const current = sel.value;
-    sel.innerHTML = '<option value="">— O\'qituvchi tanlang —</option>' +
+  const pairs = [
+    { teacherSel: document.getElementById('f-teacher'), groupSel: document.getElementById('f-group') },
+    { teacherSel: document.getElementById('e-teacher'), groupSel: document.getElementById('e-group') }
+  ];
+  pairs.forEach(({ teacherSel, groupSel }) => {
+    if (!teacherSel) return;
+    const current = teacherSel.value;
+    teacherSel.innerHTML = '<option value="">— O\'qituvchi tanlang —</option>' +
       ADMIN_STATE.teachers.map(t => `<option value="${t.id}">${escapeHtml(t.name)}</option>`).join('');
-    if (current) sel.value = current;
+    if (current) teacherSel.value = current;
+    if (groupSel) populateGroupOptions(groupSel, teacherSel.value, groupSel.value);
   });
+}
+
+// Tanlangan o'qituvchining guruhlarini Guruh select ichiga to'ldiradi.
+// Har bir o'qituvchi faqat o'ziga tegishli guruhlar ro'yxatiga ega.
+function populateGroupOptions(groupSel, teacherId, selectedValue) {
+  if (!groupSel) return;
+  if (!teacherId) {
+    groupSel.innerHTML = '<option value="">— avval o\'qituvchini tanlang —</option>';
+    groupSel.disabled = true;
+    return;
+  }
+  const teacher = ADMIN_STATE.teachers.find(t => t.id === teacherId);
+  const groups = teacher ? (teacher.groups || []) : [];
+  groupSel.disabled = false;
+  if (groups.length === 0) {
+    groupSel.innerHTML = '<option value="">— bu o\'qituvchida guruh yo\'q —</option>';
+    return;
+  }
+  groupSel.innerHTML = '<option value="">— Guruh tanlang —</option>' +
+    groups.map(g => `<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');
+  if (selectedValue && groups.includes(selectedValue)) groupSel.value = selectedValue;
+}
+
+// O'qituvchi tanlanganda tegishli guruhlar ro'yxati yangilanishi uchun listenerlar
+function initTeacherGroupLinking() {
+  const fTeacher = document.getElementById('f-teacher');
+  const fGroup = document.getElementById('f-group');
+  if (fTeacher && fGroup) {
+    fTeacher.addEventListener('change', () => populateGroupOptions(fGroup, fTeacher.value, ''));
+  }
+  const eTeacher = document.getElementById('e-teacher');
+  const eGroup = document.getElementById('e-group');
+  if (eTeacher && eGroup) {
+    eTeacher.addEventListener('change', () => populateGroupOptions(eGroup, eTeacher.value, ''));
+  }
 }
 
 function renderStudentsTable() {
@@ -219,16 +258,71 @@ function renderTeachersTable() {
   const body = document.getElementById('teachers-table-body');
   if (!body) return;
   if (ADMIN_STATE.teachers.length === 0) {
-    body.innerHTML = '<tr><td colspan="3" class="empty-state">Hali o\'qituvchi qo\'shilmagan.</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" class="empty-state">Hali o\'qituvchi qo\'shilmagan.</td></tr>';
     return;
   }
-  body.innerHTML = ADMIN_STATE.teachers.map(t => `
+  body.innerHTML = ADMIN_STATE.teachers.map(t => {
+    const groups = t.groups || [];
+    const badges = groups.length
+      ? groups.map(g => `<span class="badge keldi group-badge" data-teacher="${t.id}" data-group="${escapeHtml(g)}" title="O'chirish uchun bosing" style="cursor:pointer; margin:2px 4px 2px 0; display:inline-block;">${escapeHtml(g)} ✕</span>`).join('')
+      : '<span style="color:var(--text-dim); font-size:0.8rem;">guruh yo\'q</span>';
+    return `
     <tr>
       <td>${escapeHtml(t.name)}</td>
+      <td>
+        <div style="margin-bottom:8px; max-width:260px;">${badges}</div>
+        <div style="display:flex; gap:6px;">
+          <input type="text" id="new-group-${t.id}" placeholder="Yangi guruh nomi" style="max-width:150px; padding:6px 10px; font-size:0.78rem;" />
+          <button class="btn sm add-group-btn" data-teacher="${t.id}">+ Guruh</button>
+        </div>
+      </td>
       <td>${fmtMoney(t.salary)}</td>
       <td><button class="btn sm danger" onclick="deleteTeacher('${t.id}')">🗑 O'chirish</button></td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+}
+
+async function addGroupToTeacher(teacherId) {
+  const input = document.getElementById(`new-group-${teacherId}`);
+  if (!input) return;
+  const group = input.value.trim();
+  if (!group) return;
+  const { ok, data } = await apiSend(`/api/teachers/${teacherId}/groups`, 'POST', { group });
+  if (ok && data.success) {
+    showToast(`✅ "${group}" guruhi qo'shildi.`, 'ok');
+    loadAdminData();
+  } else {
+    showToast(`⚠️ ${data.message || 'Guruh qo\'shishda xatolik.'}`, 'err');
+  }
+}
+
+async function removeGroupFromTeacher(teacherId, group) {
+  if (!confirm(`"${group}" guruhini o'chirishni tasdiqlaysizmi?`)) return;
+  const { ok, data } = await apiSend(`/api/teachers/${teacherId}/groups/${encodeURIComponent(group)}`, 'DELETE');
+  if (ok && data.success) {
+    showToast('Guruh o\'chirildi.', 'ok');
+    loadAdminData();
+  } else {
+    showToast(`⚠️ ${data.message || 'O\'chirishda xatolik.'}`, 'err');
+  }
+}
+
+// Guruh qo'shish tugmasi va guruh belgisini o'chirish uchun delegatsiyalangan listener
+function initTeachersTableEvents() {
+  const body = document.getElementById('teachers-table-body');
+  if (!body) return;
+  body.addEventListener('click', (e) => {
+    const addBtn = e.target.closest('.add-group-btn');
+    if (addBtn) {
+      addGroupToTeacher(addBtn.dataset.teacher);
+      return;
+    }
+    const badge = e.target.closest('.group-badge');
+    if (badge) {
+      removeGroupFromTeacher(badge.dataset.teacher, badge.dataset.group);
+    }
+  });
 }
 
 function renderLiveFeed(attendanceToday) {
@@ -320,9 +414,14 @@ function initManualScanInput() {
     }
   });
 
-  // Fokusni doimo shu inputda ushlab turamiz (apparat klaviaturadek ishlaydi)
+  // Fokusni faqat "bo'sh joyda" (hech qanday forma maydoni band bo'lmaganda)
+  // shu inputga qaytaramiz — aks holda boshqa maydonlarga yozish imkonsiz bo'lib qolardi.
+  const isFormField = (el) => el && ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName);
   const refocus = () => {
-    if (document.activeElement !== input && !document.querySelector('.modal-overlay.open')) {
+    const active = document.activeElement;
+    const modalOpen = !!document.querySelector('.modal-overlay.open');
+    const somethingElseFocused = isFormField(active) && active !== input;
+    if (!modalOpen && !somethingElseFocused && active !== input) {
       input.focus();
     }
   };
@@ -404,8 +503,8 @@ function openEditModal(studentId) {
 
   document.getElementById('e-id').value = student.id;
   document.getElementById('e-name').value = student.name || '';
-  document.getElementById('e-group').value = student.group || '';
   document.getElementById('e-teacher').value = student.teacherId || '';
+  populateGroupOptions(document.getElementById('e-group'), student.teacherId || '', student.group || '');
   document.getElementById('e-fee').value = student.fee || 0;
   document.getElementById('e-balance').value = student.balance || 0;
   document.getElementById('e-qrcode').value = student.studQrCode || '';
@@ -530,5 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAddStudentForm();
   initEditModal();
   initAddTeacherForm();
+  initTeacherGroupLinking();
+  initTeachersTableEvents();
   initPeriodicRefresh();
 });
