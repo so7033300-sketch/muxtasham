@@ -1,147 +1,233 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Panel - EduManage CRM</title>
-    <link rel="stylesheet" href="/style.css">
-    <style>
-        body { align-items: flex-start; }
-        .flex-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
-        .search-box { width: 300px; margin-bottom: 0; }
-        .danger-btn { background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2); }
-        .danger-btn:hover { background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); box-shadow: 0 8px 25px rgba(239, 68, 68, 0.4); }
-        .excel-btn { background: linear-gradient(135deg, #10b981 0%, #047857 100%) !important; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2) !important; width: auto !important; padding: 10px 20px !important; }
-        .excel-btn:hover { background: linear-gradient(135deg, #059669 0%, #065f46 100%) !important; box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4) !important; transform: translateY(-2px); }
-        .inline-form { display: flex; gap: 10px; align-items: center; }
-        .inline-form input { padding: 8px 12px; font-size: 13px; }
-        .inline-form .btn { padding: 8px 15px; font-size: 13px; width: auto; }
-        select { appearance: none; -webkit-appearance: none; background: rgba(255, 255, 255, 0.05) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; color: #ffffff !important; cursor: pointer; padding: 14px 20px; width: 100%; border-radius: 12px; outline: none; font-size: 15px; }
-        select option { background-color: #111026 !important; color: #ffffff !important; padding: 12px !important; }
-        select:focus { border-color: #38bdf8 !important; box-shadow: 0 0 15px rgba(56, 189, 248, 0.2) !important; }
-        .dynamic-group-box { animation: fadeIn 0.4s ease-out; background: rgba(255, 255, 255, 0.02); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.05); margin-bottom: 20px; }
-        .archive-title { color: #a78bfa !important; border-left: 4px solid #a78bfa !important; padding-left: 15px; margin-top: 20px; text-align: left; }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart QR-Attendance — Admin panel</title>
+<link rel="stylesheet" href="style.css" />
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 </head>
 <body>
-    <div class="dashboard-container">
-        <!-- Header -->
-        <div class="flex-header glass-container" style="max-width: 100%; padding: 20px 40px; border-radius: 16px;">
-            <h2 style="margin-bottom: 0;">Admin Boshqaruv Paneli</h2>
-            <div style="font-size: 16px; font-weight: 500;">
-                Markaz sof foydasi: <span class="status-badge status-paid" id="centerProfitDisplay" style="font-size: 16px; padding: 8px 16px;">0 so'm</span>
-            </div>
-            <div style="display: flex; gap: 15px; align-items: center;">
-                <!-- 🔥 YANGI EXCEL YUKLASH TUGMASI -->
-                <button class="btn excel-btn" onclick="downloadExcelReport()">📥 Excel Hisobot</button>
-                <button class="btn danger-btn" style="width: auto; padding: 10px 20px;" onclick="logout()">Chiqish</button>
-            </div>
-        </div>
-        <div class="grid-2">
-            <!-- 1. Yangi O'quvchi Qo'shish Oynasi -->
-            <div class="card glass-container" style="max-width: 100%;">
-                <h3>Yangi O'quvchi Qo'shish</h3>
-                <form id="studentForm">
-                    <div class="input-group"> <input type="text" id="studName" placeholder="F.I.Sh (Ism Familya)" required> </div>
-                    <div class="input-group"> <input type="text" id="studPhone" placeholder="Telefon raqami (998901234567)" required> </div>
-                    <div class="input-group"> <input type="number" id="studBirth" placeholder="Tug'ilgan yili (Yil)" required> </div>
-                    <div class="input-group">
-                        <select id="studFee" required>
-                            <option value="" disabled selected>Oylik to'lov miqdorini tanlang</option>
-                            <option value="250000">250 000 so'm</option>
-                            <option value="300000">300 000 so'm</option>
-                            <option value="350000">350 000 so'm</option>
-                            <option value="400000">400 000 so'm</option>
-                            <option value="450000">450 000 so'm</option>
-                            <option value="500000">500 000 so'm</option>
-                            <option value="550000">550 000 so'm</option>
-                            <option value="600000">600 000 so'm</option>
-                        </select>
-                    </div>
-                    <div class="input-group"> <select id="studTeacher" onchange="onTeacherSelected()" required><option value="" disabled selected>Qaysi o'qituvchiga qo'shish...</option></select> </div>
-                    <div id="groupSelectionContainer" class="dynamic-group-box" style="display: none;">
-                        <div class="input-group" style="margin-bottom: 10px;">
-                            <select id="groupModeSelect" onchange="toggleGroupMode()">
-                                <option value="select">Mavjud guruhlardan tanlash</option>
-                                <option value="create">Mavjud guruh yo'q, yangi oching</option>
-                            </select>
-                        </div>
-                        <div id="existingGroupWrapper" class="input-group" style="margin-bottom: 0;">
-                            <select id="studGroupSelect"><option value="" disabled selected>Guruhni tanlang...</option></select>
-                        </div>
-                        <div id="newGroupWrapper" class="input-group" style="margin-bottom: 0; display: none;">
-                            <input type="text" id="studNewGroupInput" placeholder="Yangi guruh nomini kiriting (Masalan: Group-1)">
-                        </div>
-                    </div>
-                    <div class="input-group"> <input type="text" id="parentChatId" placeholder="Ota-ona Telegram Chat ID (ixtiyoriy)"> </div>
-                    <button type="submit" class="btn">O'quvchini Saqlash</button>
-                </form>
-            </div>
 
-            <!-- 2. Yangi O'qituvchi Qo'shish Oynasi -->
-            <div class="card glass-container" style="max-width: 100%;">
-                <h3>Yangi O'qituvchi Qo'shish</h3>
-                <form id="teacherForm">
-                    <div class="input-group"> <input type="text" id="teachName" placeholder="O'qituvchi F.I.Sh" required> </div>
-                    <div class="input-group"> <input type="text" id="teachSubject" placeholder="Qaysi fandan dars berishi" required> </div>
-                    <div class="grid-2" style="margin-bottom: 0; gap: 10px;">
-                        <div class="input-group"> <input type="time" id="teachTimeStart" required> </div>
-                        <div class="input-group"> <input type="time" id="teachTimeEnd" required> </div>
-                    </div>
-                    <div class="input-group" style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1);">
-                        <label style="display: block; margin-bottom: 10px; color: #38bdf8; font-size: 14px;">Dars kunlarini tanlang:</label>
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px;">
-                            <label><input type="checkbox" name="teachDaysCheck" value="Dushanba" style="width:auto;"> Dushanba</label>
-                            <label><input type="checkbox" name="teachDaysCheck" value="Seshanba" style="width:auto;"> Seshanba</label>
-                            <label><input type="checkbox" name="teachDaysCheck" value="Chorshanba" style="width:auto;"> Chorshanba</label>
-                            <label><input type="checkbox" name="teachDaysCheck" value="Payshanba" style="width:auto;"> Payshanba</label>
-                            <label><input type="checkbox" name="teachDaysCheck" value="Juma" style="width:auto;"> Juma</label>
-                            <label><input type="checkbox" name="teachDaysCheck" value="Shanba" style="width:auto;"> Shanba</label>
-                            <label><input type="checkbox" name="teachDaysCheck" value="Yakshanba" style="width:auto;"> Yakshanba</label>
-                        </div>
-                    </div>
-                    <div class="grid-2" style="margin-bottom: 0; gap: 10px;">
-                        <div class="input-group"> <input type="text" id="teachLogin" placeholder="Login" required> </div>
-                        <div class="input-group"> <input type="password" id="teachPass" placeholder="Parol" required> </div>
-                    </div>
-                    <button type="submit" class="btn">O'qituvchini Saqlash</button>
-                </form>
-            </div>
-        </div>
-        <!-- O'quvchilar Ro'yxati -->
-        <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
-            <div class="flex-header">
-                <h3 style="margin-bottom: 0;">Barcha O'quvchilar Ro'yxati</h3>
-                <div class="input-group search-box"> <input type="text" id="searchStudent" placeholder="Qidirish..." oninput="filterStudents()"> </div>
-                <button class="btn danger-btn" style="width: auto; padding: 8px 15px; font-size: 13px;" onclick="clearData('all')">Hamma Ma'lumotlarni Tozalash</button>
-            </div>
-            <div class="table-responsive"> <table> <thead> <tr> <th>Ism Familya</th> <th>Telefon raqam</th> <th>Ustoz (Guruh)</th> <th>Oylik To'lov</th> <th>Balans</th> <th>To'lov Qabul</th> <th>Amallar</th> </tr> </thead> <tbody id="studentsTableBody"></tbody> </table> </div>
-        </div>
+<!-- OSMA CHIROQ ZANJIRI (2 qator parallel) -->
+<div class="lights-wrap">
+  <svg class="lights-row row-1" viewBox="0 0 1200 70" preserveAspectRatio="none">
+    <path d="M0,6 Q300,60 600,10 T1200,6" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+    <g id="bulbs-row1"></g>
+  </svg>
+  <svg class="lights-row row-2" viewBox="0 0 1200 70" preserveAspectRatio="none">
+    <path d="M0,14 Q300,66 600,20 T1200,16" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2"/>
+    <g id="bulbs-row2"></g>
+  </svg>
+</div>
 
-        <!-- Kunlik Davomat Tarixi -->
-        <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
-            <div class="flex-header"> <h3 style="margin-bottom: 0;">Kunlik Davomat Tarixi</h3> <button class="btn danger-btn" style="width: auto; padding: 8px 15px; font-size: 13px;" onclick="clearData('attendance')">Davomatni Tozalash</button> </div>
-            <div class="table-responsive"> <table> <thead> <tr> <th>Sana</th> <th>O'quvchi F.I.Sh</th> <th>O'qituvchi</th> <th>Status</th> </tr> </thead> <tbody id="attendanceTableBody"></tbody> </table> </div>
-        </div>
+<div class="toast-area" id="toast-area"></div>
 
-        <!-- O'qituvchilar Ro'yxati -->
-        <div class="card glass-container" style="max-width: 100%; margin-bottom: 30px;">
-            <h3>O'qituvchilar Ro'yxati va Ularning Joriy Balansi</h3>
-            <div class="table-responsive"> <table> <thead> <tr> <th>O'qituvchi F.I.Sh</th> <th>Fan</th> <th>Kunlar / Vaqt</th> <th>Oylik Balans</th> <th>Login / Parol</th> <th>Amallar</th> </tr> </thead> <tbody id="teachersTableBody"></tbody> </table> </div>
-        </div>
-
-        <!-- O'TGAN OYLAR MOLIYAVIY ARXIV JADVALI -->
-        <div class="grid-2" style="gap: 30px;">
-            <div class="card glass-container" style="max-width: 100%;">
-                <h3 class="archive-title">📦 Markaz Foyda Arxivi (Oxirgi 3 oy)</h3>
-                <div class="table-responsive"> <table> <thead> <tr> <th>Yil-Oy</th> <th>Arxivlangan Sof Foyda</th> </tr> </thead> <tbody id="centerArchiveTableBody"></tbody> </table> </div>
-            </div>
-            <div class="card glass-container" style="max-width: 100%;">
-                <h3 class="archive-title">📦 O'qituvchilar Oylik Arxivi (Oxirgi 3 oy)</h3>
-                <div class="table-responsive"> <table> <thead> <tr> <th>Yil-Oy</th> <th>O'qituvchi</th> <th>Fan</th> <th>Olingan Oylik</th> </tr> </thead> <tbody id="teacherArchiveTableBody"></tbody> </table> </div>
-            </div>
-        </div>
+<div class="page">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-badge">🎓</div>
+      <div>
+        <h1>Admin panel</h1>
+        <span>Smart QR-Attendance — markaziy boshqaruv</span>
+      </div>
     </div>
-    <script src="/script.js"></script>
+    <a class="nav-link" href="/index.html">🏠 Bosh sahifa</a>
+  </div>
+
+  <!-- STATISTIKA -->
+  <div class="stats-grid">
+    <div class="glass stat-card" id="card-total">
+      <div class="label">Jami o'quvchilar</div>
+      <div class="value" id="stat-total">0</div>
+    </div>
+    <div class="glass stat-card came" id="card-came">
+      <div class="label">Kelganlar soni</div>
+      <div class="value" id="stat-came">0</div>
+    </div>
+    <div class="glass stat-card missed" id="card-missed">
+      <div class="label">Kelmaganlar soni</div>
+      <div class="value" id="stat-missed">0</div>
+    </div>
+    <div class="glass stat-card profit" id="card-profit">
+      <div class="label">Joriy markaz foydasi</div>
+      <div class="value" id="stat-profit">0 so'm</div>
+    </div>
+  </div>
+
+  <!-- 🔴 JONLI QR-DAVOMAT SKANERI -->
+  <div class="glass scanner-block">
+    <div class="section-title live"><span class="dot"></span> 🔴 JONLI QR-DAVOMAT SKANERI</div>
+
+    <div class="scanner-grid">
+      <div>
+        <div id="qr-reader"></div>
+        <div class="manual-input-wrap">
+          <label for="manualQrInput">Shtrix/QR kodni skaner qiling yoki qo'lda kiriting:</label>
+          <input type="text" id="manualQrInput" placeholder="Skaner kutilmoqda..." autocomplete="off" autofocus />
+        </div>
+      </div>
+
+      <div>
+        <div class="section-title" style="font-size:0.85rem; margin-bottom:8px;">Jonli davomat oqimi</div>
+        <div class="live-feed" id="live-feed">
+          <table>
+            <thead>
+              <tr><th>O'quvchi</th><th>Holat</th><th>Vaqt</th></tr>
+            </thead>
+            <tbody id="live-feed-body">
+              <tr><td colspan="3" class="empty-state">Hali skaner qilinmadi.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- O'QUVCHI QO'SHISH FORMASI -->
+  <div class="glass panel">
+    <div class="section-title"><span class="dot"></span> Yangi o'quvchi qo'shish</div>
+    <form id="addStudentForm" class="form-grid">
+      <div class="field">
+        <label>Ism-familiya</label>
+        <input type="text" id="f-name" required />
+      </div>
+      <div class="field">
+        <label>Guruh</label>
+        <input type="text" id="f-group" />
+      </div>
+      <div class="field">
+        <label>O'qituvchi</label>
+        <select id="f-teacher"></select>
+      </div>
+      <div class="field">
+        <label>Oylik to'lov (fee, so'm)</label>
+        <input type="number" id="f-fee" min="0" required />
+      </div>
+      <div class="field">
+        <label>O'quvchi QR/Shtrix Kodi</label>
+        <input type="text" id="f-qrcode" placeholder="masalan: STU-0001" />
+      </div>
+      <div class="field">
+        <label>Dars boshlanish vaqti</label>
+        <input type="time" id="f-lesson-start" />
+      </div>
+      <div class="field">
+        <label>Dars tugash vaqti</label>
+        <input type="time" id="f-lesson-end" />
+      </div>
+      <div class="field">
+        <label>Ota-ona Telegram ID (parentChatId)</label>
+        <input type="text" id="f-parent-chat" placeholder="masalan: 123456789" />
+      </div>
+      <div class="form-actions" style="grid-column: 1 / -1;">
+        <button type="submit" class="btn primary">+ O'quvchi qo'shish</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- O'QUVCHILAR RO'YXATI -->
+  <div class="glass panel">
+    <div class="section-title"><span class="dot"></span> O'quvchilar ro'yxati</div>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Ism</th><th>Guruh</th><th>O'qituvchi</th><th>Oylik</th>
+            <th>Balans</th><th>QR-kod</th><th>Dars vaqti</th><th>Amallar</th>
+          </tr>
+        </thead>
+        <tbody id="students-table-body">
+          <tr><td colspan="8" class="empty-state">Yuklanmoqda...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- O'QITUVCHILAR BOSHQARUVI -->
+  <div class="glass panel">
+    <div class="section-title"><span class="dot"></span> O'qituvchilar</div>
+    <form id="addTeacherForm" style="display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;">
+      <input type="text" id="f-teacher-name" placeholder="Yangi o'qituvchi ismi" style="flex:1; min-width:200px;" required />
+      <button type="submit" class="btn primary">+ Qo'shish</button>
+    </form>
+    <div class="table-scroll">
+      <table class="data-table">
+        <thead><tr><th>Ism</th><th>Joriy oylik (bu oy)</th><th>Amallar</th></tr></thead>
+        <tbody id="teachers-table-body">
+          <tr><td colspan="3" class="empty-state">Yuklanmoqda...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- OYLIK ARXIV -->
+  <div class="glass panel">
+    <div class="section-title"><span class="dot"></span> Oxirgi 3 oy arxivi</div>
+    <div class="table-scroll">
+      <table class="data-table" id="history-table">
+        <thead><tr><th>Oy</th><th>Markaz foydasi</th><th>O'qituvchilar oyligi (jami)</th></tr></thead>
+        <tbody><tr><td colspan="3" class="empty-state">Arxiv bo'sh.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="foot">Smart QR-Attendance CRM &middot; Sahifa yangilanmasdan jonli ishlaydi</footer>
+</div>
+
+<!-- TAHRIRLASH MODALI -->
+<div class="modal-overlay" id="editModal">
+  <div class="glass modal-box">
+    <div class="modal-head">
+      <h3 style="margin:0;">O'quvchini tahrirlash</h3>
+      <button class="modal-close" id="closeModalBtn">✕</button>
+    </div>
+    <form id="editStudentForm" class="form-grid">
+      <input type="hidden" id="e-id" />
+      <div class="field">
+        <label>Ism-familiya</label>
+        <input type="text" id="e-name" required />
+      </div>
+      <div class="field">
+        <label>Guruh</label>
+        <input type="text" id="e-group" />
+      </div>
+      <div class="field">
+        <label>O'qituvchi</label>
+        <select id="e-teacher"></select>
+      </div>
+      <div class="field">
+        <label>Oylik to'lov (fee)</label>
+        <input type="number" id="e-fee" min="0" required />
+      </div>
+      <div class="field">
+        <label>Balans</label>
+        <input type="number" id="e-balance" />
+      </div>
+      <div class="field">
+        <label>QR/Shtrix kod</label>
+        <input type="text" id="e-qrcode" />
+      </div>
+      <div class="field">
+        <label>Dars boshlanish vaqti</label>
+        <input type="time" id="e-lesson-start" />
+      </div>
+      <div class="field">
+        <label>Dars tugash vaqti</label>
+        <input type="time" id="e-lesson-end" />
+      </div>
+      <div class="field" style="grid-column: 1 / -1;">
+        <label>Ota-ona Telegram ID (parentChatId)</label>
+        <input type="text" id="e-parent-chat" placeholder="masalan: 123456789" />
+      </div>
+      <div class="form-actions" style="grid-column: 1 / -1;">
+        <button type="button" class="btn" id="cancelEditBtn">Bekor qilish</button>
+        <button type="submit" class="btn primary">Saqlash</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
