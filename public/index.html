@@ -1,54 +1,91 @@
 <!DOCTYPE html>
 <html lang="uz">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduManage CRM - Kirish</title>
-    <link rel="stylesheet" href="/style.css">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Smart QR-Attendance — Bosh sahifa</title>
+<link rel="stylesheet" href="style.css" />
 </head>
-<body> <!-- 🔥 Tizim ochilganda chiroq majburiy 100% o'chiq va qorong'u rejimda yuklanadi -->
+<body>
 
-    <!-- Animatsiyali Chiroq Atrof-muhiti -->
-    <div class="lamp-container">
-        <div class="lamp">
-            <div class="lamp-shade"></div>
-            <!-- Chiroqni o'chirib-yoqadigan osilib turgan ip -->
-            <div class="lamp-string" onclick="toggleLamp()"></div>
-            <div class="lamp-light"></div>
-        </div>
+<!-- OSMA CHIROQ ZANJIRI (2 qator parallel) -->
+<div class="lights-wrap">
+  <svg class="lights-row row-1" viewBox="0 0 1200 70" preserveAspectRatio="none">
+    <path d="M0,6 Q300,60 600,10 T1200,6" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="2"/>
+    <g id="bulbs-row1"></g>
+  </svg>
+  <svg class="lights-row row-2" viewBox="0 0 1200 70" preserveAspectRatio="none">
+    <path d="M0,14 Q300,66 600,20 T1200,16" fill="none" stroke="rgba(255,255,255,0.14)" stroke-width="2"/>
+    <g id="bulbs-row2"></g>
+  </svg>
+</div>
+
+<div class="page">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-badge">🎓</div>
+      <div>
+        <h1>Smart QR-Attendance</h1>
+        <span>O'quv markazi boshqaruv tizimi</span>
+      </div>
     </div>
+    <a class="nav-link" href="/admin.html">⚙️ Admin panel</a>
+  </div>
 
-    <!-- Premium Login Oynasi -->
-    <div class="login-form glass-container">
-        <h2>Welcome to EduManage CRM</h2>
-        <div id="errorMessage" class="status-badge status-debt" style="display: none; width: 100%; margin-bottom: 20px; text-align: center;"></div>
-        
-        <form onsubmit="event.preventDefault(); executeLogin();">
-            <div class="form-group">
-                <label>Username</label>
-                <input type="text" id="loginInput" placeholder="Enter name" required>
-            </div>
-            
-            <div class="form-group">
-                <label>Password</label>
-                <input type="password" id="passwordInput" placeholder="Enter Password" required>
-            </div>
-            
-            <button type="submit" class="login-btn">Sign In</button>
-        </form>
+  <div class="glass panel">
+    <div class="section-title"><span class="dot"></span> Bugungi umumiy holat</div>
+
+    <div class="stats-grid">
+      <div class="glass stat-card">
+        <div class="label">Jami o'quvchilar</div>
+        <div class="value" id="ov-total">0</div>
+      </div>
+      <div class="glass stat-card came">
+        <div class="label">Bugun kelganlar</div>
+        <div class="value" id="ov-came">0</div>
+      </div>
+      <div class="glass stat-card missed">
+        <div class="label">Bugun kelmaganlar</div>
+        <div class="value" id="ov-missed">0</div>
+      </div>
+      <div class="glass stat-card profit">
+        <div class="label">Joriy markaz foydasi</div>
+        <div class="value" id="ov-profit">0 so'm</div>
+      </div>
     </div>
+  </div>
 
-    <!-- Brauzer xotirasini qulflovchi va chiroqni boshqaruvchi silliq JS mantiqi -->
-    <script>
-        function toggleLamp() {
-            document.body.classList.toggle('lamp-on');
-        }
-        
-        // Majburiy xavfsizlik qoidasi: Sayt yangilanganda keshni tozalab, chiroqni o'chirib qo'yadi
-        window.addEventListener('DOMContentLoaded', () => {
-            document.body.classList.remove('lamp-on');
-        });
-    </script>
-    <script src="/script.js"></script>
+  <div class="glass panel">
+    <div class="section-title"><span class="dot"></span> Bugungi davomat oqimi</div>
+    <div class="live-feed" id="overview-feed">
+      <table>
+        <thead>
+          <tr><th>O'quvchi</th><th>Guruh</th><th>Holat</th><th>Vaqt</th></tr>
+        </thead>
+        <tbody id="overview-feed-body">
+          <tr><td colspan="4" class="empty-state">Ma'lumot yuklanmoqda...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="glass panel">
+    <div class="section-title"><span class="dot"></span> Oxirgi 3 oy arxivi</div>
+    <div class="table-scroll">
+      <table class="data-table" id="history-table">
+        <thead>
+          <tr><th>Oy</th><th>Markaz foydasi</th><th>O'qituvchilar oyligi (jami)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="3" class="empty-state">Arxiv bo'sh.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="foot">Smart QR-Attendance CRM &middot; Jonli rejim yoqilgan</footer>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
