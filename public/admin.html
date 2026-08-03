@@ -108,9 +108,12 @@
         <label>Oylik to'lov (fee, so'm)</label>
         <input type="number" id="f-fee" min="0" required />
       </div>
-      <div class="field">
+      <div class="field phone-field">
         <label>Telefon raqami</label>
-        <input type="tel" id="f-phone" placeholder="masalan: +998 90 123 45 67" />
+        <div class="phone-input-wrap">
+          <span class="phone-prefix">+998</span>
+          <input type="tel" id="f-phone" inputmode="numeric" placeholder="90 123 45 67" />
+        </div>
       </div>
       <div class="field">
         <label>O'quvchi QR/Shtrix Kodi</label>
@@ -217,9 +220,12 @@
         <label>Balans</label>
         <input type="number" id="e-balance" />
       </div>
-      <div class="field">
+      <div class="field phone-field">
         <label>Telefon raqami</label>
-        <input type="tel" id="e-phone" placeholder="masalan: +998 90 123 45 67" />
+        <div class="phone-input-wrap">
+          <span class="phone-prefix">+998</span>
+          <input type="tel" id="e-phone" inputmode="numeric" placeholder="90 123 45 67" />
+        </div>
       </div>
       <div class="field">
         <label>QR/Shtrix kod</label>
