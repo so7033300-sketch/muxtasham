@@ -63,6 +63,7 @@
       <div>
         <div id="qr-reader"></div>
         <div id="camera-status" style="margin-top:10px; font-size:0.8rem; color:var(--text-dim);"></div>
+        <div id="last-scanned" style="margin-top:4px; font-size:0.78rem; color:var(--text-dim);"></div>
         <button type="button" class="btn primary" id="startCameraBtn" style="margin-top:10px; width:100%;">📷 Kamerani ishga tushirish</button>
         <div class="manual-input-wrap">
           <label for="manualQrInput">Shtrix/QR kodni skaner qiling yoki qo'lda kiriting:</label>
@@ -75,10 +76,10 @@
         <div class="live-feed" id="live-feed">
           <table>
             <thead>
-              <tr><th>O'quvchi</th><th>Holat</th><th>Vaqt</th></tr>
+              <tr><th>O'quvchi</th><th>Telefon</th><th>Holat</th><th>Vaqt</th></tr>
             </thead>
             <tbody id="live-feed-body">
-              <tr><td colspan="3" class="empty-state">Hali skaner qilinmadi.</td></tr>
+              <tr><td colspan="4" class="empty-state">Hali skaner qilinmadi.</td></tr>
             </tbody>
           </table>
         </div>
@@ -108,12 +109,9 @@
         <label>Oylik to'lov (fee, so'm)</label>
         <input type="number" id="f-fee" min="0" required />
       </div>
-      <div class="field phone-field">
+      <div class="field">
         <label>Telefon raqami</label>
-        <div class="phone-input-wrap">
-          <span class="phone-prefix">+998</span>
-          <input type="tel" id="f-phone" inputmode="numeric" placeholder="90 123 45 67" />
-        </div>
+        <input type="text" id="f-phone" placeholder="+998 90 123 45 67" />
       </div>
       <div class="field">
         <label>O'quvchi QR/Shtrix Kodi</label>
@@ -127,12 +125,13 @@
         <label>Dars tugash vaqti</label>
         <input type="time" id="f-lesson-end" />
       </div>
-      <div class="field">
+      <div class="field" style="grid-column: 1 / -1;">
+        <label>Dars kunlari (belgilanmagan kunlari xabar yuborilmaydi va pul yechilmaydi)</label>
+        <div class="weekday-picker" data-prefix="f"></div>
+      </div>
+      <div class="field" style="grid-column: 1 / -1;">
         <label>Ota-ona Telegram ID (parentChatId)</label>
         <input type="text" id="f-parent-chat" placeholder="masalan: 123456789" />
-        <small style="color:var(--text-dim); font-size:0.72rem; display:block; margin-top:4px;">
-          Bu ID ota-ona botga <b>/start</b> bosganda avtomatik yuboriladi — o'sha raqamni shu yerga qo'ying.
-        </small>
       </div>
       <div class="form-actions" style="grid-column: 1 / -1;">
         <button type="submit" class="btn primary">+ O'quvchi qo'shish</button>
@@ -143,16 +142,17 @@
   <!-- O'QUVCHILAR RO'YXATI -->
   <div class="glass panel">
     <div class="section-title"><span class="dot"></span> O'quvchilar ro'yxati</div>
+    <input type="text" id="student-search" placeholder="🔎 Ism, guruh, telefon yoki QR-kod bo'yicha qidirish..." style="margin-bottom:16px;" />
     <div class="table-scroll">
       <table class="data-table">
         <thead>
           <tr>
             <th>Ism</th><th>Guruh</th><th>O'qituvchi</th><th>Telefon</th><th>Oylik</th>
-            <th>Balans</th><th>QR-kod</th><th>Dars vaqti</th><th>Amallar</th>
+            <th>Balans</th><th>QR-kod</th><th>Kunlar</th><th>Dars vaqti</th><th>Amallar</th>
           </tr>
         </thead>
         <tbody id="students-table-body">
-          <tr><td colspan="9" class="empty-state">Yuklanmoqda...</td></tr>
+          <tr><td colspan="10" class="empty-state">Yuklanmoqda...</td></tr>
         </tbody>
       </table>
     </div>
@@ -220,12 +220,9 @@
         <label>Balans</label>
         <input type="number" id="e-balance" />
       </div>
-      <div class="field phone-field">
+      <div class="field">
         <label>Telefon raqami</label>
-        <div class="phone-input-wrap">
-          <span class="phone-prefix">+998</span>
-          <input type="tel" id="e-phone" inputmode="numeric" placeholder="90 123 45 67" />
-        </div>
+        <input type="text" id="e-phone" placeholder="+998 90 123 45 67" />
       </div>
       <div class="field">
         <label>QR/Shtrix kod</label>
@@ -240,11 +237,12 @@
         <input type="time" id="e-lesson-end" />
       </div>
       <div class="field" style="grid-column: 1 / -1;">
+        <label>Dars kunlari</label>
+        <div class="weekday-picker" data-prefix="e"></div>
+      </div>
+      <div class="field" style="grid-column: 1 / -1;">
         <label>Ota-ona Telegram ID (parentChatId)</label>
         <input type="text" id="e-parent-chat" placeholder="masalan: 123456789" />
-        <small style="color:var(--text-dim); font-size:0.72rem; display:block; margin-top:4px;">
-          Bu ID ota-ona botga <b>/start</b> bosganda avtomatik yuboriladi — o'sha raqamni shu yerga qo'ying.
-        </small>
       </div>
       <div class="form-actions" style="grid-column: 1 / -1;">
         <button type="button" class="btn" id="cancelEditBtn">Bekor qilish</button>
