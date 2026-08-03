@@ -340,7 +340,7 @@ app.get('/api/students', (req, res) => {
 app.post('/api/students', (req, res) => {
   const db = readDB();
   const {
-    name, group, teacherId, fee,
+    name, group, teacherId, fee, phone,
     studQrCode, lessonStart, lessonEnd,
     parentChatId
   } = req.body;
@@ -360,6 +360,7 @@ app.post('/api/students', (req, res) => {
     teacherId: teacherId || null,
     fee: Number(fee),
     balance: 0,
+    phone: phone || '',
     studQrCode: studQrCode || '',
     lessonStart: lessonStart || '',
     lessonEnd: lessonEnd || '',
@@ -380,7 +381,7 @@ app.put('/api/students/:id', (req, res) => {
   }
 
   const {
-    name, group, teacherId, fee,
+    name, group, teacherId, fee, phone,
     studQrCode, lessonStart, lessonEnd,
     parentChatId, balance
   } = req.body;
@@ -393,6 +394,7 @@ app.put('/api/students/:id', (req, res) => {
   if (group !== undefined) student.group = group;
   if (teacherId !== undefined) student.teacherId = teacherId;
   if (fee !== undefined) student.fee = Number(fee);
+  if (phone !== undefined) student.phone = phone;
   if (studQrCode !== undefined) student.studQrCode = studQrCode;
   if (lessonStart !== undefined) student.lessonStart = lessonStart;
   if (lessonEnd !== undefined) student.lessonEnd = lessonEnd;
