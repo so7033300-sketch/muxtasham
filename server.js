@@ -27,7 +27,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 function defaultDB() {
   return {
     students: [],   // {id, name, group, teacherId, fee, studQrCode, lessonStart, lessonEnd, parentChatId, balance}
-    teachers: [],   // {id, name, salary}
+    teachers: [],   // {id, name, salary, groups: [name, ...]}
     attendance: [], // {id, studentId, studentName, date, status, time, teacherId}
     center_profit: 0,
     history: []     // {month, center_profit, teacher_salary: {teacherId: amount, ...}}
@@ -44,6 +44,7 @@ function readDB() {
     // Eski fayllarda maydon yo'q bo'lsa, xavfsiz default qiymatlar bilan to'ldiramiz
     db.students = db.students || [];
     db.teachers = db.teachers || [];
+    db.teachers.forEach(t => { if (!Array.isArray(t.groups)) t.groups = []; });
     db.attendance = db.attendance || [];
     db.center_profit = db.center_profit || 0;
     db.history = db.history || [];
@@ -264,11 +265,16 @@ app.get('/api/teachers', (req, res) => {
 
 app.post('/api/teachers', (req, res) => {
   const db = readDB();
-  const { name } = req.body;
+  const { name, groups } = req.body;
   if (!name) {
     return res.status(400).json({ success: false, message: 'O\'qituvchi ismi majburiy.' });
   }
-  const newTeacher = { id: genId('tch'), name, salary: 0 };
+  const newTeacher = {
+    id: genId('tch'),
+    name,
+    salary: 0,
+    groups: Array.isArray(groups) ? groups.filter(g => g && g.trim()) : []
+  };
   db.teachers.push(newTeacher);
   writeDB(db);
   res.json({ success: true, teacher: newTeacher });
@@ -280,9 +286,43 @@ app.put('/api/teachers/:id', (req, res) => {
   if (!teacher) {
     return res.status(404).json({ success: false, message: 'O\'qituvchi topilmadi.' });
   }
-  const { name, salary } = req.body;
+  const { name, salary, groups } = req.body;
   if (name !== undefined) teacher.name = name;
   if (salary !== undefined) teacher.salary = Number(salary);
+  if (Array.isArray(groups)) teacher.groups = groups.filter(g => g && g.trim());
+  writeDB(db);
+  res.json({ success: true, teacher });
+});
+
+// Bitta o'qituvchiga yangi guruh qo'shish (har o'qituvchi o'z guruhlariga ega)
+app.post('/api/teachers/:id/groups', (req, res) => {
+  const db = readDB();
+  const teacher = db.teachers.find(t => t.id === req.params.id);
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'O\'qituvchi topilmadi.' });
+  }
+  const group = (req.body.group || '').trim();
+  if (!group) {
+    return res.status(400).json({ success: false, message: 'Guruh nomi kiritilmadi.' });
+  }
+  teacher.groups = teacher.groups || [];
+  if (teacher.groups.includes(group)) {
+    return res.status(400).json({ success: false, message: 'Bu guruh allaqachon mavjud.' });
+  }
+  teacher.groups.push(group);
+  writeDB(db);
+  res.json({ success: true, teacher });
+});
+
+// O'qituvchidan bitta guruhni o'chirish
+app.delete('/api/teachers/:id/groups/:group', (req, res) => {
+  const db = readDB();
+  const teacher = db.teachers.find(t => t.id === req.params.id);
+  if (!teacher) {
+    return res.status(404).json({ success: false, message: 'O\'qituvchi topilmadi.' });
+  }
+  const groupName = decodeURIComponent(req.params.group);
+  teacher.groups = (teacher.groups || []).filter(g => g !== groupName);
   writeDB(db);
   res.json({ success: true, teacher });
 });
