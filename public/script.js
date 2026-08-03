@@ -47,6 +47,61 @@ function showToast(message, type = 'ok') {
 }
 
 /* -------------------------------------------------------------------------
+   0.1 TELEFON RAQAMINI AVTOMATIK FORMATLASH ("+998" doim qotib turadi,
+   qolgan 9 ta raqam "XX XXX XX XX" ko'rinishida avtomatik joylashadi)
+   ------------------------------------------------------------------------- */
+
+function formatUzPhoneDigits(digits) {
+  digits = String(digits || '').replace(/\D/g, '').slice(0, 9);
+  const parts = [];
+  if (digits.length > 0) parts.push(digits.slice(0, 2));
+  if (digits.length > 2) parts.push(digits.slice(2, 5));
+  if (digits.length > 5) parts.push(digits.slice(5, 7));
+  if (digits.length > 7) parts.push(digits.slice(7, 9));
+  return parts.join(' ');
+}
+
+// Faqat raqamlarni qoldiradi; agar foydalanuvchi "998" ni ham yozib qo'ysa,
+// prefiks bilan takrorlanib qolmasligi uchun boshidan olib tashlaydi.
+function extractUzPhoneDigits(raw) {
+  let digits = String(raw || '').replace(/\D/g, '');
+  if (digits.startsWith('998')) digits = digits.slice(3);
+  return digits.slice(0, 9);
+}
+
+// Input elementiga avtomatik formatlashni ulaydi (faqat raqam kiritiladi,
+// bo'shliqlar o'zi qo'yiladi).
+function attachPhoneMask(input) {
+  if (!input) return;
+  input.addEventListener('input', () => {
+    const digits = extractUzPhoneDigits(input.value);
+    input.value = formatUzPhoneDigits(digits);
+  });
+}
+
+function initPhoneMasks() {
+  attachPhoneMask(document.getElementById('f-phone'));
+  attachPhoneMask(document.getElementById('e-phone'));
+}
+
+// Inputdagi qiymatni to'liq "+998 XX XXX XX XX" ko'rinishiga aylantirib qaytaradi.
+// Raqam kiritilmagan bo'lsa, bo'sh satr qaytaradi (maydon ixtiyoriy).
+function getFullPhoneValue(inputId) {
+  const el = document.getElementById(inputId);
+  const digits = el ? extractUzPhoneDigits(el.value) : '';
+  return digits ? `+998 ${formatUzPhoneDigits(digits)}` : '';
+}
+
+// Bazadan kelgan (yoki eski, formatlanmagan) telefon qiymatini inputga
+// faqat raqamlar qismi bilan joylashtiradi ("+998" prefiks alohida chip'da).
+function setPhoneInputValue(inputId, storedPhone) {
+  const el = document.getElementById(inputId);
+  if (!el) return;
+  const digits = extractUzPhoneDigits(storedPhone);
+  el.value = formatUzPhoneDigits(digits);
+}
+
+/* -------------------------------------------------------------------------
    1. OSMA CHIROQ ZANJIRINI CHIZISH (2 qator, parallel)
    ------------------------------------------------------------------------- */
 
@@ -523,7 +578,7 @@ function initAddStudentForm() {
       group: document.getElementById('f-group').value.trim(),
       teacherId: document.getElementById('f-teacher').value || null,
       fee: Number(document.getElementById('f-fee').value),
-      phone: document.getElementById('f-phone').value.trim(),
+      phone: getFullPhoneValue('f-phone'),
       studQrCode: document.getElementById('f-qrcode').value.trim(),
       lessonStart: document.getElementById('f-lesson-start').value,
       lessonEnd: document.getElementById('f-lesson-end').value,
@@ -551,7 +606,7 @@ function openEditModal(studentId) {
   populateGroupOptions(document.getElementById('e-group'), student.teacherId || '', student.group || '');
   document.getElementById('e-fee').value = student.fee || 0;
   document.getElementById('e-balance').value = student.balance || 0;
-  document.getElementById('e-phone').value = student.phone || '';
+  setPhoneInputValue('e-phone', student.phone || '');
   document.getElementById('e-qrcode').value = student.studQrCode || '';
   document.getElementById('e-lesson-start').value = student.lessonStart || '';
   document.getElementById('e-lesson-end').value = student.lessonEnd || '';
@@ -583,7 +638,7 @@ function initEditModal() {
       teacherId: document.getElementById('e-teacher').value || null,
       fee: Number(document.getElementById('e-fee').value),
       balance: Number(document.getElementById('e-balance').value),
-      phone: document.getElementById('e-phone').value.trim(),
+      phone: getFullPhoneValue('e-phone'),
       studQrCode: document.getElementById('e-qrcode').value.trim(),
       lessonStart: document.getElementById('e-lesson-start').value,
       lessonEnd: document.getElementById('e-lesson-end').value,
@@ -677,4 +732,5 @@ document.addEventListener('DOMContentLoaded', () => {
   initTeacherGroupLinking();
   initTeachersTableEvents();
   initPeriodicRefresh();
+  initPhoneMasks();
 });
