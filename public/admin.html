@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Smart QR-Attendance — Admin panel</title>
 <link rel="stylesheet" href="style.css" />
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" onerror="this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js';"></script>
 </head>
 <body>
 
@@ -62,6 +62,8 @@
     <div class="scanner-grid">
       <div>
         <div id="qr-reader"></div>
+        <div id="camera-status" style="margin-top:10px; font-size:0.8rem; color:var(--text-dim);"></div>
+        <button type="button" class="btn primary" id="startCameraBtn" style="margin-top:10px; width:100%;">📷 Kamerani ishga tushirish</button>
         <div class="manual-input-wrap">
           <label for="manualQrInput">Shtrix/QR kodni skaner qiling yoki qo'lda kiriting:</label>
           <input type="text" id="manualQrInput" placeholder="Skaner kutilmoqda..." autocomplete="off" autofocus />
