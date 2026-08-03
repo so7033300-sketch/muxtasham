@@ -433,35 +433,77 @@ function initManualScanInput() {
    4.2 KAMERA ORQALI QR-SKANER (html5-qrcode kutubxonasi)
    ------------------------------------------------------------------------- */
 
+let CAMERA_STARTED = false;
+let HTML5_QR_INSTANCE = null;
+
+function setCameraStatus(text, isError) {
+  const el = document.getElementById('camera-status');
+  if (!el) return;
+  el.textContent = text;
+  el.style.color = isError ? 'var(--danger)' : 'var(--text-dim)';
+}
+
 function initCameraScanner() {
   const readerEl = document.getElementById('qr-reader');
-  if (!readerEl || typeof Html5Qrcode === 'undefined') return;
+  const startBtn = document.getElementById('startCameraBtn');
+  if (!readerEl || !startBtn) return;
 
-  const html5QrCode = new Html5Qrcode('qr-reader');
-  let isScanning = false;
+  startBtn.addEventListener('click', async () => {
+    if (CAMERA_STARTED) return;
 
-  Html5Qrcode.getCameras().then(cameras => {
-    if (!cameras || cameras.length === 0) {
-      readerEl.innerHTML = '<div class="empty-state">Kamera topilmadi — qo\'lda/apparat orqali kiriting.</div>';
+    if (typeof Html5Qrcode === 'undefined') {
+      setCameraStatus('❌ Skaner kutubxonasi yuklanmadi (internet aloqasi yoki reklama blokerini tekshiring), sahifani yangilab qayta urinib ko\'ring.', true);
       return;
     }
-    const cameraId = cameras[0].id;
-    html5QrCode.start(
-      cameraId,
-      { fps: 10, qrbox: { width: 230, height: 230 } },
-      (decodedText) => {
-        if (SCAN_LOCK) return;
-        submitAttendance(decodedText);
-      },
-      () => { /* har bir frame skan qilinmasa jim o'tkaziladi */ }
-    ).then(() => { isScanning = true; })
-      .catch(err => {
-        console.warn('Kamera ishga tushmadi:', err);
-        readerEl.innerHTML = '<div class="empty-state">Kamerani ishga tushirib bo\'lmadi. Qo\'lda/apparat orqali kiritishdan foydalaning.</div>';
-      });
-  }).catch(err => {
-    console.warn('Kameralar ro\'yxatini olishda xatolik:', err);
-    readerEl.innerHTML = '<div class="empty-state">Kameraga ruxsat berilmadi. Qo\'lda/apparat orqali kiritishdan foydalaning.</div>';
+
+    startBtn.disabled = true;
+    startBtn.textContent = 'Kamera so\'ralmoqda...';
+    setCameraStatus('Brauzer kamera ruxsatini so\'ramoqda — chiqqan oynada "Ruxsat berish / Allow" tugmasini bosing.');
+
+    try {
+      HTML5_QR_INSTANCE = new Html5Qrcode('qr-reader');
+
+      const startWith = async (cameraConfig) => {
+        return HTML5_QR_INSTANCE.start(
+          cameraConfig,
+          { fps: 10, qrbox: { width: 230, height: 230 } },
+          (decodedText) => {
+            if (SCAN_LOCK) return;
+            submitAttendance(decodedText);
+          },
+          () => { /* har bir frame skan qilinmasa jim o'tkaziladi */ }
+        );
+      };
+
+      // Avval orqa kamerani (telefon) so'raymiz, topilmasa mavjud birinchi kamerani ishlatamiz
+      try {
+        await startWith({ facingMode: 'environment' });
+      } catch (envErr) {
+        console.warn('Orqa kamera topilmadi, mavjud kameralar ro\'yxatidan foydalanilmoqda:', envErr);
+        const cameras = await Html5Qrcode.getCameras();
+        if (!cameras || cameras.length === 0) {
+          throw new Error('Hech qanday kamera topilmadi.');
+        }
+        await startWith(cameras[0].id);
+      }
+
+      CAMERA_STARTED = true;
+      startBtn.style.display = 'none';
+      setCameraStatus('✅ Kamera ishga tushdi — QR-kodni ramka ichiga tuting.');
+    } catch (err) {
+      console.error('Kamera xatoligi:', err);
+      startBtn.disabled = false;
+      startBtn.textContent = '📷 Kamerani qayta urinish';
+      let msg = 'Kamerani ishga tushirib bo\'lmadi: ' + (err && err.message ? err.message : err);
+      if (String(err).toLowerCase().includes('permission') || String(err).toLowerCase().includes('notallowed')) {
+        msg = '❌ Kameraga ruxsat berilmadi. Brauzer manzil satridagi 🔒/ⓘ belgisini bosib, Camera → Allow qiling, so\'ng sahifani yangilang.';
+      } else if (String(err).toLowerCase().includes('notfound')) {
+        msg = '❌ Kamera topilmadi. Qurilmangizda kamera borligini va boshqa dastur (Zoom, Skype va h.k.) uni band qilib turmaganini tekshiring.';
+      } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+        msg = '❌ Kamera faqat HTTPS orqali ishlaydi. Sahifani https:// manzili orqali oching.';
+      }
+      setCameraStatus(msg, true);
+    }
   });
 }
 
@@ -622,9 +664,8 @@ document.addEventListener('DOMContentLoaded', () => {
   loadOverviewPage();
 
   // Admin panel
-  loadAdminData().then(() => {
-    initCameraScanner();
-  });
+  loadAdminData();
+  initCameraScanner();
   initManualScanInput();
   initAddStudentForm();
   initEditModal();
