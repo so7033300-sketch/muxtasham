@@ -20,6 +20,13 @@ const TIMEZONE = 'Asia/Tashkent';
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const TELEGRAM_API = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}`;
 
+// Admin bilan bog'lanish uchun sozlamalar
+const ADMIN_USERNAME = 'sobirov_cybersecurity'; // adminning Telegram useri (@ belgisisiz)
+// Ixtiyoriy: agar shu ID (raqamli, botga /start bosgandan keyin ko'rinadigan chat ID) Render
+// Environment Variables ichiga ADMIN_CHAT_ID nomi bilan qo'yilsa, har bir yangi ota-ona /start
+// bosganda ID uning haqida xabar avtomatik ravishda to'g'ridan-to'g'ri adminga yuboriladi.
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || '';
+
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -157,6 +164,18 @@ function statusKeyboard() {
   };
 }
 
+// "ID'ni adminga yuborish" tugmasi — bosilganda ota-onaning o'z Telegram
+// ilovasida @sobirov_cybersecurity bilan chat ochiladi, ID matn qilib
+// avtomatik to'ldirilgan bo'ladi, ota-ona faqat "Yuborish" tugmasini bosadi.
+function adminContactKeyboard(chatId, parentName) {
+  const prefilledText = `Salom! Mening Telegram ID: ${chatId}${parentName ? ` (${parentName})` : ''}. Farzandimni Smart QR-Attendance tizimida profilga ulab bering.`;
+  return {
+    inline_keyboard: [[
+      { text: '📨 ID\'ni adminga yuborish', url: `https://t.me/${ADMIN_USERNAME}?text=${encodeURIComponent(prefilledText)}` }
+    ]]
+  };
+}
+
 // Telegram HTML parse_mode uchun maxsus belgilarni xavfsizlantiradi
 function escapeTgHtml(str) {
   if (str === null || str === undefined) return '';
@@ -202,11 +221,31 @@ async function handleTelegramUpdate(update) {
   const text = msg.text.trim();
 
   if (text === '/start') {
+    const parentName = [msg.from && msg.from.first_name, msg.from && msg.from.last_name].filter(Boolean).join(' ');
+
+    // 1-xabar: ID + "adminga yuborish" tugmasi (inline)
     await sendTelegramMessage(
       chatId,
-      `Assalomu alaykum! 👋\n\nSizning Telegram ID raqamingiz: <b>${chatId}</b>\n\nUshbu ID raqamni farzandingiz o'qiydigan markaz administratoriga bering. U sizni farzandingiz profiliga ulaganidan so'ng, "${STATUS_BUTTON_TEXT}" tugmasi orqali bugun darsga kelgan-kelmaganini va joriy balansni istalgan vaqtda ko'rishingiz mumkin bo'ladi.`,
+      `Assalomu alaykum! 👋\n\nSizning Telegram ID raqamingiz: <b>${chatId}</b>\n\nPastdagi tugmani bosib, ID raqamingizni to'g'ridan-to'g'ri administratorga yuborishingiz mumkin. U sizni farzandingiz profiliga ulab qo'yadi.`,
+      adminContactKeyboard(chatId, parentName)
+    );
+
+    // 2-xabar: doimiy "Holatim" tugmasi (reply keyboard alohida xabarda, chunki bir xabarda
+    // ham inline, ham reply keyboard birga ishlatilmaydi)
+    await sendTelegramMessage(
+      chatId,
+      `Admin sizni ulab bo'lgach, "${STATUS_BUTTON_TEXT}" tugmasi orqali bugungi davomat holati va balansni istalgan vaqtda ko'rishingiz mumkin bo'ladi.`,
       statusKeyboard()
     );
+
+    // Agar ADMIN_CHAT_ID sozlangan bo'lsa, admin haqida avtomatik ravishda xabardor qilinadi
+    if (ADMIN_CHAT_ID) {
+      const usernamePart = msg.from && msg.from.username ? `@${escapeTgHtml(msg.from.username)}` : '—';
+      await sendTelegramMessage(
+        ADMIN_CHAT_ID,
+        `🔔 Botga yangi ota-ona /start bosdi.\n\nIsm: ${escapeTgHtml(parentName || '—')}\nUsername: ${usernamePart}\nTelegram ID: <b>${chatId}</b>\n\nShu ID'ni kerakli o'quvchi profiliga ulang.`
+      );
+    }
     return;
   }
 
