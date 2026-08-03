@@ -234,7 +234,7 @@ function renderStudentsTable() {
   const body = document.getElementById('students-table-body');
   if (!body) return;
   if (ADMIN_STATE.students.length === 0) {
-    body.innerHTML = '<tr><td colspan="8" class="empty-state">Hali o\'quvchi qo\'shilmagan.</td></tr>';
+    body.innerHTML = '<tr><td colspan="9" class="empty-state">Hali o\'quvchi qo\'shilmagan.</td></tr>';
     return;
   }
   body.innerHTML = ADMIN_STATE.students.map(s => `
@@ -242,6 +242,7 @@ function renderStudentsTable() {
       <td>${escapeHtml(s.name)}</td>
       <td>${escapeHtml(s.group)}</td>
       <td>${escapeHtml(teacherName(s.teacherId))}</td>
+      <td>${escapeHtml(s.phone) || '—'}</td>
       <td>${fmtMoney(s.fee)}</td>
       <td>${fmtMoney(s.balance)}</td>
       <td>${escapeHtml(s.studQrCode) || '—'}</td>
@@ -522,6 +523,7 @@ function initAddStudentForm() {
       group: document.getElementById('f-group').value.trim(),
       teacherId: document.getElementById('f-teacher').value || null,
       fee: Number(document.getElementById('f-fee').value),
+      phone: document.getElementById('f-phone').value.trim(),
       studQrCode: document.getElementById('f-qrcode').value.trim(),
       lessonStart: document.getElementById('f-lesson-start').value,
       lessonEnd: document.getElementById('f-lesson-end').value,
@@ -549,6 +551,7 @@ function openEditModal(studentId) {
   populateGroupOptions(document.getElementById('e-group'), student.teacherId || '', student.group || '');
   document.getElementById('e-fee').value = student.fee || 0;
   document.getElementById('e-balance').value = student.balance || 0;
+  document.getElementById('e-phone').value = student.phone || '';
   document.getElementById('e-qrcode').value = student.studQrCode || '';
   document.getElementById('e-lesson-start').value = student.lessonStart || '';
   document.getElementById('e-lesson-end').value = student.lessonEnd || '';
@@ -580,6 +583,7 @@ function initEditModal() {
       teacherId: document.getElementById('e-teacher').value || null,
       fee: Number(document.getElementById('e-fee').value),
       balance: Number(document.getElementById('e-balance').value),
+      phone: document.getElementById('e-phone').value.trim(),
       studQrCode: document.getElementById('e-qrcode').value.trim(),
       lessonStart: document.getElementById('e-lesson-start').value,
       lessonEnd: document.getElementById('e-lesson-end').value,
