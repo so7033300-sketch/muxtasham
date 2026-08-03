@@ -47,58 +47,49 @@ function showToast(message, type = 'ok') {
 }
 
 /* -------------------------------------------------------------------------
-   0.1 TELEFON RAQAMINI AVTOMATIK FORMATLASH ("+998" doim qotib turadi,
-   qolgan 9 ta raqam "XX XXX XX XX" ko'rinishida avtomatik joylashadi)
+   0.1 HAFTA KUNLARI — har o'quvchi uchun alohida dars kunlarini tanlash
    ------------------------------------------------------------------------- */
 
-function formatUzPhoneDigits(digits) {
-  digits = String(digits || '').replace(/\D/g, '').slice(0, 9);
-  const parts = [];
-  if (digits.length > 0) parts.push(digits.slice(0, 2));
-  if (digits.length > 2) parts.push(digits.slice(2, 5));
-  if (digits.length > 5) parts.push(digits.slice(5, 7));
-  if (digits.length > 7) parts.push(digits.slice(7, 9));
-  return parts.join(' ');
-}
+const WEEKDAYS_UZ = [
+  { key: 'mon', label: 'Dush' },
+  { key: 'tue', label: 'Sesh' },
+  { key: 'wed', label: 'Chor' },
+  { key: 'thu', label: 'Pay' },
+  { key: 'fri', label: 'Juma' },
+  { key: 'sat', label: 'Shan' },
+  { key: 'sun', label: 'Yak' }
+];
 
-// Faqat raqamlarni qoldiradi; agar foydalanuvchi "998" ni ham yozib qo'ysa,
-// prefiks bilan takrorlanib qolmasligi uchun boshidan olib tashlaydi.
-function extractUzPhoneDigits(raw) {
-  let digits = String(raw || '').replace(/\D/g, '');
-  if (digits.startsWith('998')) digits = digits.slice(3);
-  return digits.slice(0, 9);
-}
-
-// Input elementiga avtomatik formatlashni ulaydi (faqat raqam kiritiladi,
-// bo'shliqlar o'zi qo'yiladi).
-function attachPhoneMask(input) {
-  if (!input) return;
-  input.addEventListener('input', () => {
-    const digits = extractUzPhoneDigits(input.value);
-    input.value = formatUzPhoneDigits(digits);
+// Har ikkala (qo'shish/tahrirlash) formadagi bo'sh .weekday-picker konteynerlarini
+// checkbox'lar bilan to'ldiradi. Qo'shish formasida odatiy holda Dush-Juma belgilangan.
+function renderWeekdayPickers() {
+  document.querySelectorAll('.weekday-picker').forEach(container => {
+    const prefix = container.dataset.prefix;
+    const defaultChecked = prefix === 'f' ? ['mon', 'tue', 'wed', 'thu', 'fri'] : [];
+    container.innerHTML = WEEKDAYS_UZ.map(d => `
+      <label style="display:inline-flex; align-items:center; gap:5px; margin:0 12px 8px 0; font-size:0.82rem; color:var(--text-dim); cursor:pointer;">
+        <input type="checkbox" name="${prefix}-days" value="${d.key}" ${defaultChecked.includes(d.key) ? 'checked' : ''} />
+        ${d.label}
+      </label>
+    `).join('');
   });
 }
 
-function initPhoneMasks() {
-  attachPhoneMask(document.getElementById('f-phone'));
-  attachPhoneMask(document.getElementById('e-phone'));
+function getSelectedDays(prefix) {
+  return Array.from(document.querySelectorAll(`input[name="${prefix}-days"]:checked`)).map(i => i.value);
 }
 
-// Inputdagi qiymatni to'liq "+998 XX XXX XX XX" ko'rinishiga aylantirib qaytaradi.
-// Raqam kiritilmagan bo'lsa, bo'sh satr qaytaradi (maydon ixtiyoriy).
-function getFullPhoneValue(inputId) {
-  const el = document.getElementById(inputId);
-  const digits = el ? extractUzPhoneDigits(el.value) : '';
-  return digits ? `+998 ${formatUzPhoneDigits(digits)}` : '';
+function setSelectedDays(prefix, days) {
+  const arr = Array.isArray(days) ? days : [];
+  document.querySelectorAll(`input[name="${prefix}-days"]`).forEach(i => {
+    i.checked = arr.includes(i.value);
+  });
 }
 
-// Bazadan kelgan (yoki eski, formatlanmagan) telefon qiymatini inputga
-// faqat raqamlar qismi bilan joylashtiradi ("+998" prefiks alohida chip'da).
-function setPhoneInputValue(inputId, storedPhone) {
-  const el = document.getElementById(inputId);
-  if (!el) return;
-  const digits = extractUzPhoneDigits(storedPhone);
-  el.value = formatUzPhoneDigits(digits);
+function daysToLabel(days) {
+  if (!Array.isArray(days) || days.length === 0) return '<span style="color:var(--danger);">belgilanmagan</span>';
+  if (days.length === 7) return 'Har kuni';
+  return days.map(k => (WEEKDAYS_UZ.find(d => d.key === k) || {}).label || k).join(', ');
 }
 
 /* -------------------------------------------------------------------------
@@ -165,12 +156,13 @@ async function loadOverviewPage() {
 
   const feedBody = document.getElementById('overview-feed-body');
   if (data.attendanceToday.length === 0) {
-    feedBody.innerHTML = '<tr><td colspan="4" class="empty-state">Bugun hali davomat yo\'q.</td></tr>';
+    feedBody.innerHTML = '<tr><td colspan="5" class="empty-state">Bugun hali davomat yo\'q.</td></tr>';
   } else {
     feedBody.innerHTML = data.attendanceToday.map(a => {
       const student = data.students.find(s => s.id === a.studentId);
       return `<tr>
         <td>${escapeHtml(a.studentName)}</td>
+        <td>${escapeHtml(a.phone) || '—'}</td>
         <td>${escapeHtml(student ? student.group : '')}</td>
         <td><span class="badge ${a.status}">${a.status}</span></td>
         <td>${escapeHtml(a.time)}</td>
@@ -285,14 +277,42 @@ function initTeacherGroupLinking() {
   }
 }
 
+let STUDENT_SEARCH_QUERY = '';
+
+function getFilteredStudents() {
+  const q = STUDENT_SEARCH_QUERY.toLowerCase().trim();
+  if (!q) return ADMIN_STATE.students;
+  return ADMIN_STATE.students.filter(s =>
+    (s.name || '').toLowerCase().includes(q) ||
+    (s.group || '').toLowerCase().includes(q) ||
+    (s.phone || '').toLowerCase().includes(q) ||
+    (s.studQrCode || '').toLowerCase().includes(q) ||
+    teacherName(s.teacherId).toLowerCase().includes(q)
+  );
+}
+
+function initStudentSearch() {
+  const input = document.getElementById('student-search');
+  if (!input) return;
+  input.addEventListener('input', () => {
+    STUDENT_SEARCH_QUERY = input.value;
+    renderStudentsTable();
+  });
+}
+
 function renderStudentsTable() {
   const body = document.getElementById('students-table-body');
   if (!body) return;
+  const list = getFilteredStudents();
   if (ADMIN_STATE.students.length === 0) {
-    body.innerHTML = '<tr><td colspan="9" class="empty-state">Hali o\'quvchi qo\'shilmagan.</td></tr>';
+    body.innerHTML = '<tr><td colspan="10" class="empty-state">Hali o\'quvchi qo\'shilmagan.</td></tr>';
     return;
   }
-  body.innerHTML = ADMIN_STATE.students.map(s => `
+  if (list.length === 0) {
+    body.innerHTML = '<tr><td colspan="10" class="empty-state">Qidiruvga mos o\'quvchi topilmadi.</td></tr>';
+    return;
+  }
+  body.innerHTML = list.map(s => `
     <tr>
       <td>${escapeHtml(s.name)}</td>
       <td>${escapeHtml(s.group)}</td>
@@ -301,6 +321,7 @@ function renderStudentsTable() {
       <td>${fmtMoney(s.fee)}</td>
       <td>${fmtMoney(s.balance)}</td>
       <td>${escapeHtml(s.studQrCode) || '—'}</td>
+      <td style="font-size:0.78rem;">${daysToLabel(s.days)}</td>
       <td>${escapeHtml(s.lessonStart) || '—'} – ${escapeHtml(s.lessonEnd) || '—'}</td>
       <td>
         <button class="btn sm" onclick="openEditModal('${s.id}')">✏️ Tahrirlash</button>
@@ -385,12 +406,13 @@ function renderLiveFeed(attendanceToday) {
   const body = document.getElementById('live-feed-body');
   if (!body) return;
   if (!attendanceToday || attendanceToday.length === 0) {
-    body.innerHTML = '<tr><td colspan="3" class="empty-state">Hali skaner qilinmadi.</td></tr>';
+    body.innerHTML = '<tr><td colspan="4" class="empty-state">Hali skaner qilinmadi.</td></tr>';
     return;
   }
   body.innerHTML = attendanceToday.map(a => `
     <tr>
       <td>${escapeHtml(a.studentName)}</td>
+      <td>${escapeHtml(a.phone) || '—'}</td>
       <td><span class="badge ${a.status}">${a.status}</span></td>
       <td>${escapeHtml(a.time)}</td>
     </tr>
@@ -407,6 +429,7 @@ function prependLiveFeedRow(record) {
   tr.className = 'row-in';
   tr.innerHTML = `
     <td>${escapeHtml(record.studentName)}</td>
+    <td>${escapeHtml(record.phone) || '—'}</td>
     <td><span class="badge ${record.status}">${record.status}</span></td>
     <td>${escapeHtml(record.time)}</td>
   `;
@@ -522,8 +545,22 @@ function initCameraScanner() {
       const startWith = async (cameraConfig) => {
         return HTML5_QR_INSTANCE.start(
           cameraConfig,
-          { fps: 10, qrbox: { width: 230, height: 230 } },
+          {
+            fps: 15,
+            // Skaner qutisini kamera ko'rish maydonining katta qismiga moslashtiramiz —
+            // shunda QR-kodni uzoqdan ko'rsatsa ham tezroq va ishonchliroq tanib oladi.
+            qrbox: (viewfinderWidth, viewfinderHeight) => {
+              const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+              const size = Math.floor(minEdge * 0.85);
+              return { width: size, height: size };
+            },
+            aspectRatio: 1.0,
+            disableFlip: false,
+            experimentalFeatures: { useBarCodeDetectorIfSupported: true }
+          },
           (decodedText) => {
+            const lastEl = document.getElementById('last-scanned');
+            if (lastEl) lastEl.textContent = `Oxirgi o'qilgan kod: "${decodedText}"`;
             if (SCAN_LOCK) return;
             submitAttendance(decodedText);
           },
@@ -578,10 +615,11 @@ function initAddStudentForm() {
       group: document.getElementById('f-group').value.trim(),
       teacherId: document.getElementById('f-teacher').value || null,
       fee: Number(document.getElementById('f-fee').value),
-      phone: getFullPhoneValue('f-phone'),
+      phone: document.getElementById('f-phone').value.trim(),
       studQrCode: document.getElementById('f-qrcode').value.trim(),
       lessonStart: document.getElementById('f-lesson-start').value,
       lessonEnd: document.getElementById('f-lesson-end').value,
+      days: getSelectedDays('f'),
       parentChatId: document.getElementById('f-parent-chat').value.trim()
     };
 
@@ -589,6 +627,7 @@ function initAddStudentForm() {
     if (ok && data.success) {
       showToast(`✅ ${data.student.name} ro'yxatga qo'shildi.`, 'ok');
       form.reset();
+      setSelectedDays('f', ['mon', 'tue', 'wed', 'thu', 'fri']);
       loadAdminData();
     } else {
       showToast(`⚠️ ${data.message || 'Qo\'shishda xatolik.'}`, 'err');
@@ -606,10 +645,11 @@ function openEditModal(studentId) {
   populateGroupOptions(document.getElementById('e-group'), student.teacherId || '', student.group || '');
   document.getElementById('e-fee').value = student.fee || 0;
   document.getElementById('e-balance').value = student.balance || 0;
-  setPhoneInputValue('e-phone', student.phone || '');
+  document.getElementById('e-phone').value = student.phone || '';
   document.getElementById('e-qrcode').value = student.studQrCode || '';
   document.getElementById('e-lesson-start').value = student.lessonStart || '';
   document.getElementById('e-lesson-end').value = student.lessonEnd || '';
+  setSelectedDays('e', student.days || []);
   document.getElementById('e-parent-chat').value = student.parentChatId || '';
 
   document.getElementById('editModal').classList.add('open');
@@ -638,10 +678,11 @@ function initEditModal() {
       teacherId: document.getElementById('e-teacher').value || null,
       fee: Number(document.getElementById('e-fee').value),
       balance: Number(document.getElementById('e-balance').value),
-      phone: getFullPhoneValue('e-phone'),
+      phone: document.getElementById('e-phone').value.trim(),
       studQrCode: document.getElementById('e-qrcode').value.trim(),
       lessonStart: document.getElementById('e-lesson-start').value,
       lessonEnd: document.getElementById('e-lesson-end').value,
+      days: getSelectedDays('e'),
       parentChatId: document.getElementById('e-parent-chat').value.trim()
     };
 
@@ -723,6 +764,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadOverviewPage();
 
   // Admin panel
+  renderWeekdayPickers();
   loadAdminData();
   initCameraScanner();
   initManualScanInput();
@@ -731,6 +773,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initAddTeacherForm();
   initTeacherGroupLinking();
   initTeachersTableEvents();
+  initStudentSearch();
   initPeriodicRefresh();
-  initPhoneMasks();
 });
