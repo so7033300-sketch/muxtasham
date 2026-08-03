@@ -109,6 +109,10 @@
         <input type="number" id="f-fee" min="0" required />
       </div>
       <div class="field">
+        <label>Telefon raqami</label>
+        <input type="tel" id="f-phone" placeholder="masalan: +998 90 123 45 67" />
+      </div>
+      <div class="field">
         <label>O'quvchi QR/Shtrix Kodi</label>
         <input type="text" id="f-qrcode" placeholder="masalan: STU-0001" />
       </div>
@@ -140,12 +144,12 @@
       <table class="data-table">
         <thead>
           <tr>
-            <th>Ism</th><th>Guruh</th><th>O'qituvchi</th><th>Oylik</th>
+            <th>Ism</th><th>Guruh</th><th>O'qituvchi</th><th>Telefon</th><th>Oylik</th>
             <th>Balans</th><th>QR-kod</th><th>Dars vaqti</th><th>Amallar</th>
           </tr>
         </thead>
         <tbody id="students-table-body">
-          <tr><td colspan="8" class="empty-state">Yuklanmoqda...</td></tr>
+          <tr><td colspan="9" class="empty-state">Yuklanmoqda...</td></tr>
         </tbody>
       </table>
     </div>
@@ -212,6 +216,10 @@
       <div class="field">
         <label>Balans</label>
         <input type="number" id="e-balance" />
+      </div>
+      <div class="field">
+        <label>Telefon raqami</label>
+        <input type="tel" id="e-phone" placeholder="masalan: +998 90 123 45 67" />
       </div>
       <div class="field">
         <label>QR/Shtrix kod</label>
