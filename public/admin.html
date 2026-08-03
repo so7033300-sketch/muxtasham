@@ -93,12 +93,14 @@
         <input type="text" id="f-name" required />
       </div>
       <div class="field">
-        <label>Guruh</label>
-        <input type="text" id="f-group" />
-      </div>
-      <div class="field">
         <label>O'qituvchi</label>
         <select id="f-teacher"></select>
+      </div>
+      <div class="field">
+        <label>Guruh</label>
+        <select id="f-group">
+          <option value="">— avval o'qituvchini tanlang —</option>
+        </select>
       </div>
       <div class="field">
         <label>Oylik to'lov (fee, so'm)</label>
@@ -153,9 +155,9 @@
     </form>
     <div class="table-scroll">
       <table class="data-table">
-        <thead><tr><th>Ism</th><th>Joriy oylik (bu oy)</th><th>Amallar</th></tr></thead>
+        <thead><tr><th>Ism</th><th>Guruhlari</th><th>Joriy oylik (bu oy)</th><th>Amallar</th></tr></thead>
         <tbody id="teachers-table-body">
-          <tr><td colspan="3" class="empty-state">Yuklanmoqda...</td></tr>
+          <tr><td colspan="4" class="empty-state">Yuklanmoqda...</td></tr>
         </tbody>
       </table>
     </div>
@@ -189,12 +191,14 @@
         <input type="text" id="e-name" required />
       </div>
       <div class="field">
-        <label>Guruh</label>
-        <input type="text" id="e-group" />
-      </div>
-      <div class="field">
         <label>O'qituvchi</label>
         <select id="e-teacher"></select>
+      </div>
+      <div class="field">
+        <label>Guruh</label>
+        <select id="e-group">
+          <option value="">— avval o'qituvchini tanlang —</option>
+        </select>
       </div>
       <div class="field">
         <label>Oylik to'lov (fee)</label>
