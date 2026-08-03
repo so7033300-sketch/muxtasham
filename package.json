@@ -1,0 +1,17 @@
+{
+  "name": "smart-qr-attendance-crm",
+  "version": "2.0.0",
+  "description": "Smart QR-Attendance CRM - jonli QR-davomat, moliyaviy hisob-kitob va Telegram xabarnomalari",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-schedule": "^2.1.1",
+    "node-telegram-bot-api": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

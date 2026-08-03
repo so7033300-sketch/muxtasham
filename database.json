@@ -1,0 +1,45 @@
+{
+  "students": [
+    {
+      "id": "stu_1785751344680_2021",
+      "name": "Vali Valiyev",
+      "group": "A1",
+      "teacherId": "tch_1785751344546_1823",
+      "fee": 1200000,
+      "balance": -100000,
+      "studQrCode": "STU-001",
+      "phone": "+998901234567",
+      "days": [
+        "mon"
+      ],
+      "lessonStart": "00:00",
+      "lessonEnd": "23:59",
+      "parentChatId": "111222333"
+    }
+  ],
+  "teachers": [
+    {
+      "id": "tch_1785751344546_1823",
+      "name": "Aziz Aka",
+      "salary": 50000,
+      "groups": [
+        "A1"
+      ]
+    }
+  ],
+  "attendance": [
+    {
+      "id": "att_1785751344689_6945",
+      "studentId": "stu_1785751344680_2021",
+      "studentName": "Vali Valiyev",
+      "phone": "+998901234567",
+      "date": "2026-08-03",
+      "status": "keldi",
+      "time": "15:02",
+      "teacherId": "tch_1785751344546_1823"
+    }
+  ],
+  "center_profit": 50000,
+  "history": [],
+  "adminChatId": null
+}
