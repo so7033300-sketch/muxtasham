@@ -167,6 +167,28 @@ async function sendTelegramMessage(chatId, text) {
 // TELEGRAM_ADMIN_USERNAME bilan almashtirish mumkin.
 const ADMIN_USERNAME = (process.env.TELEGRAM_ADMIN_USERNAME || 'sobirov_cybersecurity').replace(/^@/, '').toLowerCase();
 
+function escapeTgHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function fmtSom(n) {
+  const v = Number(n) || 0;
+  return v.toLocaleString('ru-RU').replace(/,/g, ' ') + " so'm";
+}
+
+// Bitta Telegram chatId'ga biriktirilgan barcha o'quvchilarning balansini matn qilib qaytaradi
+function buildBalanceMessage(db, chatId) {
+  const myKids = db.students.filter(s => String(s.parentChatId) === String(chatId));
+  if (myKids.length === 0) {
+    return null;
+  }
+  return myKids.map(s =>
+    `👤 <b>${escapeTgHtml(s.name)}</b>\n` +
+    `Guruh: ${escapeTgHtml(s.group) || '—'}\n` +
+    `💰 Joriy balans: ${fmtSom(s.balance)}`
+  ).join('\n\n');
+}
+
 let telegramBot = null;
 
 function initTelegramBot() {
@@ -205,10 +227,25 @@ function initTelegramBot() {
       {
         parse_mode: 'HTML',
         reply_markup: {
-          inline_keyboard: [[{ text: '📨 Administratorga yuborish', callback_data: 'send_to_admin' }]]
+          inline_keyboard: [
+            [{ text: '📨 Administratorga yuborish', callback_data: 'send_to_admin' }],
+            [{ text: '💰 Farzandim balansini ko\'rish', callback_data: 'check_balance' }]
+          ]
         }
       }
     );
+  });
+
+  // Har doim tez kirish uchun /balans buyrug'i ham ishlaydi
+  telegramBot.onText(/\/balans/i, (msg) => {
+    const chatId = msg.chat.id;
+    const db = readDB();
+    const message = buildBalanceMessage(db, chatId);
+    if (!message) {
+      telegramBot.sendMessage(chatId, '❌ Sizning Telegram ID raqamingiz hali birorta o\'quvchiga biriktirilmagan. Avval /start bosib, ID raqamingizni administratorga yuboring.');
+      return;
+    }
+    telegramBot.sendMessage(chatId, `Farzandingiz haqida ma'lumot:\n\n${message}`, { parse_mode: 'HTML' });
   });
 
   telegramBot.on('callback_query', (query) => {
