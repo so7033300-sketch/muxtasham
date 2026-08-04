@@ -234,6 +234,30 @@ function initTelegramBot() {
         }
       }
     );
+
+    // Pastda doimiy ko'rinadigan tugma — istalgan vaqt bir bosish bilan balansni tekshirish uchun
+    telegramBot.sendMessage(
+      chatId,
+      'Pastdagi tugma orqali istalgan vaqtda balansni tekshirishingiz mumkin.',
+      {
+        reply_markup: {
+          keyboard: [[{ text: '💰 Balansni tekshirish' }]],
+          resize_keyboard: true
+        }
+      }
+    );
+  });
+
+  // Doimiy pastki tugma bosilganda ham xuddi /balans kabi javob beradi
+  telegramBot.onText(/💰 Balansni tekshirish/, (msg) => {
+    const chatId = msg.chat.id;
+    const db = readDB();
+    const message = buildBalanceMessage(db, chatId);
+    if (!message) {
+      telegramBot.sendMessage(chatId, '❌ Sizning Telegram ID raqamingiz hali birorta o\'quvchiga biriktirilmagan. Avval /start bosib, ID raqamingizni administratorga yuboring.');
+      return;
+    }
+    telegramBot.sendMessage(chatId, `Farzandingiz haqida ma'lumot:\n\n${message}`, { parse_mode: 'HTML' });
   });
 
   // Har doim tez kirish uchun /balans buyrug'i ham ishlaydi
@@ -249,9 +273,22 @@ function initTelegramBot() {
   });
 
   telegramBot.on('callback_query', (query) => {
+    const chatId = query.message.chat.id;
+
+    if (query.data === 'check_balance') {
+      const db = readDB();
+      const message = buildBalanceMessage(db, chatId);
+      telegramBot.answerCallbackQuery(query.id);
+      if (!message) {
+        telegramBot.sendMessage(chatId, '❌ Sizning Telegram ID raqamingiz hali birorta o\'quvchiga biriktirilmagan. Avval ID raqamingizni "Administratorga yuborish" tugmasi orqali yuboring.');
+        return;
+      }
+      telegramBot.sendMessage(chatId, `Farzandingiz haqida ma'lumot:\n\n${message}`, { parse_mode: 'HTML' });
+      return;
+    }
+
     if (query.data !== 'send_to_admin') return;
 
-    const chatId = query.message.chat.id;
     const username = query.from.username ? '@' + query.from.username : '(username yo\'q)';
     const fullName = [query.from.first_name, query.from.last_name].filter(Boolean).join(' ');
 
