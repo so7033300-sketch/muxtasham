@@ -415,6 +415,36 @@ table.data-table { width: 100%; border-collapse: collapse; min-width: 640px; }
   font-size: 0.9rem;
 }
 
+/* Har bir o'qituvchining o'z guruhi — jadvallar aralashib ketmasligi uchun */
+.teacher-group {
+  margin-bottom: 26px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.teacher-group:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+.teacher-group-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.count-badge {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  background: var(--panel-strong);
+  border: 1px solid var(--panel-border);
+  padding: 2px 10px;
+  border-radius: 999px;
+}
+
 footer.foot {
   text-align: center;
   color: var(--text-dim);
