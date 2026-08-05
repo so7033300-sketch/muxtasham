@@ -156,12 +156,13 @@ async function loadOverviewPage() {
 
   const feedBody = document.getElementById('overview-feed-body');
   if (data.attendanceToday.length === 0) {
-    feedBody.innerHTML = '<tr><td colspan="5" class="empty-state">Bugun hali davomat yo\'q.</td></tr>';
+    feedBody.innerHTML = '<tr><td colspan="6" class="empty-state">Bugun hali davomat yo\'q.</td></tr>';
   } else {
     feedBody.innerHTML = data.attendanceToday.map(a => {
       const student = data.students.find(s => s.id === a.studentId);
       return `<tr>
         <td>${escapeHtml(a.studentName)}</td>
+        <td>${escapeHtml(a.subject) || '—'}</td>
         <td>${escapeHtml(a.phone) || '—'}</td>
         <td>${escapeHtml(student ? student.group : '')}</td>
         <td><span class="badge ${a.status}">${a.status}</span></td>
@@ -285,6 +286,7 @@ function getFilteredStudents() {
   return ADMIN_STATE.students.filter(s =>
     (s.name || '').toLowerCase().includes(q) ||
     (s.group || '').toLowerCase().includes(q) ||
+    (s.subject || '').toLowerCase().includes(q) ||
     (s.phone || '').toLowerCase().includes(q) ||
     (s.studQrCode || '').toLowerCase().includes(q) ||
     teacherName(s.teacherId).toLowerCase().includes(q)
@@ -305,17 +307,18 @@ function renderStudentsTable() {
   if (!body) return;
   const list = getFilteredStudents();
   if (ADMIN_STATE.students.length === 0) {
-    body.innerHTML = '<tr><td colspan="10" class="empty-state">Hali o\'quvchi qo\'shilmagan.</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" class="empty-state">Hali o\'quvchi qo\'shilmagan.</td></tr>';
     return;
   }
   if (list.length === 0) {
-    body.innerHTML = '<tr><td colspan="10" class="empty-state">Qidiruvga mos o\'quvchi topilmadi.</td></tr>';
+    body.innerHTML = '<tr><td colspan="11" class="empty-state">Qidiruvga mos o\'quvchi topilmadi.</td></tr>';
     return;
   }
   body.innerHTML = list.map(s => `
     <tr>
       <td>${escapeHtml(s.name)}</td>
       <td>${escapeHtml(s.group)}</td>
+      <td>${escapeHtml(s.subject) || '—'}</td>
       <td>${escapeHtml(teacherName(s.teacherId))}</td>
       <td>${escapeHtml(s.phone) || '—'}</td>
       <td>${fmtMoney(s.fee)}</td>
@@ -406,12 +409,13 @@ function renderLiveFeed(attendanceToday) {
   const body = document.getElementById('live-feed-body');
   if (!body) return;
   if (!attendanceToday || attendanceToday.length === 0) {
-    body.innerHTML = '<tr><td colspan="4" class="empty-state">Hali skaner qilinmadi.</td></tr>';
+    body.innerHTML = '<tr><td colspan="5" class="empty-state">Hali skaner qilinmadi.</td></tr>';
     return;
   }
   body.innerHTML = attendanceToday.map(a => `
     <tr>
       <td>${escapeHtml(a.studentName)}</td>
+      <td>${escapeHtml(a.subject) || '—'}</td>
       <td>${escapeHtml(a.phone) || '—'}</td>
       <td><span class="badge ${a.status}">${a.status}</span></td>
       <td>${escapeHtml(a.time)}</td>
@@ -429,6 +433,7 @@ function prependLiveFeedRow(record) {
   tr.className = 'row-in';
   tr.innerHTML = `
     <td>${escapeHtml(record.studentName)}</td>
+    <td>${escapeHtml(record.subject) || '—'}</td>
     <td>${escapeHtml(record.phone) || '—'}</td>
     <td><span class="badge ${record.status}">${record.status}</span></td>
     <td>${escapeHtml(record.time)}</td>
@@ -614,6 +619,7 @@ function initAddStudentForm() {
       name: document.getElementById('f-name').value.trim(),
       group: document.getElementById('f-group').value.trim(),
       teacherId: document.getElementById('f-teacher').value || null,
+      subject: document.getElementById('f-subject').value.trim(),
       fee: Number(document.getElementById('f-fee').value),
       phone: document.getElementById('f-phone').value.trim(),
       studQrCode: document.getElementById('f-qrcode').value.trim(),
@@ -643,6 +649,7 @@ function openEditModal(studentId) {
   document.getElementById('e-name').value = student.name || '';
   document.getElementById('e-teacher').value = student.teacherId || '';
   populateGroupOptions(document.getElementById('e-group'), student.teacherId || '', student.group || '');
+  document.getElementById('e-subject').value = student.subject || '';
   document.getElementById('e-fee').value = student.fee || 0;
   document.getElementById('e-balance').value = student.balance || 0;
   document.getElementById('e-phone').value = student.phone || '';
@@ -676,6 +683,7 @@ function initEditModal() {
       name: document.getElementById('e-name').value.trim(),
       group: document.getElementById('e-group').value.trim(),
       teacherId: document.getElementById('e-teacher').value || null,
+      subject: document.getElementById('e-subject').value.trim(),
       fee: Number(document.getElementById('e-fee').value),
       balance: Number(document.getElementById('e-balance').value),
       phone: document.getElementById('e-phone').value.trim(),
