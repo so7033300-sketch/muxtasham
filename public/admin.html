@@ -76,10 +76,10 @@
         <div class="live-feed" id="live-feed">
           <table>
             <thead>
-              <tr><th>O'quvchi</th><th>Telefon</th><th>Holat</th><th>Vaqt</th></tr>
+              <tr><th>O'quvchi</th><th>Fan</th><th>Telefon</th><th>Holat</th><th>Vaqt</th></tr>
             </thead>
             <tbody id="live-feed-body">
-              <tr><td colspan="4" class="empty-state">Hali skaner qilinmadi.</td></tr>
+              <tr><td colspan="5" class="empty-state">Hali skaner qilinmadi.</td></tr>
             </tbody>
           </table>
         </div>
@@ -104,6 +104,10 @@
         <select id="f-group">
           <option value="">— avval o'qituvchini tanlang —</option>
         </select>
+      </div>
+      <div class="field">
+        <label>Fan</label>
+        <input type="text" id="f-subject" placeholder="masalan: Matematika" />
       </div>
       <div class="field">
         <label>Oylik to'lov (fee, so'm)</label>
@@ -139,22 +143,12 @@
     </form>
   </div>
 
-  <!-- O'QUVCHILAR RO'YXATI -->
+  <!-- O'QUVCHILAR RO'YXATI (har bir o'qituvchi uchun alohida jadval) -->
   <div class="glass panel">
     <div class="section-title"><span class="dot"></span> O'quvchilar ro'yxati</div>
-    <input type="text" id="student-search" placeholder="🔎 Ism, guruh, telefon yoki QR-kod bo'yicha qidirish..." style="margin-bottom:16px;" />
-    <div class="table-scroll">
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>Ism</th><th>Guruh</th><th>O'qituvchi</th><th>Telefon</th><th>Oylik</th>
-            <th>Balans</th><th>QR-kod</th><th>Kunlar</th><th>Dars vaqti</th><th>Amallar</th>
-          </tr>
-        </thead>
-        <tbody id="students-table-body">
-          <tr><td colspan="10" class="empty-state">Yuklanmoqda...</td></tr>
-        </tbody>
-      </table>
+    <input type="text" id="student-search" placeholder="🔎 Ism, guruh, fan, telefon yoki QR-kod bo'yicha qidirish..." style="margin-bottom:16px;" />
+    <div id="students-groups">
+      <div class="empty-state">Yuklanmoqda...</div>
     </div>
   </div>
 
@@ -211,6 +205,10 @@
         <select id="e-group">
           <option value="">— avval o'qituvchini tanlang —</option>
         </select>
+      </div>
+      <div class="field">
+        <label>Fan</label>
+        <input type="text" id="e-subject" placeholder="masalan: Matematika" />
       </div>
       <div class="field">
         <label>Oylik to'lov (fee)</label>
