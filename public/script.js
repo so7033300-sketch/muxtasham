@@ -303,35 +303,70 @@ function initStudentSearch() {
 }
 
 function renderStudentsTable() {
-  const body = document.getElementById('students-table-body');
-  if (!body) return;
+  const container = document.getElementById('students-groups');
+  if (!container) return;
+
   const list = getFilteredStudents();
   if (ADMIN_STATE.students.length === 0) {
-    body.innerHTML = '<tr><td colspan="11" class="empty-state">Hali o\'quvchi qo\'shilmagan.</td></tr>';
+    container.innerHTML = '<div class="empty-state">Hali o\'quvchi qo\'shilmagan.</div>';
     return;
   }
   if (list.length === 0) {
-    body.innerHTML = '<tr><td colspan="11" class="empty-state">Qidiruvga mos o\'quvchi topilmadi.</td></tr>';
+    container.innerHTML = '<div class="empty-state">Qidiruvga mos o\'quvchi topilmadi.</div>';
     return;
   }
-  body.innerHTML = list.map(s => `
-    <tr>
-      <td>${escapeHtml(s.name)}</td>
-      <td>${escapeHtml(s.group)}</td>
-      <td>${escapeHtml(s.subject) || '—'}</td>
-      <td>${escapeHtml(teacherName(s.teacherId))}</td>
-      <td>${escapeHtml(s.phone) || '—'}</td>
-      <td>${fmtMoney(s.fee)}</td>
-      <td>${fmtMoney(s.balance)}</td>
-      <td>${escapeHtml(s.studQrCode) || '—'}</td>
-      <td style="font-size:0.78rem;">${daysToLabel(s.days)}</td>
-      <td>${escapeHtml(s.lessonStart) || '—'} – ${escapeHtml(s.lessonEnd) || '—'}</td>
-      <td>
-        <button class="btn sm" onclick="openEditModal('${s.id}')">✏️ Tahrirlash</button>
-        <button class="btn sm danger" onclick="deleteStudent('${s.id}')">🗑</button>
-      </td>
-    </tr>
-  `).join('');
+
+  // Har bir o'qituvchi uchun alohida guruh — bir-biriga aralashib ketmasligi uchun.
+  // Tartib: o'qituvchilar ro'yxati tartibida, oxirida "Biriktirilmagan" guruhi.
+  const groups = new Map();
+  ADMIN_STATE.teachers.forEach(t => groups.set(t.id, { name: t.name, students: [] }));
+  groups.set('__none__', { name: 'Biriktirilmagan', students: [] });
+
+  list.forEach(s => {
+    const key = (s.teacherId && groups.has(s.teacherId)) ? s.teacherId : '__none__';
+    groups.get(key).students.push(s);
+  });
+
+  let html = '';
+  groups.forEach(group => {
+    if (group.students.length === 0) return; // bo'sh guruhlarni ko'rsatmaymiz
+    html += `
+      <div class="teacher-group">
+        <div class="teacher-group-title">👨‍🏫 ${escapeHtml(group.name)} <span class="count-badge">${group.students.length} o'quvchi</span></div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Ism</th><th>Guruh</th><th>Fan</th><th>Telefon</th><th>Oylik</th>
+                <th>Balans</th><th>QR-kod</th><th>Kunlar</th><th>Dars vaqti</th><th>Amallar</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${group.students.map(s => `
+                <tr>
+                  <td>${escapeHtml(s.name)}</td>
+                  <td>${escapeHtml(s.group)}</td>
+                  <td>${escapeHtml(s.subject) || '—'}</td>
+                  <td>${escapeHtml(s.phone) || '—'}</td>
+                  <td>${fmtMoney(s.fee)}</td>
+                  <td>${fmtMoney(s.balance)}</td>
+                  <td>${escapeHtml(s.studQrCode) || '—'}</td>
+                  <td style="font-size:0.78rem;">${daysToLabel(s.days)}</td>
+                  <td>${escapeHtml(s.lessonStart) || '—'} – ${escapeHtml(s.lessonEnd) || '—'}</td>
+                  <td>
+                    <button class="btn sm" onclick="openEditModal('${s.id}')">✏️ Tahrirlash</button>
+                    <button class="btn sm danger" onclick="deleteStudent('${s.id}')">🗑</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  });
+
+  container.innerHTML = html || '<div class="empty-state">Qidiruvga mos o\'quvchi topilmadi.</div>';
 }
 
 function renderTeachersTable() {
