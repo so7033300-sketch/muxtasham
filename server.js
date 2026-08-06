@@ -26,7 +26,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 function defaultDB() {
   return {
-    students: [],   // {id, name, group, teacherId, fee, studQrCode, phone, days:[], lessonStart, lessonEnd, parentChatId, balance}
+    students: [],   // {id, name, group, teacherId, subject, fee, studQrCode, phone, days:[], lessonStart, lessonEnd, parentChatId, balance}
     teachers: [],   // {id, name, salary, groups: [name, ...]}
     attendance: [], // {id, studentId, studentName, phone, date, status, time, teacherId}
     center_profit: 0,
@@ -46,6 +46,7 @@ function readDB() {
     db.students = db.students || [];
     db.students.forEach(s => {
       if (typeof s.phone !== 'string') s.phone = '';
+      if (typeof s.subject !== 'string') s.subject = '';
       // Eski o'quvchilarda "days" bo'lmasa — eski xatti-harakatni buzmaslik uchun
       // har kuni faol deb hisoblaymiz. Yangilarida forma orqali aniq tanlanadi.
       if (!Array.isArray(s.days)) s.days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -78,25 +79,35 @@ function genId(prefix) {
    ========================================================================= */
 
 // Hozirgi vaqtni Toshkent zonasida Date obyekti sifatida qaytaradi
+// O'zbekiston (Toshkent) soat zonasi doim UTC+5 — yozgi vaqtga o'tish yo'q (1992 yildan beri).
+// Shuning uchun Intl/ICU orqali emas, to'g'ridan-to'g'ri sobit siljish bilan hisoblaymiz —
+// bu serverning til/ICU ma'lumotlariga bog'liq bo'lmagan, har doim ishonchli usul.
+const TASHKENT_OFFSET_MS = 5 * 60 * 60 * 1000;
+
 function nowInTashkent() {
-  const s = new Date().toLocaleString('en-US', { timeZone: TIMEZONE });
-  return new Date(s);
+  // Date.getTime() har doim UTC epoch (ms) qaytaradi — bu allaqachon mutlaq va
+  // serverning o'z mahalliy vaqt zonasiga bog'liq emas. Shunga sobit +5soat qo'shamiz.
+  const now = new Date();
+  return new Date(now.getTime() + TASHKENT_OFFSET_MS);
 }
 
 // "YYYY-MM-DD" formatidagi bugungi sana (Toshkent bo'yicha)
 function todayDateStr() {
   const d = nowInTashkent();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
+  // MUHIM: getUTC* metodlari ishlatiladi (getFullYear/getHours emas) — chunki
+  // "d" qiymati "haqiqiy UTC + 5soat" bo'lgan mutlaq vaqt. getUTC* uni serverning
+  // o'z mahalliy vaqt zonasiga bog'liq bo'lmagan holda to'g'ri o'qiydi.
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const dd = String(d.getUTCDate()).padStart(2, '0');
   return `${yyyy}-${mm}-${dd}`;
 }
 
 // "HH:MM" formatidagi hozirgi vaqt (Toshkent bo'yicha)
 function currentTimeStr() {
   const d = nowInTashkent();
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mi = String(d.getMinutes()).padStart(2, '0');
+  const hh = String(d.getUTCHours()).padStart(2, '0');
+  const mi = String(d.getUTCMinutes()).padStart(2, '0');
   return `${hh}:${mi}`;
 }
 
@@ -110,14 +121,14 @@ function timeStrToMinutes(t) {
 
 function currentMinutes() {
   const d = nowInTashkent();
-  return d.getHours() * 60 + d.getMinutes();
+  return d.getUTCHours() * 60 + d.getUTCMinutes();
 }
 
 // Bugungi hafta kunini qisqa kalit sifatida qaytaradi: mon, tue, wed, thu, fri, sat, sun
 const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 function todayWeekdayKey() {
   const d = nowInTashkent();
-  return WEEKDAY_KEYS[d.getDay()];
+  return WEEKDAY_KEYS[d.getUTCDay()];
 }
 
 // O'quvchi uchun bugun faol dars kuni ekanligini tekshiradi.
@@ -373,7 +384,7 @@ function sanitizeDays(days) {
 app.post('/api/students', (req, res) => {
   const db = readDB();
   const {
-    name, group, teacherId, fee,
+    name, group, teacherId, fee, subject,
     studQrCode, lessonStart, lessonEnd,
     parentChatId, phone, days
   } = req.body;
@@ -391,6 +402,7 @@ app.post('/api/students', (req, res) => {
     name,
     group: group || '',
     teacherId: teacherId || null,
+    subject: subject || '',
     fee: Number(fee),
     balance: 0,
     studQrCode: studQrCode || '',
@@ -415,7 +427,7 @@ app.put('/api/students/:id', (req, res) => {
   }
 
   const {
-    name, group, teacherId, fee,
+    name, group, teacherId, fee, subject,
     studQrCode, lessonStart, lessonEnd,
     parentChatId, balance, phone, days
   } = req.body;
@@ -427,6 +439,7 @@ app.put('/api/students/:id', (req, res) => {
   if (name !== undefined) student.name = name;
   if (group !== undefined) student.group = group;
   if (teacherId !== undefined) student.teacherId = teacherId;
+  if (subject !== undefined) student.subject = subject;
   if (fee !== undefined) student.fee = Number(fee);
   if (studQrCode !== undefined) student.studQrCode = studQrCode;
   if (phone !== undefined) student.phone = phone;
@@ -574,6 +587,7 @@ app.post('/api/attendance/qr', async (req, res) => {
     studentId: student.id,
     studentName: student.name,
     phone: student.phone || '',
+    subject: student.subject || '',
     date: todayDateStr(),
     status: 'keldi',
     time,
@@ -650,6 +664,7 @@ schedule.scheduleJob('* * * * *', async () => {
         studentId: student.id,
         studentName: student.name,
         phone: student.phone || '',
+        subject: student.subject || '',
         date: today,
         status: 'kelmadi',
         time: currentTimeStr(),
@@ -682,8 +697,8 @@ schedule.scheduleJob('0 0 1 * *', () => {
   const db = readDB();
 
   const now = nowInTashkent();
-  const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const monthLabel = `${prevMonthDate.getFullYear()}-${String(prevMonthDate.getMonth() + 1).padStart(2, '0')}`;
+  const prevMonthDate = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const monthLabel = `${prevMonthDate.getUTCFullYear()}-${String(prevMonthDate.getUTCMonth() + 1).padStart(2, '0')}`;
 
   const teacherSalarySnapshot = {};
   db.teachers.forEach(t => {
