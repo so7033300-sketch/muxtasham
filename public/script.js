@@ -535,17 +535,19 @@ function initManualScanInput() {
 
   // Fokusni faqat "bo'sh joyda" (hech qanday forma maydoni band bo'lmaganda)
   // shu inputga qaytaramiz — aks holda boshqa maydonlarga yozish imkonsiz bo'lib qolardi.
+  // preventScroll: true — MUHIM: aks holda fokus qaytganda brauzer sahifani
+  // avtomatik ravishda skaner inputi tomon aylantirib yuborardi.
   const isFormField = (el) => el && ['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName);
   const refocus = () => {
     const active = document.activeElement;
     const modalOpen = !!document.querySelector('.modal-overlay.open');
     const somethingElseFocused = isFormField(active) && active !== input;
     if (!modalOpen && !somethingElseFocused && active !== input) {
-      input.focus();
+      input.focus({ preventScroll: true });
     }
   };
   setInterval(refocus, 1200);
-  input.focus();
+  input.focus({ preventScroll: true });
 }
 
 /* -------------------------------------------------------------------------
