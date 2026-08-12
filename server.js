@@ -176,7 +176,7 @@ async function sendTelegramMessage(chatId, text) {
 
 // Administrator Telegram username'i (@ belgisisiz). Render Environment orqali
 // TELEGRAM_ADMIN_USERNAME bilan almashtirish mumkin.
-const ADMIN_USERNAME = (process.env.TELEGRAM_ADMIN_USERNAME || 'sobirov_cybersecurity').replace(/^@/, '').toLowerCase();
+const ADMIN_USERNAME = (process.env.TELEGRAM_ADMIN_USERNAME || 'muxtashamlearningcenter').replace(/^@/, '').toLowerCase();
 
 function escapeTgHtml(str) {
   return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
